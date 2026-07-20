@@ -16,18 +16,16 @@ CREATE TABLE mesa (
 
 CREATE TABLE produto (
                          id_produto INT AUTO_INCREMENT PRIMARY KEY,
+                         id_categoria INT NOT NULL,
                          nome VARCHAR(100) NOT NULL,
                          descricao VARCHAR(255),
-                         categoria ENUM(
-        'ESPETO',
-        'LANCHE',
-        'PORCAO',
-        'BEBIDA',
-        'OUTRO'
-    ) NOT NULL,
                          preco DECIMAL(10,2) NOT NULL,
                          quantidade_estoque INT NOT NULL DEFAULT 0,
-                         ativo BOOLEAN NOT NULL DEFAULT TRUE
+                         ativo BOOLEAN NOT NULL DEFAULT TRUE,
+
+                         CONSTRAINT fk_produto_categoria
+                             FOREIGN KEY (id_categoria)
+                                 REFERENCES categoria(id_categoria)
 );
 
 CREATE TABLE comanda (
@@ -131,4 +129,10 @@ CREATE TABLE movimentacao_caixa (
                                     CONSTRAINT fk_movimentacao_pagamento
                                         FOREIGN KEY (id_pagamento)
                                             REFERENCES pagamento(id_pagamento)
+);
+
+CREATE TABLE categoria (
+                           id_categoria INT AUTO_INCREMENT PRIMARY KEY,
+                           nome VARCHAR(50) NOT NULL UNIQUE,
+                           ativo BOOLEAN NOT NULL DEFAULT TRUE
 );

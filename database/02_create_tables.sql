@@ -1,5 +1,9 @@
 USE trevizan_espetinhos;
 
+-- =========================
+-- USUÁRIO
+-- =========================
+
 CREATE TABLE usuario (
                          id_usuario INT AUTO_INCREMENT PRIMARY KEY,
                          nome VARCHAR(100) NOT NULL,
@@ -8,11 +12,32 @@ CREATE TABLE usuario (
                          ativo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+
+-- =========================
+-- MESA
+-- =========================
+
 CREATE TABLE mesa (
                       id_mesa INT AUTO_INCREMENT PRIMARY KEY,
                       numero INT NOT NULL UNIQUE,
                       status ENUM('LIVRE', 'OCUPADA') NOT NULL DEFAULT 'LIVRE'
 );
+
+
+-- =========================
+-- CATEGORIA
+-- =========================
+
+CREATE TABLE categoria (
+                           id_categoria INT AUTO_INCREMENT PRIMARY KEY,
+                           nome VARCHAR(50) NOT NULL UNIQUE,
+                           ativo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+
+-- =========================
+-- PRODUTO
+-- =========================
 
 CREATE TABLE produto (
                          id_produto INT AUTO_INCREMENT PRIMARY KEY,
@@ -28,6 +53,11 @@ CREATE TABLE produto (
                                  REFERENCES categoria(id_categoria)
 );
 
+
+-- =========================
+-- COMANDA
+-- =========================
+
 CREATE TABLE comanda (
                          id_comanda INT AUTO_INCREMENT PRIMARY KEY,
                          id_mesa INT NOT NULL,
@@ -35,11 +65,13 @@ CREATE TABLE comanda (
                          nome_cliente VARCHAR(100),
                          data_abertura DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                          data_fechamento DATETIME,
+
                          status ENUM(
         'ABERTA',
         'FECHADA',
         'CANCELADA'
     ) NOT NULL DEFAULT 'ABERTA',
+
                          valor_total DECIMAL(10,2) NOT NULL DEFAULT 0,
 
                          CONSTRAINT fk_comanda_mesa
@@ -51,6 +83,11 @@ CREATE TABLE comanda (
                                  REFERENCES usuario(id_usuario)
 );
 
+
+-- =========================
+-- ITEM DA COMANDA
+-- =========================
+
 CREATE TABLE item_comanda (
                               id_item_comanda INT AUTO_INCREMENT PRIMARY KEY,
                               id_comanda INT NOT NULL,
@@ -59,6 +96,7 @@ CREATE TABLE item_comanda (
                               preco_unitario DECIMAL(10,2) NOT NULL,
                               observacao VARCHAR(255),
                               subtotal DECIMAL(10,2) NOT NULL,
+
                               status_item ENUM(
         'PENDENTE',
         'EM_PREPARO',
@@ -76,15 +114,22 @@ CREATE TABLE item_comanda (
                                       REFERENCES produto(id_produto)
 );
 
+
+-- =========================
+-- PAGAMENTO
+-- =========================
+
 CREATE TABLE pagamento (
                            id_pagamento INT AUTO_INCREMENT PRIMARY KEY,
                            id_comanda INT NOT NULL,
+
                            forma_pagamento ENUM(
         'DINHEIRO',
         'PIX',
         'DEBITO',
         'CREDITO'
     ) NOT NULL,
+
                            valor DECIMAL(10,2) NOT NULL,
                            data_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -93,6 +138,11 @@ CREATE TABLE pagamento (
                                    REFERENCES comanda(id_comanda)
 );
 
+
+-- =========================
+-- CAIXA
+-- =========================
+
 CREATE TABLE caixa (
                        id_caixa INT AUTO_INCREMENT PRIMARY KEY,
                        id_usuario_abertura INT NOT NULL,
@@ -100,6 +150,7 @@ CREATE TABLE caixa (
                        data_hora_fechamento DATETIME,
                        valor_inicial DECIMAL(10,2) NOT NULL DEFAULT 0,
                        valor_final DECIMAL(10,2),
+
                        status ENUM(
         'ABERTO',
         'FECHADO'
@@ -110,14 +161,21 @@ CREATE TABLE caixa (
                                REFERENCES usuario(id_usuario)
 );
 
+
+-- =========================
+-- MOVIMENTAÇÃO DO CAIXA
+-- =========================
+
 CREATE TABLE movimentacao_caixa (
                                     id_movimentacao INT AUTO_INCREMENT PRIMARY KEY,
                                     id_caixa INT NOT NULL,
                                     id_pagamento INT,
+
                                     tipo ENUM(
         'ENTRADA',
         'SAIDA'
     ) NOT NULL,
+
                                     descricao VARCHAR(255),
                                     valor DECIMAL(10,2) NOT NULL,
                                     data_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -129,10 +187,4 @@ CREATE TABLE movimentacao_caixa (
                                     CONSTRAINT fk_movimentacao_pagamento
                                         FOREIGN KEY (id_pagamento)
                                             REFERENCES pagamento(id_pagamento)
-);
-
-CREATE TABLE categoria (
-                           id_categoria INT AUTO_INCREMENT PRIMARY KEY,
-                           nome VARCHAR(50) NOT NULL UNIQUE,
-                           ativo BOOLEAN NOT NULL DEFAULT TRUE
 );

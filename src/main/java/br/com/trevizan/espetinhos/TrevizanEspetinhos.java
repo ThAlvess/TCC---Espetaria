@@ -1,7 +1,7 @@
 
-package com.mycompany.trevizanespetinhos;
+package br.com.trevizan.espetinhos;
 
-import com.mycompany.trevizanespetinhos.telas.Login; //importando tela de login da pasta
+import br.com.trevizan.espetinhos.view.Login; //importando tela de login da pasta
 
 
 public class TrevizanEspetinhos {

@@ -1,4 +1,4 @@
-package com.mycompany.trevizanespetinhos.telas;
+package br.com.trevizan.espetinhos.view;
 
 public class MainScreen extends javax.swing.JFrame {
     

@@ -1,16 +1,15 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- */
 
 package com.mycompany.trevizanespetinhos;
 
-/**
- *
- * @author Henrique
- */
+import com.mycompany.trevizanespetinhos.telas.Login; //importando tela de login da pasta
+
+
 public class TrevizanEspetinhos {
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        // Torna a tela de Login visível ao iniciar a aplicação
+        java.awt.EventQueue.invokeLater(() -> {
+            new Login().setVisible(true);// torna a janela de Login Visível.
+        });
     }
 }

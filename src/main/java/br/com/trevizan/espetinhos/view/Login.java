@@ -4,6 +4,10 @@
  */
 package br.com.trevizan.espetinhos.view;
 
+import br.com.trevizan.espetinhos.dao.UsuarioDAO;
+import br.com.trevizan.espetinhos.model.Usuario;
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author thiag
@@ -16,7 +20,9 @@ public class Login extends javax.swing.JFrame {
      * Creates new form Login
      */
     public Login() {
+
         initComponents();
+        getRootPane().setDefaultButton(jButton2);
     }
 
     /**
@@ -182,9 +188,46 @@ public class Login extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton2ActionPerformed
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {
+
+        String login = jTextField1.getText().trim();
+        String senha = new String(jPasswordField1.getPassword());
+
+        if (login.isEmpty() || senha.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Preencha o usuário e a senha.",
+                    "Campos obrigatórios",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        UsuarioDAO usuarioDAO = new UsuarioDAO();
+        Usuario usuario = usuarioDAO.autenticar(login, senha);
+
+        if (usuario != null) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Bem-vindo, " + usuario.getNome() + "!"
+            );
+
+            MainScreen mainScreen = new MainScreen();
+            mainScreen.setVisible(true);
+
+            this.dispose();
+
+        } else {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Usuário ou senha inválidos.",
+                    "Erro de autenticação",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
 
     private void jLabel4MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel4MouseClicked
         Cadastro telaCadastro = new Cadastro();

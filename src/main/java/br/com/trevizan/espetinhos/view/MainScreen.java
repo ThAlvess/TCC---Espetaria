@@ -2,7 +2,7 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.PadraoJPanel;
 
-public class MainScreen extends javax.swing.JFrame {
+public class MainScreen extends javax.swing.JPanel {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(MainScreen.class.getName());
     private java.awt.CardLayout cardLayout;
@@ -12,11 +12,11 @@ public class MainScreen extends javax.swing.JFrame {
      */
     public MainScreen() {
         initComponents();
-        this.setExtendedState(MAXIMIZED_BOTH);
+
         CenterPanel.add(new PadraoJPanel(), "mesas"); // provisório, até criar a tela de Mesas de verdade
         CenterPanel.add(new PadraoJPanel(), "historico"); // provisório, até criar a tela de Histórico de verdade
         CenterPanel.add(new PadraoJPanel(), "caixa"); // provisório, até criar a tela de Caixa de verdade
-        CenterPanel.add(new PadraoJPanel(), "produtos"); // provisório, até criar a tela de Produtos de verdade
+        CenterPanel.add(new ProdutoPanel(), "produtos"); // provisório, até criar a tela de Produtos de verdade
         CenterPanel.add(new Relatorio(), "relatorios");
         cardLayout = (java.awt.CardLayout) CenterPanel.getLayout();
         cardLayout.show(CenterPanel, "mesas"); // força o card inicial, independente da ordem dos add()
@@ -80,7 +80,7 @@ public class MainScreen extends javax.swing.JFrame {
             }
         };
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
         setBackground(new java.awt.Color(235, 225, 226));
 
         PainelMargem.setBackground(new java.awt.Color(235, 225, 226));
@@ -168,9 +168,8 @@ public class MainScreen extends javax.swing.JFrame {
         CenterPanel.setLayout(new java.awt.CardLayout());
         PainelMargem.add(CenterPanel, java.awt.BorderLayout.CENTER);
 
-        getContentPane().add(PainelMargem, java.awt.BorderLayout.CENTER);
-
-        pack();
+        setLayout(new java.awt.BorderLayout());
+        add(PainelMargem, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
     // Método para voltar todos os botões ao estado normal (Fundo branco, texto verde)
@@ -231,14 +230,7 @@ private void ativarBotao(javax.swing.JButton botaoAtivo) {
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
-        
-        // 1. Ativa o design do FlatLaf
-        com.formdev.flatlaf.FlatLightLaf.setup();
 
-        // 2. Cria e exibe a tela
-        java.awt.EventQueue.invokeLater(() -> new MainScreen().setVisible(true));
-    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel CenterPanel;

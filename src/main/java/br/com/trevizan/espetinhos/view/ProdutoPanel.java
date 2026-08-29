@@ -10,7 +10,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
 
-public class ProdutoView extends JFrame {
+public class ProdutoPanel extends JPanel {
 
     private JTextField txtNome;
     private JTextField txtDescricao;
@@ -28,26 +28,19 @@ public class ProdutoView extends JFrame {
     private final ProdutoDAO produtoDAO;
     private final CategoriaDAO categoriaDAO;
 
-    public ProdutoView() {
+    public ProdutoPanel() {
 
         produtoDAO = new ProdutoDAO();
         categoriaDAO = new CategoriaDAO();
 
-        configurarJanela();
+
         criarComponentes();
         carregarCategorias();
         carregarProdutos();
     }
 
-    private void configurarJanela() {
-
-        setTitle("Cadastro de Produtos");
-
-        setSize(900, 600);
-
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
-        setLocationRelativeTo(null);
+    private void configurarPainel() {
+        setLayout(new BorderLayout());
     }
 
     private void criarComponentes() {
@@ -340,18 +333,5 @@ public class ProdutoView extends JFrame {
         if (cbCategoria.getItemCount() > 0) {
             cbCategoria.setSelectedIndex(0);
         }
-    }
-
-    public static void main(String[] args) {
-
-        SwingUtilities.invokeLater(
-                () -> {
-
-                    ProdutoView tela =
-                            new ProdutoView();
-
-                    tela.setVisible(true);
-                }
-        );
     }
 }

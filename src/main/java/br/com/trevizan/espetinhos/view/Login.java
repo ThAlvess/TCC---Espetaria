@@ -19,6 +19,7 @@ public class Login extends javax.swing.JFrame {
      * Creates new form Login
      */
     public Login() {
+
         initComponents();
 
         // Permite pressionar ENTER para executar o login
@@ -85,6 +86,7 @@ public class Login extends javax.swing.JFrame {
         jTextField1.setBackground(
                 new java.awt.Color(242, 242, 242)
         );
+
         jTextField1.addActionListener(
                 this::jTextField1ActionPerformed
         );
@@ -102,6 +104,7 @@ public class Login extends javax.swing.JFrame {
                 new java.awt.Font("Segoe UI", 1, 15)
         ); // NOI18N
         jButton1.setText("Esqueci a senha");
+
         jButton1.addActionListener(
                 this::jButton1ActionPerformed
         );
@@ -116,6 +119,7 @@ public class Login extends javax.swing.JFrame {
                 new java.awt.Color(255, 255, 255)
         );
         jButton2.setText("Entrar");
+
         jButton2.addActionListener(
                 this::jButton2ActionPerformed
         );
@@ -135,10 +139,10 @@ public class Login extends javax.swing.JFrame {
         jLabel4.addMouseListener(
                 new java.awt.event.MouseAdapter() {
 
+                    @Override
                     public void mouseClicked(
                             java.awt.event.MouseEvent evt
                     ) {
-
                         jLabel4MouseClicked(evt);
                     }
                 }
@@ -377,8 +381,8 @@ public class Login extends javax.swing.JFrame {
                                         .addGap(291, 291, 291)
                                         .addGroup(
                                                 layout.createParallelGroup(
-                                                                javax.swing.GroupLayout.Alignment.CENTER
-                                                        )
+                                                        javax.swing.GroupLayout.Alignment.CENTER
+                                                )
                                                         .addComponent(
                                                                 PainelCartao,
                                                                 javax.swing.GroupLayout.PREFERRED_SIZE,
@@ -427,8 +431,7 @@ public class Login extends javax.swing.JFrame {
             java.awt.event.ActionEvent evt
     ) {//GEN-FIRST:event_jTextField1ActionPerformed
 
-        // Se apertar Enter no campo de usuário,
-        // passa o foco para o campo de senha
+        // Ao pressionar Enter no usuário, passa para a senha
         jPasswordField1.requestFocus();
 
     }//GEN-LAST:event_jTextField1ActionPerformed
@@ -453,9 +456,7 @@ public class Login extends javax.swing.JFrame {
     ) {//GEN-FIRST:event_jButton2ActionPerformed
 
         String login =
-                jTextField1
-                        .getText()
-                        .trim();
+                jTextField1.getText().trim();
 
         String senha =
                 new String(
@@ -537,7 +538,8 @@ public class Login extends javax.swing.JFrame {
 
 
     /**
-     * Substitui o conteúdo do JFrame de Login pela MainScreen.
+     * Mantém o JFrame do Login aberto e substitui
+     * seu conteúdo pela MainScreen.
      *
      * A MainScreen deve estender JPanel.
      */
@@ -546,27 +548,19 @@ public class Login extends javax.swing.JFrame {
         MainScreen mainScreen =
                 new MainScreen();
 
-        /*
-         * O JFrame continua sendo o próprio Login.
-         * Apenas trocamos o conteúdo dele.
-         */
+        // Troca o conteúdo do JFrame
         setContentPane(mainScreen);
 
         setTitle(
                 "Espetinhos Trevizan"
         );
 
-        /*
-         * Abre a aplicação maximizada depois do login.
-         */
+        // Maximiza a janela
         setExtendedState(
                 JFrame.MAXIMIZED_BOTH
         );
 
-        /*
-         * Atualiza os componentes depois da troca
-         * do ContentPane.
-         */
+        // Atualiza a interface
         revalidate();
         repaint();
     }
@@ -577,10 +571,7 @@ public class Login extends javax.swing.JFrame {
      */
     public static void main(String args[]) {
 
-        /*
-         * Mantive o FlatLaf como visual da aplicação.
-         * Se der algum problema, pode voltar para Nimbus.
-         */
+        // Ativa o FlatLaf
         com.formdev.flatlaf.FlatLightLaf.setup();
 
         java.awt.EventQueue.invokeLater(

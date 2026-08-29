@@ -8,7 +8,7 @@ public class MainScreen extends javax.swing.JFrame {
     private java.awt.CardLayout cardLayout;
     
     /**
-     * Creates new form MainScreen
+     * Creates new form MainScreen MainScreen
      */
     public MainScreen() {
         initComponents();

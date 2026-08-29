@@ -1,14 +1,26 @@
 package br.com.trevizan.espetinhos.view;
 
+import br.com.trevizan.espetinhos.PadraoJPanel;
+
 public class MainScreen extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(MainScreen.class.getName());
-
+    private java.awt.CardLayout cardLayout;
+    
     /**
      * Creates new form MainScreen
      */
     public MainScreen() {
         initComponents();
+        this.setExtendedState(MAXIMIZED_BOTH);
+        CenterPanel.add(new PadraoJPanel(), "mesas"); // provisório, até criar a tela de Mesas de verdade
+        CenterPanel.add(new PadraoJPanel(), "historico"); // provisório, até criar a tela de Histórico de verdade
+        CenterPanel.add(new PadraoJPanel(), "caixa"); // provisório, até criar a tela de Caixa de verdade
+        CenterPanel.add(new PadraoJPanel(), "produtos"); // provisório, até criar a tela de Produtos de verdade
+        CenterPanel.add(new Relatorio(), "relatorios");
+        cardLayout = (java.awt.CardLayout) CenterPanel.getLayout();
+        cardLayout.show(CenterPanel, "mesas"); // força o card inicial, independente da ordem dos add()
+        
         // Resize do logo
         javax.swing.ImageIcon iconeOriginal = (javax.swing.ImageIcon) Logo.getIcon();
         
@@ -45,7 +57,7 @@ public class MainScreen extends javax.swing.JFrame {
                 g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(getBackground());
                 // Desenha o arredondamento empurrando a parte direita 30 pixels para fora (reta)
-                g2.fillRoundRect(0, 0, getWidth() + 30, getHeight(), 30, 30);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 0, 0);
                 g2.dispose();
             }
         };
@@ -69,9 +81,9 @@ public class MainScreen extends javax.swing.JFrame {
         };
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setBackground(new java.awt.Color(235, 225, 226));
 
         PainelMargem.setBackground(new java.awt.Color(235, 225, 226));
-        PainelMargem.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 60, 20, 60));
         PainelMargem.setLayout(new java.awt.BorderLayout());
 
         LateralPanel.setBackground(new java.awt.Color(255, 255, 255));
@@ -146,7 +158,7 @@ public class MainScreen extends javax.swing.JFrame {
                 .addComponent(btnProdutos, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(btnRelatorios, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(103, Short.MAX_VALUE))
+                .addContainerGap(143, Short.MAX_VALUE))
         );
 
         PainelMargem.add(LateralPanel, java.awt.BorderLayout.WEST);
@@ -193,22 +205,27 @@ private void ativarBotao(javax.swing.JButton botaoAtivo) {
     
     private void btnMesasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMesasActionPerformed
         ativarBotao(btnMesas);
+        cardLayout.show(CenterPanel, "mesas");
     }//GEN-LAST:event_btnMesasActionPerformed
 
     private void btnHistoricoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHistoricoActionPerformed
         ativarBotao(btnHistorico);
+        cardLayout.show(CenterPanel, "historico");
     }//GEN-LAST:event_btnHistoricoActionPerformed
 
     private void btnCaixaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCaixaActionPerformed
         ativarBotao(btnCaixa);
+        cardLayout.show(CenterPanel, "caixa");
     }//GEN-LAST:event_btnCaixaActionPerformed
 
     private void btnProdutosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnProdutosActionPerformed
         ativarBotao(btnProdutos);
+        cardLayout.show(CenterPanel, "produtos");
     }//GEN-LAST:event_btnProdutosActionPerformed
 
     private void btnRelatoriosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRelatoriosActionPerformed
         ativarBotao(btnRelatorios);
+        cardLayout.show(CenterPanel, "relatorios");
     }//GEN-LAST:event_btnRelatoriosActionPerformed
 
     /**

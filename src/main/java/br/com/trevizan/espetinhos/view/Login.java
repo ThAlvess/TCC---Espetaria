@@ -47,8 +47,6 @@ public class Login extends javax.swing.JFrame {
         jPasswordField1 = new javax.swing.JPasswordField();
         jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
-        jLabel3 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
         Logo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -56,374 +54,112 @@ public class Login extends javax.swing.JFrame {
         setName("Frame"); // NOI18N
 
         PainelCartao.setBackground(new java.awt.Color(255, 255, 255));
-        PainelCartao.setBorder(
-                javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1)
-        );
-        PainelCartao.setPreferredSize(
-                new java.awt.Dimension(450, 400)
-        );
+        PainelCartao.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        PainelCartao.setPreferredSize(new java.awt.Dimension(450, 400));
 
-        jLabel1.setFont(
-                new java.awt.Font("Segoe UI", 1, 15)
-        ); // NOI18N
-        jLabel1.setForeground(
-                new java.awt.Color(25, 100, 25)
-        );
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
+        jLabel1.setForeground(new java.awt.Color(25, 100, 25));
         jLabel1.setText("BEM-VINDO!");
 
-        jLabel2.setForeground(
-                new java.awt.Color(25, 100, 25)
-        );
-        jLabel2.setText(
-                "Faça login preenchendo os dados do seu usuário abaixo:"
-        );
+        jLabel2.setForeground(new java.awt.Color(25, 100, 25));
+        jLabel2.setText("Faça login preenchendo os dados do seu usuário abaixo:");
 
-        jLabelUsuário.setFont(
-                new java.awt.Font("Segoe UI", 1, 14)
-        ); // NOI18N
+        jLabelUsuário.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabelUsuário.setText("Usuário:");
 
-        jTextField1.setBackground(
-                new java.awt.Color(242, 242, 242)
-        );
+        jTextField1.setBackground(new java.awt.Color(242, 242, 242));
+        jTextField1.addActionListener(this::jTextField1ActionPerformed);
 
-        jTextField1.addActionListener(
-                this::jTextField1ActionPerformed
-        );
-
-        jLabelSenha.setFont(
-                new java.awt.Font("Segoe UI", 1, 14)
-        ); // NOI18N
+        jLabelSenha.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabelSenha.setText("Senha:");
 
-        jPasswordField1.setBackground(
-                new java.awt.Color(242, 242, 242)
-        );
+        jPasswordField1.setBackground(new java.awt.Color(242, 242, 242));
 
-        jButton1.setFont(
-                new java.awt.Font("Segoe UI", 1, 15)
-        ); // NOI18N
+        jButton1.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
         jButton1.setText("Esqueci a senha");
+        jButton1.addActionListener(this::jButton1ActionPerformed);
 
-        jButton1.addActionListener(
-                this::jButton1ActionPerformed
-        );
-
-        jButton2.setBackground(
-                new java.awt.Color(0, 102, 0)
-        );
-        jButton2.setFont(
-                new java.awt.Font("Segoe UI", 1, 15)
-        ); // NOI18N
-        jButton2.setForeground(
-                new java.awt.Color(255, 255, 255)
-        );
+        jButton2.setBackground(new java.awt.Color(0, 102, 0));
+        jButton2.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
+        jButton2.setForeground(new java.awt.Color(255, 255, 255));
         jButton2.setText("Entrar");
+        jButton2.addActionListener(this::jButton2ActionPerformed);
 
-        jButton2.addActionListener(
-                this::jButton2ActionPerformed
-        );
-
-        jLabel3.setText("Não tem um cadastro?");
-
-        jLabel4.setForeground(
-                new java.awt.Color(0, 102, 204)
-        );
-        jLabel4.setText(
-                "<html><u>Cadastrar-se</u></html>"
-        );
-        jLabel4.setCursor(
-                new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR)
-        );
-
-        jLabel4.addMouseListener(
-                new java.awt.event.MouseAdapter() {
-
-                    @Override
-                    public void mouseClicked(
-                            java.awt.event.MouseEvent evt
-                    ) {
-                        jLabel4MouseClicked(evt);
-                    }
-                }
-        );
-
-        javax.swing.GroupLayout PainelCartaoLayout =
-                new javax.swing.GroupLayout(PainelCartao);
-
+        javax.swing.GroupLayout PainelCartaoLayout = new javax.swing.GroupLayout(PainelCartao);
         PainelCartao.setLayout(PainelCartaoLayout);
-
         PainelCartaoLayout.setHorizontalGroup(
-                PainelCartaoLayout
-                        .createParallelGroup(
-                                javax.swing.GroupLayout.Alignment.LEADING
-                        )
-                        .addGroup(
-                                PainelCartaoLayout.createSequentialGroup()
-                                        .addContainerGap(
-                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                Short.MAX_VALUE
-                                        )
-                                        .addComponent(jLabel1)
-                                        .addGap(177, 177, 177)
-                        )
-                        .addGroup(
-                                PainelCartaoLayout.createSequentialGroup()
-                                        .addGroup(
-                                                PainelCartaoLayout
-                                                        .createParallelGroup(
-                                                                javax.swing.GroupLayout.Alignment.LEADING
-                                                        )
-                                                        .addGroup(
-                                                                PainelCartaoLayout
-                                                                        .createSequentialGroup()
-                                                                        .addGap(
-                                                                                66,
-                                                                                66,
-                                                                                66
-                                                                        )
-                                                                        .addComponent(
-                                                                                jLabel2
-                                                                        )
-                                                        )
-                                                        .addGroup(
-                                                                PainelCartaoLayout
-                                                                        .createSequentialGroup()
-                                                                        .addGap(
-                                                                                46,
-                                                                                46,
-                                                                                46
-                                                                        )
-                                                                        .addGroup(
-                                                                                PainelCartaoLayout
-                                                                                        .createParallelGroup(
-                                                                                                javax.swing.GroupLayout.Alignment.LEADING
-                                                                                        )
-                                                                                        .addGroup(
-                                                                                                PainelCartaoLayout
-                                                                                                        .createSequentialGroup()
-                                                                                                        .addComponent(
-                                                                                                                jLabel3
-                                                                                                        )
-                                                                                                        .addPreferredGap(
-                                                                                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED
-                                                                                                        )
-                                                                                                        .addComponent(
-                                                                                                                jLabel4,
-                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                                                                                        )
-                                                                                        )
-                                                                                        .addGroup(
-                                                                                                PainelCartaoLayout
-                                                                                                        .createParallelGroup(
-                                                                                                                javax.swing.GroupLayout.Alignment.LEADING,
-                                                                                                                false
-                                                                                                        )
-                                                                                                        .addComponent(
-                                                                                                                jLabelUsuário
-                                                                                                        )
-                                                                                                        .addComponent(
-                                                                                                                jTextField1
-                                                                                                        )
-                                                                                                        .addComponent(
-                                                                                                                jLabelSenha
-                                                                                                        )
-                                                                                                        .addComponent(
-                                                                                                                jPasswordField1
-                                                                                                        )
-                                                                                                        .addGroup(
-                                                                                                                PainelCartaoLayout
-                                                                                                                        .createSequentialGroup()
-                                                                                                                        .addComponent(
-                                                                                                                                jButton2,
-                                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                                                                                170,
-                                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                                                                                                        )
-                                                                                                                        .addPreferredGap(
-                                                                                                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-                                                                                                                                27,
-                                                                                                                                Short.MAX_VALUE
-                                                                                                                        )
-                                                                                                                        .addComponent(
-                                                                                                                                jButton1,
-                                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                                                                                170,
-                                                                                                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                                                                                                        )
-                                                                                                        )
-                                                                                        )
-                                                                        )
-                                                        )
-                                        )
-                                        .addContainerGap(
-                                                34,
-                                                Short.MAX_VALUE
-                                        )
-                        )
+            PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(PainelCartaoLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel1)
+                .addGap(177, 177, 177))
+            .addGroup(PainelCartaoLayout.createSequentialGroup()
+                .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(PainelCartaoLayout.createSequentialGroup()
+                        .addGap(66, 66, 66)
+                        .addComponent(jLabel2))
+                    .addGroup(PainelCartaoLayout.createSequentialGroup()
+                        .addGap(46, 46, 46)
+                        .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jLabelUsuário)
+                            .addComponent(jTextField1)
+                            .addComponent(jLabelSenha)
+                            .addComponent(jPasswordField1)
+                            .addGroup(PainelCartaoLayout.createSequentialGroup()
+                                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
+                                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                .addContainerGap(34, Short.MAX_VALUE))
         );
-
         PainelCartaoLayout.setVerticalGroup(
-                PainelCartaoLayout
-                        .createParallelGroup(
-                                javax.swing.GroupLayout.Alignment.LEADING
-                        )
-                        .addGroup(
-                                PainelCartaoLayout
-                                        .createSequentialGroup()
-                                        .addGap(32, 32, 32)
-                                        .addComponent(jLabel1)
-                                        .addPreferredGap(
-                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED
-                                        )
-                                        .addComponent(jLabel2)
-                                        .addGap(24, 24, 24)
-                                        .addComponent(jLabelUsuário)
-                                        .addPreferredGap(
-                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED
-                                        )
-                                        .addComponent(
-                                                jTextField1,
-                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                        )
-                                        .addGap(18, 18, 18)
-                                        .addComponent(jLabelSenha)
-                                        .addPreferredGap(
-                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED
-                                        )
-                                        .addComponent(
-                                                jPasswordField1,
-                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                        )
-                                        .addGap(29, 29, 29)
-                                        .addGroup(
-                                                PainelCartaoLayout
-                                                        .createParallelGroup(
-                                                                javax.swing.GroupLayout.Alignment.BASELINE
-                                                        )
-                                                        .addComponent(
-                                                                jButton2,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                36,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                                        )
-                                                        .addComponent(
-                                                                jButton1,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                36,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                                        )
-                                        )
-                                        .addGap(18, 18, 18)
-                                        .addGroup(
-                                                PainelCartaoLayout
-                                                        .createParallelGroup(
-                                                                javax.swing.GroupLayout.Alignment.BASELINE
-                                                        )
-                                                        .addComponent(jLabel3)
-                                                        .addComponent(
-                                                                jLabel4,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                                        )
-                                        )
-                                        .addGap(
-                                                0,
-                                                36,
-                                                Short.MAX_VALUE
-                                        )
-                        )
+            PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(PainelCartaoLayout.createSequentialGroup()
+                .addGap(32, 32, 32)
+                .addComponent(jLabel1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel2)
+                .addGap(24, 24, 24)
+                .addComponent(jLabelUsuário)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jLabelSenha)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPasswordField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(29, 29, 29)
+                .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(0, 70, Short.MAX_VALUE))
         );
 
-        Logo.setHorizontalAlignment(
-                javax.swing.SwingConstants.CENTER
-        );
-
-        Logo.setIcon(
-                new javax.swing.ImageIcon(
-                        getClass().getResource(
-                                "/TrevizanPequeno.png"
-                        )
-                )
-        ); // NOI18N
-
+        Logo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        Logo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/TrevizanPequeno.png"))); // NOI18N
         Logo.setAlignmentY(0.0F);
+        Logo.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 1, 1, 1));
 
-        Logo.setBorder(
-                javax.swing.BorderFactory.createEmptyBorder(
-                        20,
-                        1,
-                        1,
-                        1
-                )
-        );
-
-        javax.swing.GroupLayout layout =
-                new javax.swing.GroupLayout(
-                        getContentPane()
-                );
-
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
-
         layout.setHorizontalGroup(
-                layout.createParallelGroup(
-                                javax.swing.GroupLayout.Alignment.LEADING
-                        )
-                        .addGroup(
-                                layout.createSequentialGroup()
-                                        .addGap(291, 291, 291)
-                                        .addGroup(
-                                                layout.createParallelGroup(
-                                                        javax.swing.GroupLayout.Alignment.CENTER
-                                                )
-                                                        .addComponent(
-                                                                PainelCartao,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                                449,
-                                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                                        )
-                                                        .addComponent(Logo)
-                                        )
-                                        .addContainerGap(
-                                                340,
-                                                Short.MAX_VALUE
-                                        )
-                        )
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(291, 291, 291)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(PainelCartao, javax.swing.GroupLayout.PREFERRED_SIZE, 449, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(Logo))
+                .addContainerGap(340, Short.MAX_VALUE))
         );
-
         layout.setVerticalGroup(
-                layout.createParallelGroup(
-                                javax.swing.GroupLayout.Alignment.LEADING
-                        )
-                        .addGroup(
-                                layout.createSequentialGroup()
-                                        .addGap(12, 12, 12)
-                                        .addComponent(Logo)
-                                        .addPreferredGap(
-                                                javax.swing.LayoutStyle.ComponentPlacement.RELATED
-                                        )
-                                        .addComponent(
-                                                PainelCartao,
-                                                javax.swing.GroupLayout.PREFERRED_SIZE,
-                                                350,
-                                                javax.swing.GroupLayout.PREFERRED_SIZE
-                                        )
-                                        .addContainerGap(
-                                                131,
-                                                Short.MAX_VALUE
-                                        )
-                        )
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(12, 12, 12)
+                .addComponent(Logo)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(PainelCartao, javax.swing.GroupLayout.PREFERRED_SIZE, 350, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(131, Short.MAX_VALUE))
         );
 
         pack();
-
     }// </editor-fold>//GEN-END:initComponents
 
 
@@ -523,19 +259,6 @@ public class Login extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton2ActionPerformed
 
 
-    private void jLabel4MouseClicked(
-            java.awt.event.MouseEvent evt
-    ) {//GEN-FIRST:event_jLabel4MouseClicked
-
-        Cadastro telaCadastro =
-                new Cadastro();
-
-        telaCadastro.setVisible(true);
-
-        this.dispose();
-
-    }//GEN-LAST:event_jLabel4MouseClicked
-
 
     /**
      * Mantém o JFrame do Login aberto e substitui
@@ -593,8 +316,6 @@ public class Login extends javax.swing.JFrame {
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabelSenha;
     private javax.swing.JLabel jLabelUsuário;
     private javax.swing.JPasswordField jPasswordField1;

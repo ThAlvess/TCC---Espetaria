@@ -48,11 +48,7 @@
             <artifactId>jfreechart</artifactId>
             <version>1.5.5</version>
         </dependency>
-        <dependency>
-            <groupId>unknown.binary</groupId>
-            <artifactId>AbsoluteLayout</artifactId>
-            <version>SNAPSHOT</version>
-        </dependency>
+        
     </dependencies>
 
 </project>

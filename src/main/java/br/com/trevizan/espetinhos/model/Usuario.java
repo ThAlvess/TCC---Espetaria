@@ -92,4 +92,8 @@ public class Usuario {
     public void setSenha(String senha) {
         this.senha = senha;
     }
+
+    public Object getAtivo() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
 }

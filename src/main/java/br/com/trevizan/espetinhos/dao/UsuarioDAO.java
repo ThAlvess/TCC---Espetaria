@@ -14,7 +14,7 @@ public class UsuarioDAO {
 
     public Usuario autenticar(String login, String senha) {
         String sql = """
-                SELECT id_usuario, nome, login, senha, ativo
+                SELECT id_usuario, nome, login, senha, ativo, cpf, perfil
                 FROM usuario
                 WHERE login = ?
                   AND senha = ?
@@ -36,6 +36,8 @@ public class UsuarioDAO {
                     usuario.setLogin(rs.getString("login"));
                     usuario.setSenha(rs.getString("senha"));
                     usuario.setAtivo(rs.getString("ativo"));
+                    usuario.setCpf(rs.getString("cpf"));
+                    usuario.setPerfil(rs.getString("perfil"));
                     return usuario;
                 }
             }
@@ -45,8 +47,40 @@ public class UsuarioDAO {
         return null;
     }
 
+    public boolean verificarLoginExistente(String login) {
+        String sql = "SELECT COUNT(*) FROM usuario WHERE login = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, login);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao verificar se o login existe.", e);
+        }
+        return false;
+    }
+
+    public String verificarStatusLogin(String login) {
+        String sql = "SELECT ativo FROM usuario WHERE login = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, login);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("ativo");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao verificar status do login.", e);
+        }
+        return null;
+    }
+
     public List<Usuario> listar() {
-        String sql = "SELECT id_usuario, nome, login, senha, ativo FROM usuario";
+        String sql = "SELECT id_usuario, nome, login, senha, ativo, cpf, perfil FROM usuario WHERE ativo = 'ativo'";
         List<Usuario> usuarios = new ArrayList<>();
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -58,6 +92,8 @@ public class UsuarioDAO {
                 u.setLogin(rs.getString("login"));
                 u.setSenha(rs.getString("senha"));
                 u.setAtivo(rs.getString("ativo"));
+                u.setCpf(rs.getString("cpf"));
+                u.setPerfil(rs.getString("perfil"));
                 usuarios.add(u);
             }
         } catch (SQLException e) {
@@ -67,28 +103,35 @@ public class UsuarioDAO {
     }
 
     public void cadastrar(Usuario u) {
-        String sql = "INSERT INTO usuario (nome, login, senha, ativo) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO usuario (nome, login, senha, ativo, cpf, perfil) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, u.getNome());
             stmt.setString(2, u.getLogin());
             stmt.setString(3, u.getSenha());
             stmt.setString(4, u.getStatus());
+            stmt.setString(5, u.getCpf());
+            stmt.setString(6, u.getPerfil());
             stmt.executeUpdate();
         } catch (SQLException e) {
+            if (e.getErrorCode() == 1062) {
+                throw new RuntimeException("Este nome de usuário (login) já está em uso.", e);
+            }
             throw new RuntimeException("Erro ao cadastrar usuário.", e);
         }
     }
 
     public void atualizar(Usuario u) {
-        String sql = "UPDATE usuario SET nome = ?, login = ?, senha = ?, ativo = ? WHERE id_usuario = ?";
+        String sql = "UPDATE usuario SET nome = ?, login = ?, senha = ?, ativo = ?, cpf = ?, perfil = ? WHERE id_usuario = ?";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, u.getNome());
             stmt.setString(2, u.getLogin());
             stmt.setString(3, u.getSenha());
             stmt.setString(4, u.getStatus());
-            stmt.setInt(5, u.getIdUsuario());
+            stmt.setString(5, u.getCpf());
+            stmt.setString(6, u.getPerfil());
+            stmt.setInt(7, u.getIdUsuario());
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao atualizar usuário.", e);

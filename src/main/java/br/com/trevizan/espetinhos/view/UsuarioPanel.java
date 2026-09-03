@@ -4,6 +4,7 @@ import br.com.trevizan.espetinhos.dao.UsuarioDAO;
 import br.com.trevizan.espetinhos.model.Usuario;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
@@ -176,6 +177,10 @@ public class UsuarioPanel extends javax.swing.JPanel {
         tabelaUsuarios = new JTable(modeloTabela);
         tabelaUsuarios.setRowHeight(25);
         tabelaUsuarios.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Alinha os títulos (cabeçalhos) das colunas para a esquerda
+        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) tabelaUsuarios.getTableHeader().getDefaultRenderer();
+        headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
 
         // Controla a largura da coluna PERFIL (índice 4)
         tabelaUsuarios.getColumnModel().getColumn(4).setPreferredWidth(240);

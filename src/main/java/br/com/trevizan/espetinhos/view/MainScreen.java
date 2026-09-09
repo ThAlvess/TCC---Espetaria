@@ -1,22 +1,23 @@
 package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.PadraoJPanel;
-
+import br.com.trevizan.espetinhos.model.Usuario;
 public class MainScreen extends javax.swing.JPanel {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(MainScreen.class.getName());
     private java.awt.CardLayout cardLayout;
+    private final Usuario usuarioLogado;
     
     /**
      * Creates new form MainScreen
      */
-    public MainScreen() {
+    public MainScreen(Usuario usuarioLogado) {
         initComponents();
-
-        CenterPanel.add(new PadraoJPanel(), "mesas"); // provisório, até criar a tela de Mesas de verdade
+        this.usuarioLogado = usuarioLogado;
+        CenterPanel.add(new MesaPanel(usuarioLogado), "mesas");
         CenterPanel.add(new PadraoJPanel(), "historico"); // provisório, até criar a tela de Histórico de verdade
         CenterPanel.add(new PadraoJPanel(), "caixa"); // provisório, até criar a tela de Caixa de verdade
-        CenterPanel.add(new ProdutoPanel(), "produtos"); // provisório, até criar a tela de Produtos de verdade
+        CenterPanel.add(new ProdutoPanel(), "produtos");
         CenterPanel.add(new Relatorio(), "relatorios");
         cardLayout = (java.awt.CardLayout) CenterPanel.getLayout();
         cardLayout.show(CenterPanel, "mesas"); // força o card inicial, independente da ordem dos add()

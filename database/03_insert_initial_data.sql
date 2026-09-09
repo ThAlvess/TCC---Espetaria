@@ -12,8 +12,8 @@ USE trevizan_espetinhos;
 INSERT INTO usuario
     (id_usuario, nome, login, senha, ativo, cpf, perfil)
 VALUES
-    (1, 'Administrador', 'admin', 'admin123', 'ativo', '49080233870', 'Administrador'),
-    (21, 'admin', 'vini', 'admin123', 'ativo', '413.830.238-75', 'Caixa');
+    (1, 'Administrador', 'admin', 'admin123', '1', '49080233870', 'Administrador'),
+    (21, 'admin', 'vini', 'admin123', '1', '413.830.238-75', 'Caixa');
 
 -- =========================================================
 -- MESAS

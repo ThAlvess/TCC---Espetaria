@@ -29,7 +29,7 @@ public class UsuarioPanel extends javax.swing.JPanel {
     private JFormattedTextField txtCpf;
     private JPasswordField txtSenha, txtConfirmaSenha;
     private JComboBox<String> cbPerfil;
-    private JButton btnCadastrar, btnAtualizar, btnInativar;
+    private JButton btnCadastrar, btnAtualizar;
     private JTable tabelaUsuarios;
     private DefaultTableModel modeloTabela;
     private TableRowSorter<DefaultTableModel> sorter;
@@ -137,17 +137,15 @@ public class UsuarioPanel extends javax.swing.JPanel {
         panelBusca.setOpaque(false);
         panelBusca.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, -5));
 
-        // Painel esquerdo para os botões Cadastrar, Salvar e Inativar alinhados lado a lado
+        // Painel esquerdo para os botões Cadastrar e Salvar alinhados lado a lado
         JPanel panelBotoesEsquerda = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         panelBotoesEsquerda.setOpaque(false);
 
         btnCadastrar = criarBotaoEstilizado("Cadastrar", new Color(25, 100, 25), Color.WHITE);
         btnAtualizar = criarBotaoEstilizado("Salvar", new Color(30, 100, 180), Color.WHITE);
-        btnInativar = criarBotaoEstilizado("Inativar", new Color(220, 130, 20), Color.WHITE);
 
         panelBotoesEsquerda.add(btnCadastrar);
         panelBotoesEsquerda.add(btnAtualizar);
-        panelBotoesEsquerda.add(btnInativar);
 
         // Painel direito para o campo de busca posicionado na ponta direita
         JPanel panelBuscaDireita = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
@@ -161,13 +159,16 @@ public class UsuarioPanel extends javax.swing.JPanel {
 
         panelTabelaContainer.add(panelBusca, BorderLayout.NORTH);
 
-        // Define o modelo da tabela customizado: permite editar a senha apenas se o olhinho daquela linha estiver destravado (visível)
-        modeloTabela = new DefaultTableModel(new Object[]{"ID", "Nome", "Usuário", "CPF", "Perfil", "Senha"}, 0) {
+        // Define o modelo da tabela customizado
+        modeloTabela = new DefaultTableModel(new Object[]{"ID", "Status", "Nome", "Usuário", "CPF", "Perfil", "Senha"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                if (column == 5) {
+                if (column == 6) {
                     int modelRow = tabelaUsuarios.convertRowIndexToModel(row);
                     return senhasVisiveis.getOrDefault(modelRow, false);
+                }
+                if (column == 1 || column == 5) {
+                    return true; // Colunas Status (1) e Perfil (5) editáveis via ComboBox
                 }
                 return true; // Demais colunas editáveis normalmente
             }
@@ -182,13 +183,22 @@ public class UsuarioPanel extends javax.swing.JPanel {
         DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) tabelaUsuarios.getTableHeader().getDefaultRenderer();
         headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
 
-        // Controla a largura da coluna PERFIL (índice 4)
-        tabelaUsuarios.getColumnModel().getColumn(4).setPreferredWidth(240);
-        tabelaUsuarios.getColumnModel().getColumn(4).setMinWidth(90);
-        tabelaUsuarios.getColumnModel().getColumn(4).setMaxWidth(240);
+        // Configura a coluna de status (índice 1) com um JComboBox para seleção rápida de "Ativo" / "Inativo"
+        JComboBox<String> cbStatusCombo = new JComboBox<>(new String[]{"Ativo", "Inativo"});
+        tabelaUsuarios.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(cbStatusCombo));
+        tabelaUsuarios.getColumnModel().getColumn(1).setPreferredWidth(90);
+        tabelaUsuarios.getColumnModel().getColumn(1).setMinWidth(80);
+        tabelaUsuarios.getColumnModel().getColumn(1).setMaxWidth(120);
+
+        // Configura a coluna de perfil (índice 5) com um JComboBox para seleção de "Caixa", "Gerente" e "Administrador"
+        JComboBox<String> cbPerfilCombo = new JComboBox<>(new String[]{"Caixa", "Gerente", "Administrador"});
+        tabelaUsuarios.getColumnModel().getColumn(5).setCellEditor(new DefaultCellEditor(cbPerfilCombo));
+        tabelaUsuarios.getColumnModel().getColumn(5).setPreferredWidth(140);
+        tabelaUsuarios.getColumnModel().getColumn(5).setMinWidth(100);
+        tabelaUsuarios.getColumnModel().getColumn(5).setMaxWidth(180);
 
         // Define o renderizador customizado na coluna de senha para mascarar os caracteres e desenhar o ícone de visualização
-        tabelaUsuarios.getColumnModel().getColumn(5).setCellRenderer(new SenhaCellRenderer());
+        tabelaUsuarios.getColumnModel().getColumn(6).setCellRenderer(new SenhaCellRenderer());
 
         // Adiciona um ouvinte de eventos de mouse na tabela para detectar cliques específicos no ícone do olho da coluna de senha
         tabelaUsuarios.addMouseListener(new MouseAdapter() {
@@ -196,8 +206,8 @@ public class UsuarioPanel extends javax.swing.JPanel {
             public void mousePressed(MouseEvent e) {
                 int col = tabelaUsuarios.columnAtPoint(e.getPoint());
                 int row = tabelaUsuarios.rowAtPoint(e.getPoint());
-                // Verifica se o clique ocorreu na coluna da senha (índice 5) e em uma linha válida
-                if (col == 5 && row != -1) {
+                // Verifica se o clique ocorreu na coluna da senha (índice 6) e em uma linha válida
+                if (col == 6 && row != -1) {
                     int modelRow = tabelaUsuarios.convertRowIndexToModel(row);
                     Rectangle cellRect = tabelaUsuarios.getCellRect(row, col, false);
                     // Identifica se o clique foi efetuado na extremidade direita da célula (onde o ícone do olho é desenhado)
@@ -270,7 +280,6 @@ public class UsuarioPanel extends javax.swing.JPanel {
         // Associa as ações de clique aos respectivos métodos de controle dos botões
         btnCadastrar.addActionListener(e -> cadastrarUsuario());
         btnAtualizar.addActionListener(e -> atualizarUsuario());
-        btnInativar.addActionListener(e -> inativarUsuario());
 
         // Adiciona um ouvinte de seleção na tabela apenas para capturar a linha selecionada, sem preencher o formulário superior
         tabelaUsuarios.getSelectionModel().addListSelectionListener(e -> {
@@ -303,10 +312,11 @@ public class UsuarioPanel extends javax.swing.JPanel {
         List<Usuario> lista = usuarioDAO.listar();
         if (lista != null) {
             for (Usuario u : lista) {
-                Object[] linha = new Object[6];
+                Object[] linha = new Object[7];
                 linha[0] = u.getIdUsuario();
-                linha[1] = u.getNome();
-                linha[2] = u.getLogin();
+                linha[1] = Boolean.TRUE.equals(u.isAtivo()) ? "Ativo" : "Inativo";
+                linha[2] = u.getNome();
+                linha[3] = u.getLogin();
                 
                 // Formata o CPF recuperado do banco para o padrão visual de pontos e traço na tabela
                 String cpfBruto = u.getCpf();
@@ -316,10 +326,10 @@ public class UsuarioPanel extends javax.swing.JPanel {
                         cpfBruto = cpfBruto.replaceAll("(\\d{3})(\\d{3})(\\d{3})(\\d{2})", "$1.$2.$3-$4");
                     }
                 }
-                linha[3] = cpfBruto;
+                linha[4] = cpfBruto;
                 
-                linha[4] = u.getPerfil();
-                linha[5] = u.getSenha();
+                linha[5] = u.getPerfil();
+                linha[6] = u.getSenha();
                 modeloTabela.addRow(linha);
             }
         }
@@ -392,10 +402,10 @@ public class UsuarioPanel extends javax.swing.JPanel {
         }
 
         // Verifica o status atual do login informado no banco de dados
-        String statusUsuario = usuarioDAO.verificarStatusLogin(usuarioLogin);
+        Boolean statusUsuario = usuarioDAO.verificarStatusLogin(usuarioLogin);
 
         if (statusUsuario != null) {
-            if (statusUsuario.equalsIgnoreCase("inativo")) {
+            if (!statusUsuario) {
                 JOptionPane.showMessageDialog(this, "Não é possível cadastrar esse usuário, pois foi inativado", "Aviso", JOptionPane.WARNING_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this, "Usuário " + usuarioLogin + " já cadastrado", "Aviso", JOptionPane.WARNING_MESSAGE);
@@ -416,7 +426,7 @@ public class UsuarioPanel extends javax.swing.JPanel {
         u.setCpf(cpf);
         u.setSenha(senha);
         u.setPerfil(cbPerfil.getSelectedItem().toString());
-        u.setStatus("ativo");
+        u.setAtivo(true);
 
         // Executa o cadastro no banco de dados através do DAO
         usuarioDAO.cadastrar(u);
@@ -425,7 +435,7 @@ public class UsuarioPanel extends javax.swing.JPanel {
         limparCampos();
     }
 
-    // Método acionado ao clicar em Salvar para atualizar as informações do usuário selecionado (incluindo alteração de senha pela tabela)
+    // Método acionado ao clicar em Salvar para atualizar as informações do usuário selecionado (capturando perfil e status da tabela)
     private void atualizarUsuario() {
         if (linhaSelecionada == -1) {
             JOptionPane.showMessageDialog(this, "Selecione um usuário na tabela para alterar!", "Aviso", JOptionPane.WARNING_MESSAGE);
@@ -440,16 +450,22 @@ public class UsuarioPanel extends javax.swing.JPanel {
 
         int id = Integer.parseInt(modeloTabela.getValueAt(linhaSelecionada, 0).toString());
 
-        String nome = String.valueOf(modeloTabela.getValueAt(linhaSelecionada, 1));
-        String usuarioLogin = String.valueOf(modeloTabela.getValueAt(linhaSelecionada, 2));
+        // Pega o valor atualizado do status diretamente da tabela (índice 1)
+        Object statusObj = modeloTabela.getValueAt(linhaSelecionada, 1);
+        boolean statusFinal = (statusObj != null && statusObj.toString().equalsIgnoreCase("Ativo"));
+
+        String nome = String.valueOf(modeloTabela.getValueAt(linhaSelecionada, 2));
+        String usuarioLogin = String.valueOf(modeloTabela.getValueAt(linhaSelecionada, 3));
         
-        Object cpfObj = modeloTabela.getValueAt(linhaSelecionada, 3);
+        Object cpfObj = modeloTabela.getValueAt(linhaSelecionada, 4);
         String cpf = (cpfObj != null && !cpfObj.toString().equalsIgnoreCase("null")) ? cpfObj.toString() : "";
         
-        String perfil = String.valueOf(modeloTabela.getValueAt(linhaSelecionada, 4));
+        // Pega o valor atualizado do perfil diretamente da tabela (índice 5)
+        Object perfilObj = modeloTabela.getValueAt(linhaSelecionada, 5);
+        String perfil = (perfilObj != null) ? perfilObj.toString() : "Caixa";
         
-        // Pega o valor atualizado da senha diretamente da tabela (caso tenha sido editada após destravada pelo olhinho)
-        Object senhaObj = modeloTabela.getValueAt(linhaSelecionada, 5);
+        // Pega o valor atualizado da senha diretamente da tabela (índice 6)
+        Object senhaObj = modeloTabela.getValueAt(linhaSelecionada, 6);
         String senhaFinal = (senhaObj != null) ? senhaObj.toString().trim() : "";
 
         if (cpf.isEmpty() || cpf.contains("_")) {
@@ -478,32 +494,11 @@ public class UsuarioPanel extends javax.swing.JPanel {
         u.setCpf(cpf);
         u.setPerfil(perfil);
         u.setSenha(senhaFinal);
-        u.setStatus("ativo");
+        u.setAtivo(statusFinal);
 
         usuarioDAO.atualizar(u);
 
         JOptionPane.showMessageDialog(this, "Usuário alterado com sucesso!");
-        carregarTabela();
-        limparCampos();
-    }
-
-    // Método acionado ao clicar em Inativar para desativar o registro de usuário selecionado
-    private void inativarUsuario() {
-        if (linhaSelecionada == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um usuário na tabela para inativar!", "Aviso", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // Exige a senha do administrador para autorizar a inativação
-        if (!validarSenhaAdministrador()) {
-            JOptionPane.showMessageDialog(this, "Senha de Administrador incorreta!", "Acesso Negado", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        int id = Integer.parseInt(modeloTabela.getValueAt(linhaSelecionada, 0).toString());
-        usuarioDAO.inativar(id);
-
-        JOptionPane.showMessageDialog(this, "Usuário inativado no banco de dados!");
         carregarTabela();
         limparCampos();
     }
@@ -525,7 +520,7 @@ public class UsuarioPanel extends javax.swing.JPanel {
         linhaSelecionada = -1;
     }
 
-    // Valida mathematicalmente os dígitos verificadores do CPF informado
+    // Valida matematicamente os dígitos verificadores do CPF informado
     private boolean isCpfValido(String cpf) {
         cpf = cpf.replaceAll("\\D", "");
         if (cpf.length() != 11 || cpf.matches("(\\d)\\1{10}")) return false;
@@ -549,7 +544,7 @@ public class UsuarioPanel extends javax.swing.JPanel {
         cpfCandidato = cpfCandidato.replaceAll("\\D", "");
         for (int i = 0; i < modeloTabela.getRowCount(); i++) {
             Object idObj = modeloTabela.getValueAt(i, 0);
-            Object cpfObj = modeloTabela.getValueAt(i, 3);
+            Object cpfObj = modeloTabela.getValueAt(i, 4); // CPF está no índice 4
             
             if (idObj != null && cpfObj != null) {
                 int idLinha = Integer.parseInt(idObj.toString());

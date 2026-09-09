@@ -30,7 +30,7 @@ CREATE TABLE usuario (
     nome VARCHAR(100) COLLATE utf8mb4_unicode_ci NOT NULL,
     login VARCHAR(50) COLLATE utf8mb4_unicode_ci NOT NULL,
     senha VARCHAR(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-    ativo VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
     cpf VARCHAR(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     perfil VARCHAR(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     PRIMARY KEY (id_usuario),

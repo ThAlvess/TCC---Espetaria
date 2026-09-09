@@ -18,7 +18,7 @@ public class UsuarioDAO {
                 FROM usuario
                 WHERE login = ?
                   AND senha = ?
-                  AND ativo = 'ativo'
+                  AND ativo = true
                 """;
 
         try (
@@ -35,7 +35,7 @@ public class UsuarioDAO {
                     usuario.setNome(rs.getString("nome"));
                     usuario.setLogin(rs.getString("login"));
                     usuario.setSenha(rs.getString("senha"));
-                    usuario.setAtivo(rs.getString("ativo"));
+                    usuario.setAtivo(rs.getBoolean("ativo"));
                     usuario.setCpf(rs.getString("cpf"));
                     usuario.setPerfil(rs.getString("perfil"));
                     return usuario;
@@ -63,14 +63,14 @@ public class UsuarioDAO {
         return false;
     }
 
-    public String verificarStatusLogin(String login) {
+    public Boolean verificarStatusLogin(String login) {
         String sql = "SELECT ativo FROM usuario WHERE login = ?";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, login);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getString("ativo");
+                    return rs.getBoolean("ativo");
                 }
             }
         } catch (SQLException e) {
@@ -80,7 +80,7 @@ public class UsuarioDAO {
     }
 
     public List<Usuario> listar() {
-        String sql = "SELECT id_usuario, nome, login, senha, ativo, cpf, perfil FROM usuario WHERE ativo = 'ativo'";
+        String sql = "SELECT id_usuario, nome, login, senha, ativo, cpf, perfil FROM usuario";
         List<Usuario> usuarios = new ArrayList<>();
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -91,7 +91,7 @@ public class UsuarioDAO {
                 u.setNome(rs.getString("nome"));
                 u.setLogin(rs.getString("login"));
                 u.setSenha(rs.getString("senha"));
-                u.setAtivo(rs.getString("ativo"));
+                u.setAtivo(rs.getBoolean("ativo"));
                 u.setCpf(rs.getString("cpf"));
                 u.setPerfil(rs.getString("perfil"));
                 usuarios.add(u);
@@ -109,7 +109,7 @@ public class UsuarioDAO {
             stmt.setString(1, u.getNome());
             stmt.setString(2, u.getLogin());
             stmt.setString(3, u.getSenha());
-            stmt.setString(4, u.getStatus());
+            stmt.setBoolean(4, u.isAtivo());
             stmt.setString(5, u.getCpf());
             stmt.setString(6, u.getPerfil());
             stmt.executeUpdate();
@@ -128,7 +128,7 @@ public class UsuarioDAO {
             stmt.setString(1, u.getNome());
             stmt.setString(2, u.getLogin());
             stmt.setString(3, u.getSenha());
-            stmt.setString(4, u.getStatus());
+            stmt.setBoolean(4, u.isAtivo());
             stmt.setString(5, u.getCpf());
             stmt.setString(6, u.getPerfil());
             stmt.setInt(7, u.getIdUsuario());
@@ -150,7 +150,7 @@ public class UsuarioDAO {
     }
 
     public void inativar(int id) {
-        String sql = "UPDATE usuario SET ativo = 'inativo' WHERE id_usuario = ?";
+        String sql = "UPDATE usuario SET ativo = false WHERE id_usuario = ?";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);

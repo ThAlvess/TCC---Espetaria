@@ -6,7 +6,7 @@ public class Usuario {
     private String usuario;
     private String cpf;
     private String perfil;
-    private String status;
+    private boolean ativo;
     private String senha;
 
     public int getId() {
@@ -66,23 +66,27 @@ public class Usuario {
     }
 
     public String getStatus() {
-        return status;
+        return ativo ? "ativo" : "inativo";
     }
 
     public void setStatus(String status) {
-        this.status = status;
+        this.ativo = "ativo".equalsIgnoreCase(status) || "true".equalsIgnoreCase(status);
     }
 
     public boolean isAtivo() {
-        return "ativo".equalsIgnoreCase(status);
+        return ativo;
     }
 
     public void setAtivo(boolean ativo) {
-        this.status = ativo ? "ativo" : "inativo";
+        this.ativo = ativo;
     }
 
     public void setAtivo(String status) {
-        this.status = status;
+        this.ativo = "ativo".equalsIgnoreCase(status) || "true".equalsIgnoreCase(status);
+    }
+
+    public Boolean getAtivo() {
+        return ativo;
     }
 
     public String getSenha() {
@@ -91,9 +95,5 @@ public class Usuario {
 
     public void setSenha(String senha) {
         this.senha = senha;
-    }
-
-    public Object getAtivo() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }

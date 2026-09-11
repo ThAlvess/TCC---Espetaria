@@ -2,6 +2,8 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.dao.UsuarioDAO;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.SessaoUsuario;
+import br.com.trevizan.espetinhos.util.SessaoUsuario;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -494,6 +496,8 @@ public class Login extends javax.swing.JFrame {
                                 + usuario.getNome()
                                 + "!"
                 );
+
+                SessaoUsuario.login(usuario);
 
                 abrirMainScreen();
 

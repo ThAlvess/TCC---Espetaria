@@ -5,18 +5,14 @@ INSERT INTO usuario (nome, login, senha)
 VALUES ('Administrador', 'admin', 'admin123');
 
 -- Mesas
-INSERT INTO mesa (numero)
-VALUES
-    (1),
-    (2),
-    (3),
-    (4),
-    (5),
-    (6),
-    (7),
-    (8),
-    (9),
-    (10);
+INSERT INTO mesa (numero, status)
+SELECT n, 'LIVRE'
+FROM (
+         SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL
+         SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL
+         SELECT 9 UNION ALL SELECT 10
+     ) x
+WHERE NOT EXISTS (SELECT 1 FROM mesa m WHERE m.numero = x.n);
 
 INSERT INTO categoria (nome)
 VALUES

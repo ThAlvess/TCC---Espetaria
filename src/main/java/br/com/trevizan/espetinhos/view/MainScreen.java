@@ -208,8 +208,8 @@ private void ativarBotao(javax.swing.JButton botaoAtivo) {
     }//GEN-LAST:event_btnMesasActionPerformed
 
     private void btnHistoricoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHistoricoActionPerformed
-    ativarBotao(btnHistorico);
-    cardLayout.show(CenterPanel, "historico");
+        ativarBotao(btnHistorico);
+        cardLayout.show(CenterPanel, "historico");
     }//GEN-LAST:event_btnHistoricoActionPerformed
 
     private void btnCaixaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCaixaActionPerformed

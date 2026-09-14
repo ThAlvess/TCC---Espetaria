@@ -30,7 +30,7 @@ public class ComandaPanel extends PadraoJPanel {
 
     private static final Color COR_FUNDO = new Color(238, 232, 227);
     private static final Color COR_CARD = Color.WHITE;
-    private static final Color COR_VERDE = new Color(45, 94, 72);
+    private static final Color COR_VERDE = new Color(25, 100, 25);
     private static final Color COR_VERDE_ESCURO = new Color(35, 75, 57);
     private static final Color COR_VERDE_CLARO = new Color(231, 240, 235);
     private static final Color COR_TEXTO = new Color(46, 46, 46);

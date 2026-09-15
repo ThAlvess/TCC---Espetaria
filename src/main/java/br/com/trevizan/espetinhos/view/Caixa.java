@@ -18,6 +18,7 @@ public class Caixa extends javax.swing.JPanel {
     private br.com.trevizan.espetinhos.model.Caixa caixaAtual;
 
     private JButton btnAbrirCaixa;
+    private JButton btnFecharCaixa;
     private JLabel lblValorInicial;
     private JLabel lblTotalVendas;
     private JLabel lblSangrias;
@@ -48,20 +49,33 @@ public class Caixa extends javax.swing.JPanel {
         painelCabecalho.add(lblTitulo, BorderLayout.WEST);
         painelCabecalho.add(lblIconePerfil, BorderLayout.EAST);
 
-        // ---------- Corpo (botão + cards) ----------
+        // ---------- Corpo (botões + cards) ----------
         JPanel painelCorpo = new JPanel();
         painelCorpo.setOpaque(false);
         painelCorpo.setLayout(new BoxLayout(painelCorpo, BoxLayout.Y_AXIS));
 
-        // Botão "Abrir caixa"
+        // Linha de botões
+        JPanel painelBotoes = new JPanel(new GridLayout(1, 2, 15, 0));
+        painelBotoes.setOpaque(false);
+        painelBotoes.setAlignmentX(Component.LEFT_ALIGNMENT);
+        painelBotoes.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+
         btnAbrirCaixa = new JButton("Abrir caixa");
         btnAbrirCaixa.setBackground(new Color(27, 94, 32));
         btnAbrirCaixa.setForeground(Color.WHITE);
         btnAbrirCaixa.setFont(new Font("SansSerif", Font.BOLD, 14));
         btnAbrirCaixa.setFocusPainted(false);
-        btnAbrirCaixa.setAlignmentX(Component.LEFT_ALIGNMENT);
-        btnAbrirCaixa.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         btnAbrirCaixa.addActionListener(e -> abrirCaixaClicado());
+
+        btnFecharCaixa = new JButton("Fechar caixa");
+        btnFecharCaixa.setBackground(new Color(153, 0, 0));
+        btnFecharCaixa.setForeground(Color.WHITE);
+        btnFecharCaixa.setFont(new Font("SansSerif", Font.BOLD, 14));
+        btnFecharCaixa.setFocusPainted(false);
+        btnFecharCaixa.addActionListener(e -> fecharCaixaClicado());
+
+        painelBotoes.add(btnAbrirCaixa);
+        painelBotoes.add(btnFecharCaixa);
 
         // Linha de 4 cards
         JPanel painelCards = new JPanel(new GridLayout(1, 4, 15, 0));
@@ -79,7 +93,7 @@ public class Caixa extends javax.swing.JPanel {
         painelCards.add(criarCard("Sangrias", lblSangrias));
         painelCards.add(criarCard("Status", lblStatus));
 
-        painelCorpo.add(btnAbrirCaixa);
+        painelCorpo.add(painelBotoes);
         painelCorpo.add(Box.createRigidArea(new Dimension(0, 15)));
         painelCorpo.add(painelCards);
 
@@ -87,10 +101,6 @@ public class Caixa extends javax.swing.JPanel {
         this.add(painelCorpo, BorderLayout.CENTER);
     }
 
-    /**
-     * Cria um "card" cinza claro com um rótulo em cima e um valor embaixo.
-     * Agora recebe o JLabel de valor pronto, para podermos atualizá-lo depois.
-     */
     private JPanel criarCard(String titulo, JLabel lblValor) {
         JPanel card = new JPanel();
         card.setBackground(new Color(224, 224, 224));
@@ -122,14 +132,28 @@ public class Caixa extends javax.swing.JPanel {
 
             if (caixaAtual != null) {
                 lblValorInicial.setText("R$ " + caixaAtual.getValorInicial());
+
+                BigDecimal totalVendas = caixaDAO.calcularTotalVendas(caixaAtual.getIdCaixa());
+                lblTotalVendas.setText("R$ " + totalVendas);
+
+                BigDecimal sangrias = caixaDAO.calcularSangrias(caixaAtual.getIdCaixa());
+                lblSangrias.setText("R$ " + sangrias);
+
                 lblStatus.setText("Aberto");
+
                 btnAbrirCaixa.setEnabled(false);
                 btnAbrirCaixa.setText("Caixa já aberto");
+                btnFecharCaixa.setEnabled(true);
+
             } else {
                 lblValorInicial.setText("R$ -");
+                lblTotalVendas.setText("-");
+                lblSangrias.setText("R$ -");
                 lblStatus.setText("Pendente abertura");
+
                 btnAbrirCaixa.setEnabled(true);
                 btnAbrirCaixa.setText("Abrir caixa");
+                btnFecharCaixa.setEnabled(false);
             }
 
         } catch (RuntimeException e) {
@@ -205,6 +229,66 @@ public class Caixa extends javax.swing.JPanel {
             JOptionPane.showMessageDialog(
                     this,
                     "Erro ao abrir o caixa no banco de dados.",
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Ação do botão "Fechar caixa": confirma, calcula o valor final e salva.
+     */
+    private void fecharCaixaClicado() {
+
+        if (caixaAtual == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Não há caixa aberto para fechar.",
+                    "Erro",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        BigDecimal totalVendas = caixaDAO.calcularTotalVendas(caixaAtual.getIdCaixa());
+        BigDecimal sangrias = caixaDAO.calcularSangrias(caixaAtual.getIdCaixa());
+        BigDecimal valorFinal = caixaAtual.getValorInicial()
+                .add(totalVendas)
+                .subtract(sangrias);
+
+        int confirmacao = JOptionPane.showConfirmDialog(
+                this,
+                "Fechar o caixa com os seguintes valores?\n\n"
+                        + "Valor inicial: R$ " + caixaAtual.getValorInicial() + "\n"
+                        + "Total de vendas: R$ " + totalVendas + "\n"
+                        + "Sangrias: R$ " + sangrias + "\n"
+                        + "Valor final: R$ " + valorFinal,
+                "Confirmar fechamento",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (confirmacao != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try {
+            caixaDAO.fecharCaixa(caixaAtual.getIdCaixa(), valorFinal);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Caixa fechado com sucesso!",
+                    "Sucesso",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            carregarCaixaAberto();
+
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao fechar o caixa no banco de dados.",
                     "Erro",
                     JOptionPane.ERROR_MESSAGE
             );

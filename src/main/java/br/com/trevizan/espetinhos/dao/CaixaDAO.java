@@ -126,4 +126,98 @@ public class CaixaDAO {
 
         return null;
     }
+
+    public void fecharCaixa(int idCaixa, BigDecimal valorFinal) {
+
+        String sql = """
+                UPDATE caixa
+                SET valor_final = ?,
+                    status = 'FECHADO',
+                    data_hora_fechamento = NOW()
+                WHERE id_caixa = ?
+                """;
+
+        try (
+                Connection connection = ConnectionFactory.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+
+            statement.setBigDecimal(1, valorFinal);
+            statement.setInt(2, idCaixa);
+
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao fechar caixa.",
+                    e
+            );
+        }
+    }
+
+    public BigDecimal calcularTotalVendas(int idCaixa) {
+
+        String sql = """
+                SELECT COALESCE(SUM(p.valor), 0) AS total
+                FROM pagamento p
+                INNER JOIN comanda c ON p.id_comanda = c.id_comanda
+                INNER JOIN caixa cx ON cx.id_caixa = ?
+                WHERE p.data_hora >= cx.data_hora_abertura
+                  AND p.data_hora <= COALESCE(cx.data_hora_fechamento, NOW())
+                """;
+
+        try (
+                Connection connection = ConnectionFactory.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+
+            statement.setInt(1, idCaixa);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getBigDecimal("total");
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao calcular total de vendas.",
+                    e
+            );
+        }
+
+        return BigDecimal.ZERO;
+    }
+
+    public BigDecimal calcularSangrias(int idCaixa) {
+
+        String sql = """
+                SELECT COALESCE(SUM(valor), 0) AS total
+                FROM movimentacao_caixa
+                WHERE id_caixa = ?
+                  AND tipo = 'SAIDA'
+                """;
+
+        try (
+                Connection connection = ConnectionFactory.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+
+            statement.setInt(1, idCaixa);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getBigDecimal("total");
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao calcular sangrias.",
+                    e
+            );
+        }
+
+        return BigDecimal.ZERO;
+    }
 }

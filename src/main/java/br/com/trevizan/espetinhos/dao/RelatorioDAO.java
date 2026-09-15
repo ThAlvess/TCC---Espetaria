@@ -32,22 +32,31 @@ public class RelatorioDAO {
         ResumoRelatorio resumo = new ResumoRelatorio();
 
         String sqlResumo = """
-                SELECT
-                    COALESCE(SUM(valor), 0)                       AS faturamento_total,
-                    COUNT(*)                                      AS quantidade_vendas,
-                    COALESCE(SUM(valor) / NULLIF(COUNT(*), 0), 0)  AS ticket_medio
-                FROM pagamento
-                WHERE data_hora BETWEEN ? AND ?
-                """;
+    SELECT
+        COALESCE(SUM(p.valor), 0) AS faturamento_total,
+        COUNT(DISTINCT p.id_comanda) AS quantidade_vendas,
+        COALESCE(
+            SUM(p.valor) / NULLIF(COUNT(DISTINCT p.id_comanda), 0),
+            0
+        ) AS ticket_medio
+    FROM pagamento p
+    INNER JOIN comanda c
+        ON c.id_comanda = p.id_comanda
+    WHERE p.data_hora BETWEEN ? AND ?
+      AND c.status = 'FECHADA'
+    """;
 
         String sqlFormaPrincipal = """
-                SELECT forma_pagamento, SUM(valor) AS total_forma
-                FROM pagamento
-                WHERE data_hora BETWEEN ? AND ?
-                GROUP BY forma_pagamento
-                ORDER BY SUM(valor) DESC
-                LIMIT 1
-                """;
+            SELECT p.forma_pagamento, SUM(p.valor) AS total_forma
+            FROM pagamento p
+            INNER JOIN comanda c
+                ON c.id_comanda = p.id_comanda
+            WHERE p.data_hora BETWEEN ? AND ?
+            AND c.status = 'FECHADA'
+            GROUP BY p.forma_pagamento
+            ORDER BY SUM(p.valor) DESC
+            LIMIT 1
+            """;
 
         try (Connection conexao = ConnectionFactory.getConnection()) {
 
@@ -162,12 +171,15 @@ public class RelatorioDAO {
     public LinkedHashMap<String, BigDecimal> porFormaPagamento(LocalDateTime inicio, LocalDateTime fim) {
 
         String sql = """
-                SELECT forma_pagamento AS forma, SUM(valor) AS total
-                FROM pagamento
-                WHERE data_hora BETWEEN ? AND ?
-                GROUP BY forma_pagamento
-                ORDER BY total DESC
-                """;
+            SELECT p.forma_pagamento AS forma, SUM(p.valor) AS total
+            FROM pagamento p
+            INNER JOIN comanda c
+                ON c.id_comanda = p.id_comanda
+            WHERE p.data_hora BETWEEN ? AND ?
+            AND c.status = 'FECHADA'
+            GROUP BY p.forma_pagamento
+            ORDER BY total DESC
+            """;
 
         LinkedHashMap<String, BigDecimal> porForma = new LinkedHashMap<>();
 
@@ -201,18 +213,21 @@ public class RelatorioDAO {
             LocalDateTime inicio, LocalDateTime fim, Granularidade granularidade) {
 
         String colunaAgrupamento = switch (granularidade) {
-            case HORA -> "LPAD(HOUR(data_hora), 2, '0')";
-            case DIA -> "DATE_FORMAT(data_hora, '%d/%m')";
-            case MES -> "DATE_FORMAT(data_hora, '%Y-%m')";
+            case HORA -> "LPAD(HOUR(p.data_hora), 2, '0')";
+            case DIA -> "DATE_FORMAT(p.data_hora, '%d/%m')";
+            case MES -> "DATE_FORMAT(p.data_hora, '%Y-%m')";
         };
 
         String sql = """
-                SELECT %s AS rotulo, SUM(valor) AS total
-                FROM pagamento
-                WHERE data_hora BETWEEN ? AND ?
-                GROUP BY %s
-                ORDER BY MIN(data_hora)
-                """.formatted(colunaAgrupamento, colunaAgrupamento);
+            SELECT %s AS rotulo, SUM(p.valor) AS total
+            FROM pagamento p
+            INNER JOIN comanda c
+                ON c.id_comanda = p.id_comanda
+            WHERE p.data_hora BETWEEN ? AND ?
+            AND c.status = 'FECHADA'
+            GROUP BY %s
+            ORDER BY MIN(p.data_hora)
+            """.formatted(colunaAgrupamento, colunaAgrupamento);
 
         LinkedHashMap<String, BigDecimal> evolucao = new LinkedHashMap<>();
 

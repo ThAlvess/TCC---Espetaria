@@ -164,6 +164,7 @@ public class CaixaDAO {
                 INNER JOIN caixa cx ON cx.id_caixa = ?
                 WHERE p.data_hora >= cx.data_hora_abertura
                   AND p.data_hora <= COALESCE(cx.data_hora_fechamento, NOW())
+                  AND c.status = 'FECHADA'
                 """;
 
         try (
@@ -244,8 +245,9 @@ public class CaixaDAO {
                 FROM comanda c
                 INNER JOIN mesa m ON c.id_mesa = m.id_mesa
                 INNER JOIN caixa cx ON cx.id_caixa = ?
-                WHERE c.data_abertura >= cx.data_hora_abertura
-                  AND c.data_abertura <= COALESCE(cx.data_hora_fechamento, NOW())
+                WHERE c.data_fechamento >= cx.data_hora_abertura
+                  AND c.data_fechamento <= COALESCE(cx.data_hora_fechamento, NOW())
+                  AND c.status = 'FECHADA'
                 ORDER BY c.data_abertura DESC
                 """;
 

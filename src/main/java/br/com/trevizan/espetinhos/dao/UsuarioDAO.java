@@ -138,6 +138,10 @@ public class UsuarioDAO {
         }
     }
 
+    public void alterar(Usuario u) {
+        atualizar(u);
+    }
+
     public void excluir(int id) {
         String sql = "DELETE FROM usuario WHERE id_usuario = ?";
         try (Connection conn = ConnectionFactory.getConnection();

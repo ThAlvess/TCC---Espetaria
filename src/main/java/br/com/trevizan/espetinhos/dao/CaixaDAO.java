@@ -220,4 +220,63 @@ public class CaixaDAO {
 
         return BigDecimal.ZERO;
     }
+
+    /**
+     * Representação simples de uma comanda, só para exibição na tela de Caixa.
+     */
+    public static class ComandaResumo {
+        public int idComanda;
+        public int numeroMesa;
+        public String nomeCliente;
+        public String status;
+        public BigDecimal valorTotal;
+    }
+
+    public java.util.List<ComandaResumo> listarComandasDoCaixa(int idCaixa) {
+
+        String sql = """
+                SELECT
+                    c.id_comanda,
+                    m.numero AS numero_mesa,
+                    c.nome_cliente,
+                    c.status,
+                    c.valor_total
+                FROM comanda c
+                INNER JOIN mesa m ON c.id_mesa = m.id_mesa
+                INNER JOIN caixa cx ON cx.id_caixa = ?
+                WHERE c.data_abertura >= cx.data_hora_abertura
+                  AND c.data_abertura <= COALESCE(cx.data_hora_fechamento, NOW())
+                ORDER BY c.data_abertura DESC
+                """;
+
+        java.util.List<ComandaResumo> lista = new java.util.ArrayList<>();
+
+        try (
+                Connection connection = ConnectionFactory.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+
+            statement.setInt(1, idCaixa);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    ComandaResumo c = new ComandaResumo();
+                    c.idComanda = resultSet.getInt("id_comanda");
+                    c.numeroMesa = resultSet.getInt("numero_mesa");
+                    c.nomeCliente = resultSet.getString("nome_cliente");
+                    c.status = resultSet.getString("status");
+                    c.valorTotal = resultSet.getBigDecimal("valor_total");
+                    lista.add(c);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao listar comandas do caixa.",
+                    e
+            );
+        }
+
+        return lista;
+    }
 }

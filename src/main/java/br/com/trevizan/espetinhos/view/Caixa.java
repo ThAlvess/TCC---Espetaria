@@ -5,8 +5,10 @@ import br.com.trevizan.espetinhos.model.Usuario;
 import br.com.trevizan.espetinhos.util.SessaoUsuario;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  *
@@ -23,6 +25,8 @@ public class Caixa extends javax.swing.JPanel {
     private JLabel lblTotalVendas;
     private JLabel lblSangrias;
     private JLabel lblStatus;
+    private DefaultTableModel modeloTabelaComandas;
+    private JTable tabelaComandas;
 
     public Caixa() {
         initComponents();
@@ -49,7 +53,7 @@ public class Caixa extends javax.swing.JPanel {
         painelCabecalho.add(lblTitulo, BorderLayout.WEST);
         painelCabecalho.add(lblIconePerfil, BorderLayout.EAST);
 
-        // ---------- Corpo (botões + cards) ----------
+        // ---------- Corpo (botões + cards + tabela) ----------
         JPanel painelCorpo = new JPanel();
         painelCorpo.setOpaque(false);
         painelCorpo.setLayout(new BoxLayout(painelCorpo, BoxLayout.Y_AXIS));
@@ -93,9 +97,37 @@ public class Caixa extends javax.swing.JPanel {
         painelCards.add(criarCard("Sangrias", lblSangrias));
         painelCards.add(criarCard("Status", lblStatus));
 
+        // Título da lista de comandas
+        JLabel lblComandas = new JLabel("Comandas deste caixa");
+        lblComandas.setFont(new Font("SansSerif", Font.BOLD, 14));
+        lblComandas.setForeground(new Color(34, 102, 51));
+        lblComandas.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblComandas.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
+
+        // Tabela de comandas
+        modeloTabelaComandas = new DefaultTableModel(
+                new Object[]{"Mesa", "Cliente", "Status", "Valor"}, 0
+        ) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // tabela só leitura
+            }
+        };
+
+        tabelaComandas = new JTable(modeloTabelaComandas);
+        tabelaComandas.setRowHeight(28);
+        tabelaComandas.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
+
+        JScrollPane scrollTabela = new JScrollPane(tabelaComandas);
+        scrollTabela.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scrollTabela.setPreferredSize(new Dimension(0, 200));
+        scrollTabela.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+
         painelCorpo.add(painelBotoes);
         painelCorpo.add(Box.createRigidArea(new Dimension(0, 15)));
         painelCorpo.add(painelCards);
+        painelCorpo.add(lblComandas);
+        painelCorpo.add(scrollTabela);
 
         this.add(painelCabecalho, BorderLayout.NORTH);
         this.add(painelCorpo, BorderLayout.CENTER);
@@ -145,6 +177,8 @@ public class Caixa extends javax.swing.JPanel {
                 btnAbrirCaixa.setText("Caixa já aberto");
                 btnFecharCaixa.setEnabled(true);
 
+                carregarComandas(caixaAtual.getIdCaixa());
+
             } else {
                 lblValorInicial.setText("R$ -");
                 lblTotalVendas.setText("-");
@@ -154,6 +188,8 @@ public class Caixa extends javax.swing.JPanel {
                 btnAbrirCaixa.setEnabled(true);
                 btnAbrirCaixa.setText("Abrir caixa");
                 btnFecharCaixa.setEnabled(false);
+
+                modeloTabelaComandas.setRowCount(0); // limpa a tabela
             }
 
         } catch (RuntimeException e) {
@@ -161,6 +197,34 @@ public class Caixa extends javax.swing.JPanel {
                     this,
                     "Não foi possível verificar o caixa no banco de dados.",
                     "Erro de conexão",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    /**
+     * Busca as comandas do caixa atual e preenche a tabela.
+     */
+    private void carregarComandas(int idCaixa) {
+        try {
+            modeloTabelaComandas.setRowCount(0); // limpa antes de preencher
+
+            List<CaixaDAO.ComandaResumo> comandas = caixaDAO.listarComandasDoCaixa(idCaixa);
+
+            for (CaixaDAO.ComandaResumo c : comandas) {
+                modeloTabelaComandas.addRow(new Object[]{
+                        "Mesa " + c.numeroMesa,
+                        c.nomeCliente,
+                        c.status,
+                        "R$ " + c.valorTotal
+                });
+            }
+
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Não foi possível carregar as comandas.",
+                    "Erro",
                     JOptionPane.ERROR_MESSAGE
             );
         }

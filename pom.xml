@@ -48,6 +48,14 @@
             <artifactId>jfreechart</artifactId>
             <version>1.5.5</version>
         </dependency>
+
+        <!-- Seletor de datas (calendário) para os filtros de período dos Relatórios -->
+        <dependency>
+            <groupId>com.github.lgooddatepicker</groupId>
+            <artifactId>LGoodDatePicker</artifactId>
+            <version>11.2.1</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 
 </project>

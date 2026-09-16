@@ -1,30 +1,28 @@
 package br.com.trevizan.espetinhos.model;
 
 public class Usuario {
-
-    private int idUsuario;
+    private int id;
     private String nome;
-    private String login;
-    private String senha;
+    private String usuario;
+    private String cpf;
+    private String perfil;
     private boolean ativo;
+    private String senha;
 
-    public Usuario() {
+    public int getId() {
+        return id;
     }
 
-    public Usuario(int idUsuario, String nome, String login, String senha, boolean ativo) {
-        this.idUsuario = idUsuario;
-        this.nome = nome;
-        this.login = login;
-        this.senha = senha;
-        this.ativo = ativo;
+    public void setId(int id) {
+        this.id = id;
     }
 
     public int getIdUsuario() {
-        return idUsuario;
+        return id;
     }
 
-    public void setIdUsuario(int idUsuario) {
-        this.idUsuario = idUsuario;
+    public void setIdUsuario(int id) {
+        this.id = id;
     }
 
     public String getNome() {
@@ -35,20 +33,44 @@ public class Usuario {
         this.nome = nome;
     }
 
+    public String getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(String usuario) {
+        this.usuario = usuario;
+    }
+
     public String getLogin() {
-        return login;
+        return usuario;
     }
 
-    public void setLogin(String login) {
-        this.login = login;
+    public void setLogin(String usuario) {
+        this.usuario = usuario;
     }
 
-    public String getSenha() {
-        return senha;
+    public String getCpf() {
+        return cpf;
     }
 
-    public void setSenha(String senha) {
-        this.senha = senha;
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
+    }
+
+    public String getPerfil() {
+        return perfil;
+    }
+
+    public void setPerfil(String perfil) {
+        this.perfil = perfil;
+    }
+
+    public String getStatus() {
+        return ativo ? "ativo" : "inativo";
+    }
+
+    public void setStatus(String status) {
+        this.ativo = "ativo".equalsIgnoreCase(status) || "true".equalsIgnoreCase(status);
     }
 
     public boolean isAtivo() {
@@ -57,5 +79,21 @@ public class Usuario {
 
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
+    }
+
+    public void setAtivo(String status) {
+        this.ativo = "ativo".equalsIgnoreCase(status) || "true".equalsIgnoreCase(status);
+    }
+
+    public Boolean getAtivo() {
+        return ativo;
+    }
+
+    public String getSenha() {
+        return senha;
+    }
+
+    public void setSenha(String senha) {
+        this.senha = senha;
     }
 }

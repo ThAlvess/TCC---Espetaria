@@ -48,6 +48,7 @@
             <artifactId>jfreechart</artifactId>
             <version>1.5.5</version>
         </dependency>
+        
     </dependencies>
 
 </project>

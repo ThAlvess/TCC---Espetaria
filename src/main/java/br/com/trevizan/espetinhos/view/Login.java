@@ -499,7 +499,7 @@ public class Login extends javax.swing.JFrame {
 
                 SessaoUsuario.login(usuario);
 
-                abrirMainScreen();
+                abrirMainScreen(usuario);
 
             } else {
 
@@ -547,24 +547,17 @@ public class Login extends javax.swing.JFrame {
      *
      * A MainScreen deve estender JPanel.
      */
-    private void abrirMainScreen() {
+    private void abrirMainScreen(Usuario usuarioLogado) {
 
         MainScreen mainScreen =
-                new MainScreen();
+                new MainScreen(usuarioLogado);
 
-        // Troca o conteúdo do JFrame
         setContentPane(mainScreen);
 
-        setTitle(
-                "Espetinhos Trevizan"
-        );
+        setTitle("Espetinhos Trevizan");
 
-        // Maximiza a janela
-        setExtendedState(
-                JFrame.MAXIMIZED_BOTH
-        );
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
 
-        // Atualiza a interface
         revalidate();
         repaint();
     }

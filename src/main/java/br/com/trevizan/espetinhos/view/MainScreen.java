@@ -16,7 +16,7 @@ public class MainScreen extends javax.swing.JPanel {
         this.usuarioLogado = usuarioLogado;
         CenterPanel.add(new MesaPanel(usuarioLogado), "mesas");
         CenterPanel.add(new PadraoJPanel(), "historico"); // provisório, até criar a tela de Histórico de verdade
-        CenterPanel.add(new PadraoJPanel(), "caixa"); // provisório, até criar a tela de Caixa de verdade
+        CenterPanel.add(new Caixa(), "caixa");
         CenterPanel.add(new ProdutoPanel(), "produtos");
         CenterPanel.add(new Relatorio(), "relatorios");
         cardLayout = (java.awt.CardLayout) CenterPanel.getLayout();

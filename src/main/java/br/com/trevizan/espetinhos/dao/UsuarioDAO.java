@@ -47,6 +47,30 @@ public class UsuarioDAO {
         return null;
     }
 
+    public Usuario buscarPorId(int id) {
+        String sql = "SELECT id_usuario, nome, login, senha, ativo, cpf, perfil FROM usuario WHERE id_usuario = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Usuario u = new Usuario();
+                    u.setIdUsuario(rs.getInt("id_usuario"));
+                    u.setNome(rs.getString("nome"));
+                    u.setLogin(rs.getString("login"));
+                    u.setSenha(rs.getString("senha"));
+                    u.setAtivo(rs.getBoolean("ativo"));
+                    u.setCpf(rs.getString("cpf"));
+                    u.setPerfil(rs.getString("perfil"));
+                    return u;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao buscar usuário por ID.", e);
+        }
+        return null;
+    }
+
     public boolean verificarLoginExistente(String login) {
         String sql = "SELECT COUNT(*) FROM usuario WHERE login = ?";
         try (Connection conn = ConnectionFactory.getConnection();

@@ -8,6 +8,9 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.text.MaskFormatter;
+import javax.swing.text.PlainDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
@@ -18,11 +21,8 @@ import java.util.List;
 
 public class UsuarioPanel extends javax.swing.JPanel {
 
-    private JTextField txtNome, txtUsuario, txtBusca;
-    private JFormattedTextField txtCpf;
-    private JPasswordField txtSenha, txtConfirmaSenha;
-    private JComboBox<String> cbPerfil;
-    private JButton btnCadastrar, btnAtualizar;
+    private JTextField txtBusca;
+    private JButton btnCadastrar, btnEditar;
     private JTable tabelaUsuarios;
     private DefaultTableModel modeloTabela;
     private TableRowSorter<DefaultTableModel> sorter;
@@ -60,83 +60,12 @@ public class UsuarioPanel extends javax.swing.JPanel {
         panelTopo.add(lblSubtitulo);
         add(panelTopo, BorderLayout.NORTH);
 
-        // Cria o painel central utilizando GridBagLayout para organizar o formulário e a tabela estruturalmente
+        // Cria o painel central utilizando GridBagLayout para organizar a tabela estruturalmente
         JPanel panelCentro = new JPanel(new GridBagLayout());
         panelCentro.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(0, 0, 15, 0);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // Cria o painel do formulário com estilo de card limpo em fundo branco
-        JPanel panelForm = new JPanel(null);
-        panelForm.setPreferredSize(new Dimension(0, 135));
-        panelForm.setBackground(Color.WHITE);
-        panelForm.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(220, 215, 210), 1, true),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        ));
-
-        // Cria os rótulos e os campos de entrada alinhados harmoniosamente
-        JLabel lblNome = new JLabel("Nome:");
-        lblNome.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblNome.setForeground(new Color(80, 80, 80));
-        lblNome.setBounds(25, 18, 50, 25);
-        txtNome = new JTextField();
-        txtNome.setBounds(75, 18, 220, 28);
-
-        JLabel lblCpf = new JLabel("CPF:");
-        lblCpf.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblCpf.setForeground(new Color(80, 80, 80));
-        lblCpf.setBounds(343, 18, 40, 25);
-        
-        try {
-            MaskFormatter maskCpf = new MaskFormatter("###.###.###-##");
-            maskCpf.setPlaceholderCharacter('_');
-            txtCpf = new JFormattedTextField(maskCpf);
-        } catch (ParseException e) {
-            txtCpf = new JFormattedTextField();
-        }
-        txtCpf.setBounds(370, 18, 170, 28);
-
-        JLabel lblUsuario = new JLabel("Usuário:");
-        lblUsuario.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblUsuario.setForeground(new Color(80, 80, 80));
-        lblUsuario.setBounds(25, 58, 50, 25);
-        txtUsuario = new JTextField();
-        txtUsuario.setBounds(75, 58, 220, 28);
-
-        JLabel lblSenha = new JLabel("Senha:");
-        lblSenha.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblSenha.setForeground(new Color(80, 80, 80));
-        lblSenha.setBounds(330, 58, 50, 25);
-        txtSenha = new JPasswordField();
-        txtSenha.setBounds(370, 58, 170, 28);
-
-        JLabel lblPerfil = new JLabel("Perfil:");
-        lblPerfil.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblPerfil.setForeground(new Color(80, 80, 80));
-        lblPerfil.setBounds(25, 98, 50, 25);
-        cbPerfil = new JComboBox<>(new String[]{"Caixa", "Gerente", "Administrador"});
-        cbPerfil.setBounds(75, 98, 220, 28);
-        cbPerfil.setBackground(Color.WHITE);
-
-        JLabel lblConfirmaSenha = new JLabel("Confirmar:");
-        lblConfirmaSenha.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblConfirmaSenha.setForeground(new Color(80, 80, 80));
-        lblConfirmaSenha.setBounds(307, 98, 70, 25);
-        txtConfirmaSenha = new JPasswordField();
-        txtConfirmaSenha.setBounds(370, 98, 170, 28);
-
-        // Adiciona os componentes ao painel do formulário
-        panelForm.add(lblNome); panelForm.add(txtNome);
-        panelForm.add(lblCpf); panelForm.add(txtCpf);
-        panelForm.add(lblUsuario); panelForm.add(txtUsuario);
-        panelForm.add(lblPerfil); panelForm.add(cbPerfil);
-        panelForm.add(lblSenha); panelForm.add(txtSenha);
-        panelForm.add(lblConfirmaSenha); panelForm.add(txtConfirmaSenha);
-
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1.0; gbc.weighty = 0.0;
-        panelCentro.add(panelForm, gbc);
 
         // Cria o painel contentor da tabela com visual de card arredondado e limpo
         JPanel panelTabelaContainer = new JPanel(new BorderLayout(5, 5));
@@ -155,10 +84,10 @@ public class UsuarioPanel extends javax.swing.JPanel {
         panelBotoesEsquerda.setOpaque(false);
 
         btnCadastrar = criarBotaoEstilizado("Cadastrar", new Color(25, 110, 45), Color.WHITE);
-        btnAtualizar = criarBotaoEstilizado("Salvar Alterações", new Color(30, 100, 180), Color.WHITE);
+        btnEditar = criarBotaoEstilizado("Editar Usuário", new Color(30, 100, 180), Color.WHITE);
 
         panelBotoesEsquerda.add(btnCadastrar);
-        panelBotoesEsquerda.add(btnAtualizar);
+        panelBotoesEsquerda.add(btnEditar);
 
         JPanel panelBuscaDireita = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         panelBuscaDireita.setOpaque(false);
@@ -176,11 +105,11 @@ public class UsuarioPanel extends javax.swing.JPanel {
 
         panelTabelaContainer.add(panelBusca, BorderLayout.NORTH);
 
-        // Define o modelo da tabela
+        // Define o modelo da tabela (agora somente leitura)
         modeloTabela = new DefaultTableModel(new Object[]{"ID", "Status", "Nome", "Usuário", "CPF", "Perfil", "Senha"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return true; 
+                return false; 
             }
         };
 
@@ -194,20 +123,14 @@ public class UsuarioPanel extends javax.swing.JPanel {
         DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) tabelaUsuarios.getTableHeader().getDefaultRenderer();
         headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
 
-        JComboBox<String> cbStatusCombo = new JComboBox<>(new String[]{"Ativo", "Inativo"});
-        tabelaUsuarios.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(cbStatusCombo));
         tabelaUsuarios.getColumnModel().getColumn(1).setPreferredWidth(90);
         tabelaUsuarios.getColumnModel().getColumn(1).setMinWidth(80);
         tabelaUsuarios.getColumnModel().getColumn(1).setMaxWidth(120);
 
-        JComboBox<String> cbPerfilCombo = new JComboBox<>(new String[]{"Caixa", "Gerente", "Administrador"});
-        tabelaUsuarios.getColumnModel().getColumn(5).setCellEditor(new DefaultCellEditor(cbPerfilCombo));
         tabelaUsuarios.getColumnModel().getColumn(5).setPreferredWidth(140);
         tabelaUsuarios.getColumnModel().getColumn(5).setMinWidth(100);
         tabelaUsuarios.getColumnModel().getColumn(5).setMaxWidth(180);
 
-        JPasswordField passwordEditorField = new JPasswordField();
-        tabelaUsuarios.getColumnModel().getColumn(6).setCellEditor(new DefaultCellEditor(passwordEditorField));
         tabelaUsuarios.getColumnModel().getColumn(6).setCellRenderer(new SenhaOcultaCellRenderer());
 
         sorter = new TableRowSorter<>(modeloTabela);
@@ -219,7 +142,7 @@ public class UsuarioPanel extends javax.swing.JPanel {
         
         panelTabelaContainer.add(scrollPane, BorderLayout.CENTER);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 1.0; gbc.weighty = 1.0; gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1.0; gbc.weighty = 1.0; gbc.fill = GridBagConstraints.BOTH;
         panelCentro.add(panelTabelaContainer, gbc);
 
         add(panelCentro, BorderLayout.CENTER);
@@ -230,7 +153,8 @@ public class UsuarioPanel extends javax.swing.JPanel {
             @Override
             public void componentShown(ComponentEvent e) {
                 carregarTabela();
-                limparCampos();
+                tabelaUsuarios.clearSelection();
+                linhaSelecionada = -1;
             }
         });
 
@@ -260,8 +184,8 @@ public class UsuarioPanel extends javax.swing.JPanel {
             }
         });
 
-        btnCadastrar.addActionListener(e -> cadastrarUsuario());
-        btnAtualizar.addActionListener(e -> atualizarUsuario());
+        btnCadastrar.addActionListener(e -> abrirJanelaCadastro());
+        btnEditar.addActionListener(e -> abrirJanelaEdicao());
 
         tabelaUsuarios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -323,56 +247,147 @@ public class UsuarioPanel extends javax.swing.JPanel {
         }
     }
 
-    private void limparCampos() {
-        txtNome.setText("");
-        txtCpf.setValue(null);
-        txtUsuario.setText("");
-        txtSenha.setText("");
-        txtConfirmaSenha.setText("");
-        cbPerfil.setSelectedIndex(0);
-        tabelaUsuarios.clearSelection();
-        linhaSelecionada = -1;
-    }
+    private void abrirJanelaCadastro() {
+        // Confirmação de Segurança do Administrador antes de abrir a janela
+        JPasswordField txtSenhaAdmin = new JPasswordField(15);
+        Object[] mensagemAdmin = {
+            "Digite a senha do administrador para continuar:", txtSenhaAdmin
+        };
 
-    private void cadastrarUsuario() {
-        String nome = txtNome.getText().trim();
-        String cpf = txtCpf.getText().replaceAll("\\D", "");
-        String login = txtUsuario.getText().trim();
-        String senha = new String(txtSenha.getPassword());
-        String confirmaSenha = new String(txtConfirmaSenha.getPassword());
-        String perfil = (String) cbPerfil.getSelectedItem();
+        int opcaoAdmin = JOptionPane.showConfirmDialog(
+            this, 
+            mensagemAdmin, 
+            "Confirmação de Segurança", 
+            JOptionPane.OK_CANCEL_OPTION, 
+            JOptionPane.WARNING_MESSAGE
+        );
 
-        if (nome.isEmpty() || login.isEmpty() || senha.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Preencha todos os campos obrigatórios!", "Aviso", JOptionPane.WARNING_MESSAGE);
+        if (opcaoAdmin != JOptionPane.OK_OPTION) {
             return;
         }
 
-        if (!senha.equals(confirmaSenha)) {
-            JOptionPane.showMessageDialog(this, "As senhas não coincidem!", "Erro", JOptionPane.ERROR_MESSAGE);
+        String senhaAdmin = new String(txtSenhaAdmin.getPassword());
+        Usuario adminAutenticado = usuarioDAO.autenticar("admin", senhaAdmin);
+
+        if (adminAutenticado == null || !"Administrador".equalsIgnoreCase(adminAutenticado.getPerfil())) {
+            JOptionPane.showMessageDialog(this, "Senha incorreta ou usuário sem privilégios de Administrador!", "Erro", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        Usuario u = new Usuario();
-        u.setNome(nome);
-        u.setCpf(cpf);
-        u.setLogin(login);
-        u.setSenha(senha);
-        u.setPerfil(perfil);
-        u.setAtivo(true);
+        JDialog dialogCadastro = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Cadastrar Usuário", true);
+        dialogCadastro.setSize(420, 360);
+        dialogCadastro.setLocationRelativeTo(this);
+        dialogCadastro.setLayout(null);
+        dialogCadastro.getContentPane().setBackground(Color.WHITE);
+        dialogCadastro.setResizable(false);
 
+        JLabel lblCNome = new JLabel("Nome:");
+        lblCNome.setBounds(25, 20, 80, 25);
+        final JTextField txtNome = new JTextField();
+        // Filtro para bloquear números no campo Nome
+        txtNome.setDocument(new PlainDocument() {
+            @Override
+            public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
+                if (str == null) return;
+                if (!str.matches(".*\\d.*")) {
+                    super.insertString(offset, str, attr);
+                }
+            }
+        });
+        txtNome.setBounds(95, 20, 280, 28);
+
+        JLabel lblCCpf = new JLabel("CPF:");
+        lblCCpf.setBounds(25, 60, 80, 25);
+        JFormattedTextField tempCpf;
         try {
-            usuarioDAO.cadastrar(u);
-            JOptionPane.showMessageDialog(this, "Usuário cadastrado com sucesso!");
-            carregarTabela();
-            limparCampos();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao cadastrar usuário: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            MaskFormatter maskCpf = new MaskFormatter("###.###.###-##");
+            maskCpf.setPlaceholderCharacter('_');
+            tempCpf = new JFormattedTextField(maskCpf);
+        } catch (ParseException e) {
+            tempCpf = new JFormattedTextField();
         }
+        final JFormattedTextField txtCpf = tempCpf;
+        txtCpf.setBounds(95, 60, 280, 28);
+
+        JLabel lblCUsuario = new JLabel("Usuário:");
+        lblCUsuario.setBounds(25, 100, 80, 25);
+        final JTextField txtUsuario = new JTextField();
+        txtUsuario.setBounds(95, 100, 280, 28);
+
+        JLabel lblCSenha = new JLabel("Senha:");
+        lblCSenha.setBounds(25, 140, 80, 25);
+        final JPasswordField txtSenha = new JPasswordField();
+        txtSenha.setBounds(95, 140, 280, 28);
+
+        JLabel lblCConfirmaSenha = new JLabel("Confirmar:");
+        lblCConfirmaSenha.setBounds(25, 180, 80, 25);
+        final JPasswordField txtConfirmaSenha = new JPasswordField();
+        txtConfirmaSenha.setBounds(95, 180, 280, 28);
+
+        JLabel lblCPerfil = new JLabel("Perfil:");
+        lblCPerfil.setBounds(25, 220, 80, 25);
+        final JComboBox<String> cbPerfil = new JComboBox<>(new String[]{"Caixa", "Gerente", "Administrador"});
+        cbPerfil.setBounds(95, 220, 280, 28);
+        cbPerfil.setBackground(Color.WHITE);
+
+        JButton btnSalvarCadastro = criarBotaoEstilizado("Cadastrar", new Color(25, 110, 45), Color.WHITE);
+        btnSalvarCadastro.setBounds(145, 275, 120, 35);
+
+        dialogCadastro.add(lblCNome); dialogCadastro.add(txtNome);
+        dialogCadastro.add(lblCCpf); dialogCadastro.add(txtCpf);
+        dialogCadastro.add(lblCUsuario); dialogCadastro.add(txtUsuario);
+        dialogCadastro.add(lblCSenha); dialogCadastro.add(txtSenha);
+        dialogCadastro.add(lblCConfirmaSenha); dialogCadastro.add(txtConfirmaSenha);
+        dialogCadastro.add(lblCPerfil); dialogCadastro.add(cbPerfil);
+        dialogCadastro.add(btnSalvarCadastro);
+
+        btnSalvarCadastro.addActionListener(e -> {
+            String nome = txtNome.getText().trim();
+            String cpf = txtCpf.getText().replaceAll("\\D", "");
+            String login = txtUsuario.getText().trim();
+            String senha = new String(txtSenha.getPassword());
+            String confirmaSenha = new String(txtConfirmaSenha.getPassword());
+            String perfil = (String) cbPerfil.getSelectedItem();
+
+            if (nome.isEmpty() || login.isEmpty() || senha.isEmpty()) {
+                JOptionPane.showMessageDialog(dialogCadastro, "Preencha todos os campos obrigatórios!", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (senha.length() < 6) {
+                JOptionPane.showMessageDialog(dialogCadastro, "A senha deve ter no mínimo 6 caracteres!", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (!senha.equals(confirmaSenha)) {
+                JOptionPane.showMessageDialog(dialogCadastro, "As senhas não coincidem!", "Erro", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Usuario u = new Usuario();
+            u.setNome(nome);
+            u.setCpf(cpf);
+            u.setLogin(login);
+            u.setSenha(senha);
+            u.setPerfil(perfil);
+            u.setAtivo(true);
+
+            try {
+                usuarioDAO.cadastrar(u);
+                JOptionPane.showMessageDialog(dialogCadastro, "Usuário cadastrado com sucesso!");
+                dialogCadastro.dispose();
+                carregarTabela();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialogCadastro, "Erro ao cadastrar usuário: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        dialogCadastro.setVisible(true);
     }
 
-    private void atualizarUsuario() {
+    private void abrirJanelaEdicao() {
         if (linhaSelecionada == -1 && tabelaUsuarios.getSelectedRow() == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um usuário para atualizar!", "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Selecione um usuário para editar!", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -381,27 +396,25 @@ public class UsuarioPanel extends javax.swing.JPanel {
             linhaSelecionada = tabelaUsuarios.convertRowIndexToModel(viewRow);
         }
 
-        // Cria um campo de senha para ocultar a digitação com pontos
+        // Confirmação de Segurança do Administrador
         JPasswordField txtSenhaAdmin = new JPasswordField(15);
-        Object[] mensagem = {
-            "Digite a senha do administrador para confirmar:", txtSenhaAdmin
+        Object[] mensagemAdmin = {
+            "Digite a senha do administrador para continuar:", txtSenhaAdmin
         };
 
-        int opcao = JOptionPane.showConfirmDialog(
+        int opcaoAdmin = JOptionPane.showConfirmDialog(
             this, 
-            mensagem, 
+            mensagemAdmin, 
             "Confirmação de Segurança", 
             JOptionPane.OK_CANCEL_OPTION, 
             JOptionPane.WARNING_MESSAGE
         );
 
-        if (opcao != JOptionPane.OK_OPTION) {
-            return; // Usuário cancelou ou fechou a janela
+        if (opcaoAdmin != JOptionPane.OK_OPTION) {
+            return;
         }
 
         String senhaAdmin = new String(txtSenhaAdmin.getPassword());
-
-        // Autentica dinamicamente contra o banco de dados usando o login admin e a senha digitada
         Usuario adminAutenticado = usuarioDAO.autenticar("admin", senhaAdmin);
 
         if (adminAutenticado == null || !"Administrador".equalsIgnoreCase(adminAutenticado.getPerfil())) {
@@ -409,30 +422,127 @@ public class UsuarioPanel extends javax.swing.JPanel {
             return;
         }
 
+        // Pega os dados atuais da linha selecionada
+        int id = Integer.parseInt(modeloTabela.getValueAt(linhaSelecionada, 0).toString());
+        String statusAtual = modeloTabela.getValueAt(linhaSelecionada, 1).toString();
+        String loginAtual = modeloTabela.getValueAt(linhaSelecionada, 3).toString();
+        String cpfAtual = modeloTabela.getValueAt(linhaSelecionada, 4).toString().replaceAll("\\D", "");
+        String perfilAtual = modeloTabela.getValueAt(linhaSelecionada, 5).toString();
+        
+        // Pega o nome e a senha real direto do banco para garantir que venham corretos
+        Usuario usuarioBanco = usuarioDAO.buscarPorId(id);
+        String nomeAtual = usuarioBanco != null && usuarioBanco.getNome() != null ? usuarioBanco.getNome() : "";
+        String senhaAtual = usuarioBanco != null ? usuarioBanco.getSenha() : "";
+
+        // Cria a nova janela menor (Dialog) com os campos preenchidos
+        JDialog dialogEdicao = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Editar Usuário", true);
+        dialogEdicao.setSize(420, 360);
+        dialogEdicao.setLocationRelativeTo(this);
+        dialogEdicao.setLayout(null);
+        dialogEdicao.getContentPane().setBackground(Color.WHITE);
+        dialogEdicao.setResizable(false);
+
+        JLabel lblENome = new JLabel("Nome:");
+        lblENome.setBounds(25, 20, 80, 25);
+        final JTextField editNome = new JTextField();
+        // Aplica o documento customizado com o filtro de números e define o valor inicial corretamente
+        editNome.setDocument(new PlainDocument() {
+            @Override
+            public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
+                if (str == null) return;
+                if (!str.matches(".*\\d.*")) {
+                    super.insertString(offset, str, attr);
+                }
+            }
+        });
+        editNome.setText(nomeAtual);
+        editNome.setBounds(95, 20, 280, 28);
+
+        JLabel lblECpf = new JLabel("CPF:");
+        lblECpf.setBounds(25, 60, 80, 25);
+        JFormattedTextField tempCpf;
         try {
-            int id = Integer.parseInt(modeloTabela.getValueAt(linhaSelecionada, 0).toString());
-            String statusStr = modeloTabela.getValueAt(linhaSelecionada, 1).toString();
-            String nome = modeloTabela.getValueAt(linhaSelecionada, 2).toString();
-            String login = modeloTabela.getValueAt(linhaSelecionada, 3).toString();
-            String cpf = modeloTabela.getValueAt(linhaSelecionada, 4).toString().replaceAll("\\D", "");
-            String perfil = modeloTabela.getValueAt(linhaSelecionada, 5).toString();
-            String senha = modeloTabela.getValueAt(linhaSelecionada, 6).toString();
-
-            Usuario u = new Usuario();
-            u.setIdUsuario(id);
-            u.setAtivo("Ativo".equalsIgnoreCase(statusStr));
-            u.setNome(nome);
-            u.setLogin(login);
-            u.setCpf(cpf);
-            u.setPerfil(perfil);
-            u.setSenha(senha);
-
-            usuarioDAO.alterar(u);
-            JOptionPane.showMessageDialog(this, "Alterações salvas com sucesso!");
-            carregarTabela();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao atualizar usuário: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            MaskFormatter maskCpf = new MaskFormatter("###.###.###-##");
+            maskCpf.setPlaceholderCharacter('_');
+            tempCpf = new JFormattedTextField(maskCpf);
+        } catch (ParseException e) {
+            tempCpf = new JFormattedTextField();
         }
+        final JFormattedTextField editCpf = tempCpf;
+        editCpf.setText(cpfAtual);
+        editCpf.setBounds(95, 60, 280, 28);
+
+        JLabel lblELogin = new JLabel("Usuário:");
+        lblELogin.setBounds(25, 100, 80, 25);
+        final JTextField editLogin = new JTextField(loginAtual);
+        editLogin.setBounds(95, 100, 280, 28);
+
+        JLabel lblESenha = new JLabel("Senha:");
+        lblESenha.setBounds(25, 140, 80, 25);
+        final JPasswordField editSenha = new JPasswordField(senhaAtual);
+        editSenha.setBounds(95, 140, 280, 28);
+
+        JLabel lblEPerfil = new JLabel("Perfil:");
+        lblEPerfil.setBounds(25, 180, 80, 25);
+        final JComboBox<String> editPerfil = new JComboBox<>(new String[]{"Caixa", "Gerente", "Administrador"});
+        editPerfil.setSelectedItem(perfilAtual);
+        editPerfil.setBounds(95, 180, 280, 28);
+
+        JLabel lblEStatus = new JLabel("Status:");
+        lblEStatus.setBounds(25, 220, 80, 25);
+        final JComboBox<String> editStatus = new JComboBox<>(new String[]{"Ativo", "Inativo"});
+        editStatus.setSelectedItem(statusAtual);
+        editStatus.setBounds(95, 220, 280, 28);
+
+        JButton btnSalvarEdicao = criarBotaoEstilizado("Salvar", new Color(30, 100, 180), Color.WHITE);
+        btnSalvarEdicao.setBounds(145, 275, 120, 35);
+
+        dialogEdicao.add(lblENome); dialogEdicao.add(editNome);
+        dialogEdicao.add(lblECpf); dialogEdicao.add(editCpf);
+        dialogEdicao.add(lblELogin); dialogEdicao.add(editLogin);
+        dialogEdicao.add(lblESenha); dialogEdicao.add(editSenha);
+        dialogEdicao.add(lblEPerfil); dialogEdicao.add(editPerfil);
+        dialogEdicao.add(lblEStatus); dialogEdicao.add(editStatus);
+        dialogEdicao.add(btnSalvarEdicao);
+
+        btnSalvarEdicao.addActionListener(e -> {
+            String novoNome = editNome.getText().trim();
+            String novoCpf = editCpf.getText().replaceAll("\\D", "");
+            String novoLogin = editLogin.getText().trim();
+            String novaSenha = new String(editSenha.getPassword());
+            String novoPerfil = (String) editPerfil.getSelectedItem();
+            boolean novoStatus = "Ativo".equalsIgnoreCase((String) editStatus.getSelectedItem());
+
+            if (novoNome.isEmpty() || novoLogin.isEmpty() || novaSenha.isEmpty()) {
+                JOptionPane.showMessageDialog(dialogEdicao, "Preencha todos os campos obrigatórios!", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (novaSenha.length() < 6) {
+                JOptionPane.showMessageDialog(dialogEdicao, "A senha deve ter no mínimo 6 caracteres!", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            try {
+                Usuario u = new Usuario();
+                u.setIdUsuario(id);
+                u.setNome(novoNome);
+                u.setCpf(novoCpf);
+                u.setLogin(novoLogin);
+                u.setSenha(novaSenha);
+                u.setPerfil(novoPerfil);
+                u.setAtivo(novoStatus);
+
+                usuarioDAO.alterar(u);
+                JOptionPane.showMessageDialog(dialogEdicao, "Alterações salvas com sucesso!");
+                dialogEdicao.dispose();
+                carregarTabela();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialogEdicao, "Erro ao atualizar usuário: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        dialogEdicao.setVisible(true);
     }
 
     // Classe auxiliar interna para renderizar a senha com asteriscos na JTable

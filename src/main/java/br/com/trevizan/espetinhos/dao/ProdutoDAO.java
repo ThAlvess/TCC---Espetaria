@@ -162,4 +162,40 @@ public class ProdutoDAO {
 
         return produtos;
     }
+
+    public void atualizar(Produto produto) {
+
+        String sql = """
+            UPDATE produto
+            SET nome = ?,
+                descricao = ?,
+                preco = ?,
+                quantidade_estoque = ?,
+                id_categoria = ?,
+                ativo = ?
+            WHERE id_produto = ?
+            """;
+
+        try (
+                Connection conexao = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conexao.prepareStatement(sql)
+        ) {
+
+            stmt.setString(1, produto.getNome());
+            stmt.setString(2, produto.getDescricao());
+            stmt.setBigDecimal(3, produto.getPreco());
+            stmt.setInt(4, produto.getQuantidadeEstoque());
+            stmt.setInt(5, produto.getCategoria().getIdCategoria());
+            stmt.setBoolean(6, produto.isAtivo());
+            stmt.setInt(7, produto.getIdProduto());
+
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao atualizar produto.",
+                    e
+            );
+        }
+    }
 }

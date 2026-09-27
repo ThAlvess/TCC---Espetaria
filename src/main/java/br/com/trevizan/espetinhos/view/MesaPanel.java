@@ -6,6 +6,7 @@ import br.com.trevizan.espetinhos.dao.MesaDAO;
 import br.com.trevizan.espetinhos.model.Comanda;
 import br.com.trevizan.espetinhos.model.Mesa;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.PadraoTela;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -51,7 +52,9 @@ public class MesaPanel extends PadraoJPanel {
 
         JPanel telaMesas = new JPanel(new BorderLayout(0, 22));
         telaMesas.setOpaque(false);
-        telaMesas.setBorder(new EmptyBorder(28, 30, 28, 30));
+        // margens do padrão de telas (título na mesma posição da tela de Relatórios)
+        telaMesas.setBorder(new EmptyBorder(
+                PadraoTela.MARGEM_TOPO, PadraoTela.MARGEM_LATERAL, 28, PadraoTela.MARGEM_LATERAL));
 
         // ============================================================
         // CABEÇALHO
@@ -63,18 +66,11 @@ public class MesaPanel extends PadraoJPanel {
         blocoTitulo.setOpaque(false);
         blocoTitulo.setLayout(new BoxLayout(blocoTitulo, BoxLayout.Y_AXIS));
 
-        JLabel titulo = new JLabel("MESAS");
-        titulo.setFont(new Font("Arial", Font.BOLD, 30));
-        titulo.setForeground(COR_TEXTO);
-        titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JLabel subtitulo = new JLabel("Acompanhe as mesas e acesse as comandas em andamento.");
-        subtitulo.setFont(new Font("Arial", Font.PLAIN, 13));
-        subtitulo.setForeground(COR_SECUNDARIO);
-        subtitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel titulo = PadraoTela.criarTitulo("MESAS");
+        JLabel subtitulo = PadraoTela.criarSubtitulo("Acompanhe as mesas e acesse as comandas em andamento.");
 
         blocoTitulo.add(titulo);
-        blocoTitulo.add(Box.createVerticalStrut(5));
+        blocoTitulo.add(Box.createVerticalStrut(PadraoTela.ESPACO_TITULO_SUBTITULO));
         blocoTitulo.add(subtitulo);
 
         lblResumo = new JLabel();
@@ -93,18 +89,22 @@ public class MesaPanel extends PadraoJPanel {
         // ============================================================
         // GRADE DE MESAS
         // ============================================================
-        painelMesas = new JPanel(new GridLayout(0, 4, 18, 18));
+        // A grade ajusta a altura dos cards ao espaço disponível, para que
+        // todas as mesas caibam na tela sem precisar rolar (ver GradeMesas).
+        painelMesas = new GradeMesas();
         painelMesas.setOpaque(false);
 
-        JPanel gradeWrapper = new JPanel(new BorderLayout());
-        gradeWrapper.setOpaque(false);
-        gradeWrapper.add(painelMesas, BorderLayout.NORTH);
-
-        JScrollPane scroll = new JScrollPane(gradeWrapper);
+        JScrollPane scroll = new JScrollPane(painelMesas);
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
+        // Barra de rolagem invisível (largura 0): não aparece nem ocupa espaço.
+        // Normalmente nem é usada, porque a grade encolhe os cards para caber
+        // na tela; só entra em ação (pela roda do mouse) se houver tantas
+        // mesas que nem os cards na altura mínima caibam.
+        // (VERTICAL_SCROLLBAR_NEVER desligaria também a roda do mouse.)
+        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         telaMesas.add(scroll, BorderLayout.CENTER);
 
@@ -294,6 +294,117 @@ public class MesaPanel extends PadraoJPanel {
 
     public void atualizarMesas() {
         carregarMesas();
+    }
+
+    /**
+     * Grade de mesas com 4 colunas cuja altura dos cards se adapta à tela:
+     * os cards usam a altura normal (200) quando cabem e diminuem até
+     * ALTURA_MIN_CARD para que todas as linhas fiquem visíveis sem rolagem.
+     * Só se nem na altura mínima couber (muitas mesas / tela pequena) a
+     * grade passa a rolar.
+     */
+    private static class GradeMesas extends JPanel implements Scrollable {
+
+        private static final int COLUNAS = 4;
+        private static final int ESPACO = 18;
+        private static final int LARGURA_CARD = 230;
+        private static final int ALTURA_CARD = 200;
+        private static final int ALTURA_MIN_CARD = 150;
+
+        GradeMesas() {
+            setLayout(new LayoutGrade());
+        }
+
+        private int linhas() {
+            return (getComponentCount() + COLUNAS - 1) / COLUNAS;
+        }
+
+        private int alturaPara(int alturaCard) {
+            int linhas = linhas();
+            Insets in = getInsets();
+            return linhas == 0 ? 0 : linhas * alturaCard + (linhas - 1) * ESPACO + in.top + in.bottom;
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visivel, int orientacao, int direcao) {
+            return 16;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visivel, int orientacao, int direcao) {
+            return visivel.height;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        /** Ocupa exatamente a altura visível sempre que os cards couberem na altura mínima. */
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return getParent() instanceof JViewport viewport
+                    && viewport.getHeight() >= alturaPara(ALTURA_MIN_CARD);
+        }
+
+        private class LayoutGrade implements LayoutManager {
+
+            @Override
+            public void addLayoutComponent(String nome, Component componente) {
+            }
+
+            @Override
+            public void removeLayoutComponent(Component componente) {
+            }
+
+            @Override
+            public Dimension preferredLayoutSize(Container pai) {
+                Insets in = pai.getInsets();
+                // Altura mínima: só é usada quando a grade não cabe na tela e
+                // precisa rolar — assim a rolagem necessária é a menor possível.
+                return new Dimension(
+                        COLUNAS * LARGURA_CARD + (COLUNAS - 1) * ESPACO + in.left + in.right,
+                        alturaPara(ALTURA_MIN_CARD));
+            }
+
+            @Override
+            public Dimension minimumLayoutSize(Container pai) {
+                Insets in = pai.getInsets();
+                return new Dimension(in.left + in.right, alturaPara(ALTURA_MIN_CARD));
+            }
+
+            @Override
+            public void layoutContainer(Container pai) {
+                int total = pai.getComponentCount();
+                int linhas = linhas();
+                if (linhas == 0) {
+                    return;
+                }
+
+                Insets in = pai.getInsets();
+                int largura = pai.getWidth() - in.left - in.right;
+                int altura = pai.getHeight() - in.top - in.bottom;
+
+                int larguraCard = (largura - (COLUNAS - 1) * ESPACO) / COLUNAS;
+                int alturaCard = (altura - (linhas - 1) * ESPACO) / linhas;
+                alturaCard = Math.max(ALTURA_MIN_CARD, Math.min(ALTURA_CARD, alturaCard));
+
+                for (int i = 0; i < total; i++) {
+                    int coluna = i % COLUNAS;
+                    int linha = i / COLUNAS;
+                    pai.getComponent(i).setBounds(
+                            in.left + coluna * (larguraCard + ESPACO),
+                            in.top + linha * (alturaCard + ESPACO),
+                            larguraCard,
+                            alturaCard);
+                }
+            }
+        }
     }
 
     private static class RoundedPanel extends JPanel {

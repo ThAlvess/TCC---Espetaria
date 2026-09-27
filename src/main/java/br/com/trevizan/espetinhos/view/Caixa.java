@@ -2,6 +2,7 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.dao.CaixaDAO;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.PadraoTela;
 import br.com.trevizan.espetinhos.util.SessaoUsuario;
 
 import javax.swing.*;
@@ -36,15 +37,15 @@ public class Caixa extends javax.swing.JPanel {
     private void initComponents() {
         this.setLayout(new BorderLayout(20, 20));
         this.setBackground(new Color(237, 231, 226));
-        this.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        // margens do padrão de telas (título na mesma posição da tela de Relatórios)
+        this.setBorder(BorderFactory.createEmptyBorder(
+                PadraoTela.MARGEM_TOPO, PadraoTela.MARGEM_LATERAL, 20, PadraoTela.MARGEM_LATERAL));
 
         // ---------- Cabeçalho (título + ícone) ----------
         JPanel painelCabecalho = new JPanel(new BorderLayout());
         painelCabecalho.setOpaque(false);
 
-        JLabel lblTitulo = new JLabel("CAIXA");
-        lblTitulo.setFont(new Font("SansSerif", Font.BOLD, 22));
-        lblTitulo.setForeground(new Color(34, 102, 51));
+        JLabel lblTitulo = PadraoTela.criarTitulo("CAIXA");
 
         JLabel lblIconePerfil = new JLabel("👤");
         lblIconePerfil.setFont(new Font("SansSerif", Font.PLAIN, 24));

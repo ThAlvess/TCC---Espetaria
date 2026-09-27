@@ -5,6 +5,7 @@ import br.com.trevizan.espetinhos.dao.CategoriaDAO;
 import br.com.trevizan.espetinhos.dao.ProdutoDAO;
 import br.com.trevizan.espetinhos.model.Categoria;
 import br.com.trevizan.espetinhos.model.Produto;
+import br.com.trevizan.espetinhos.util.PadraoTela;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -78,12 +79,13 @@ public class ProdutoPanel extends PadraoJPanel {
                 getBackground()
         );
 
+        // margens do padrão de telas (título na mesma posição da tela de Relatórios)
         painelPrincipal.setBorder(
                 BorderFactory.createEmptyBorder(
-                        40,
-                        35,
+                        PadraoTela.MARGEM_TOPO,
+                        PadraoTela.MARGEM_LATERAL,
                         30,
-                        35
+                        PadraoTela.MARGEM_LATERAL
                 )
         );
 
@@ -94,21 +96,9 @@ public class ProdutoPanel extends PadraoJPanel {
          */
 
         JLabel lblTitulo =
-                new JLabel(
+                PadraoTela.criarTitulo(
                         "PRODUTOS"
                 );
-
-        lblTitulo.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        28
-                )
-        );
-
-        lblTitulo.setForeground(
-                VERDE
-        );
 
         painelPrincipal.add(
                 lblTitulo,

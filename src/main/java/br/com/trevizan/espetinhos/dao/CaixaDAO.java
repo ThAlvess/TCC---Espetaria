@@ -222,6 +222,34 @@ public class CaixaDAO {
         return BigDecimal.ZERO;
     }
 
+    public int contarComandasAbertas() {
+
+        String sql = """
+                SELECT COUNT(*) AS total
+                FROM comanda
+                WHERE status = 'ABERTA'
+                """;
+
+        try (
+                Connection connection = ConnectionFactory.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql);
+                ResultSet resultSet = statement.executeQuery()
+        ) {
+
+            if (resultSet.next()) {
+                return resultSet.getInt("total");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao contar comandas abertas.",
+                    e
+            );
+        }
+
+        return 0;
+    }
+
     /**
      * Representação simples de uma comanda, só para exibição na tela de Caixa.
      */

@@ -7,6 +7,7 @@ public class MainScreen extends javax.swing.JPanel {
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(MainScreen.class.getName());
     private java.awt.CardLayout cardLayout;
     private final Usuario usuarioLogado;
+    private Caixa caixaPanel;
     
     /**
      * Creates new form MainScreen
@@ -16,7 +17,8 @@ public class MainScreen extends javax.swing.JPanel {
         this.usuarioLogado = usuarioLogado;
         CenterPanel.add(new MesaPanel(usuarioLogado), "mesas");
         CenterPanel.add(new HistoricoPanel(), "historico");
-        CenterPanel.add(new Caixa(), "caixa");
+        caixaPanel = new Caixa();
+        CenterPanel.add(caixaPanel, "caixa");
         CenterPanel.add(new ProdutoPanel(), "produtos");
         CenterPanel.add(new Relatorio(), "relatorios");
         CenterPanel.add(new UsuarioPanel(), "usuarios");
@@ -212,6 +214,7 @@ public class MainScreen extends javax.swing.JPanel {
 
     private void btnCaixaActionPerformed(java.awt.event.ActionEvent evt) {                          
         ativarBotao(btnCaixa);
+        caixaPanel.atualizarDados();
         cardLayout.show(CenterPanel, "caixa");
     }                          
 

@@ -2,6 +2,7 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.dao.UsuarioDAO;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.PadraoTela;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -38,25 +39,20 @@ public class UsuarioPanel extends javax.swing.JPanel {
         // Define a cor de fundo padrão idêntica à tela de mesas
         setBackground(new Color(238, 232, 227));
         // Aplica uma margem interna de preenchimento (padding) nas bordas do painel
-        setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+        // (margens do padrão de telas: título na mesma posição da tela de Relatórios)
+        setBorder(BorderFactory.createEmptyBorder(
+                PadraoTela.MARGEM_TOPO, PadraoTela.MARGEM_LATERAL, 20, PadraoTela.MARGEM_LATERAL));
 
         // Painel superior para o título e o subtítulo (padrão visual da tela de mesas)
         JPanel panelTopo = new JPanel();
         panelTopo.setLayout(new BoxLayout(panelTopo, BoxLayout.Y_AXIS));
         panelTopo.setOpaque(false);
 
-        JLabel lblTitulo = new JLabel("CADASTRO DE USUÁRIOS");
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblTitulo.setForeground(new Color(40, 40, 40));
-        lblTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JLabel lblSubtitulo = new JLabel("Gerencie o acesso, perfis e credenciais dos operadores do sistema.");
-        lblSubtitulo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblSubtitulo.setForeground(new Color(120, 120, 120));
-        lblSubtitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
-        lblSubtitulo.setBorder(BorderFactory.createEmptyBorder(3, 0, 0, 0));
+        JLabel lblTitulo = PadraoTela.criarTitulo("CADASTRO DE USUÁRIOS");
+        JLabel lblSubtitulo = PadraoTela.criarSubtitulo("Gerencie o acesso, perfis e credenciais dos operadores do sistema.");
 
         panelTopo.add(lblTitulo);
+        panelTopo.add(Box.createVerticalStrut(PadraoTela.ESPACO_TITULO_SUBTITULO));
         panelTopo.add(lblSubtitulo);
         add(panelTopo, BorderLayout.NORTH);
 

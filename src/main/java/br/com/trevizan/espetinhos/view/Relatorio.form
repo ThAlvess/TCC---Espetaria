@@ -115,7 +115,7 @@
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="btnAnual" min="-2" pref="88" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="btnFiscal" min="-2" pref="88" max="-2" attributes="0"/>
+                          <Component id="btnPersonalizado" min="-2" pref="88" max="-2" attributes="0"/>
                           <EmptySpace pref="716" max="32767" attributes="0"/>
                       </Group>
                   </Group>
@@ -127,7 +127,7 @@
                           <Group type="103" groupAlignment="3" attributes="0">
                               <Component id="btnDiario" alignment="3" min="-2" pref="33" max="-2" attributes="0"/>
                               <Component id="btnAnual" alignment="3" min="-2" pref="33" max="-2" attributes="0"/>
-                              <Component id="btnFiscal" alignment="3" min="-2" pref="33" max="-2" attributes="0"/>
+                              <Component id="btnPersonalizado" alignment="3" min="-2" pref="33" max="-2" attributes="0"/>
                               <Component id="btnMensal" alignment="3" min="-2" pref="33" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace pref="9" max="32767" attributes="0"/>
@@ -175,7 +175,7 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnAnualActionPerformed"/>
                   </Events>
                 </Component>
-                <Component class="javax.swing.JButton" name="btnFiscal">
+                <Component class="javax.swing.JButton" name="btnPersonalizado">
                   <Properties>
                     <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                       <Font name="Segoe UI" size="14" style="1"/>
@@ -183,7 +183,7 @@
                     <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                       <Color blue="19" green="64" red="19" type="rgb"/>
                     </Property>
-                    <Property name="text" type="java.lang.String" value="Fiscal"/>
+                    <Property name="text" type="java.lang.String" value="Personalizado"/>
                     <Property name="actionCommand" type="java.lang.String" value=""/>
                     <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
                       <Insets value="[2, 15, 2, 15]"/>
@@ -191,7 +191,7 @@
                     <Property name="requestFocusEnabled" type="boolean" value="false"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnFiscalActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnPersonalizadoActionPerformed"/>
                   </Events>
                 </Component>
                 <Component class="javax.swing.JButton" name="btnMensal">

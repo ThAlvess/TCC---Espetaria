@@ -249,10 +249,17 @@ public class Login extends javax.swing.JFrame {
 
         } catch (RuntimeException e) {
 
+            // Pega a causa original do erro para mostrar ao usuário
+            Throwable causa = e;
+            while (causa.getCause() != null) {
+                causa = causa.getCause();
+            }
+
             JOptionPane.showMessageDialog(
                     this,
                     "Não foi possível acessar o banco de dados.\n"
-                            + "Verifique a conexão com o MySQL.",
+                            + "Verifique a conexão com o MySQL.\n\n"
+                            + "Detalhe: " + causa.getMessage(),
                     "Erro de conexão",
                     JOptionPane.ERROR_MESSAGE
             );

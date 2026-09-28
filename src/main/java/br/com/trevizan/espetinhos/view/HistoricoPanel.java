@@ -19,7 +19,7 @@ public class HistoricoPanel extends br.com.trevizan.espetinhos.PadraoJPanel {
         txtPesquisar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 16));
         txtPesquisar.putClientProperty("JTextField.placeholderText", "Pesquisar comanda, mesa, atendente ou item...");
         txtPesquisar.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        jLabel1.setForeground(VERDE);
+        br.com.trevizan.espetinhos.util.PadraoTela.aplicarTitulo(jLabel1);
         modeloTabela = (javax.swing.table.DefaultTableModel) tabelaHistorico.getModel();
         configurarTabela();
         carregarHistorico();
@@ -163,17 +163,17 @@ private void pesquisar() {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(38, 38, 38)
+                .addGap(69, 69, 69)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(txtPesquisar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1218, Short.MAX_VALUE)
                     .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(38, 38, 38))
+                .addGap(69, 69, 69))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(42, 42, 42)
+                .addGap(51, 51, 51)
                 .addComponent(jLabel1)
                 .addGap(18, 18, 18)
                 .addComponent(txtPesquisar, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)

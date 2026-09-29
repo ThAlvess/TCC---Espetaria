@@ -34,6 +34,15 @@ public class Caixa extends javax.swing.JPanel {
         carregarCaixaAberto();
     }
 
+    /**
+     * Atualiza os dados da tela consultando o banco novamente.
+     * Deve ser chamado toda vez que a tela de Caixa for exibida.
+     */
+    public void atualizarDados() {
+        carregarCaixaAberto();
+    }
+    
+
     private void initComponents() {
         this.setLayout(new BorderLayout(20, 20));
         this.setBackground(new Color(237, 231, 226));
@@ -302,7 +311,8 @@ public class Caixa extends javax.swing.JPanel {
     }
 
     /**
-     * Ação do botão "Fechar caixa": confirma, calcula o valor final e salva.
+     * Ação do botão "Fechar caixa": avisa se há comandas abertas, confirma,
+     * calcula o valor final e salva.
      */
     private void fecharCaixaClicado() {
 
@@ -314,6 +324,42 @@ public class Caixa extends javax.swing.JPanel {
                     JOptionPane.WARNING_MESSAGE
             );
             return;
+        }
+
+        // Avisa se ainda existem comandas abertas
+        int comandasAbertas;
+        try {
+            comandasAbertas = caixaDAO.contarComandasAbertas();
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Não foi possível verificar as comandas abertas.",
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            e.printStackTrace();
+            return;
+        }
+
+        if (comandasAbertas > 0) {
+            Object[] opcoes = {"Fechar mesmo assim", "Cancelar"};
+
+            int escolha = JOptionPane.showOptionDialog(
+                    this,
+                    "Ainda existem " + comandasAbertas + " comanda(s) aberta(s).\n"
+                            + "Elas ainda não estão contabilizadas no total de vendas.\n\n"
+                            + "Deseja fechar o caixa mesmo assim?",
+                    "Comandas em aberto",
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    null,
+                    opcoes,
+                    opcoes[1]
+            );
+
+            if (escolha != 0) {
+                return; // cancelou ou fechou a janela
+            }
         }
 
         BigDecimal totalVendas = caixaDAO.calcularTotalVendas(caixaAtual.getIdCaixa());

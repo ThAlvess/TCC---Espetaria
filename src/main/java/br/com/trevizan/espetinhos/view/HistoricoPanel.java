@@ -1,6 +1,9 @@
 package br.com.trevizan.espetinhos.view;
 
 import javax.swing.table.DefaultTableModel;
+import br.com.trevizan.espetinhos.model.Comanda;
+import br.com.trevizan.espetinhos.dao.ComandaDAO;
+import java.util.List;
 
 /**
  * Painel responsável por exibir o Histórico de Comandas encerradas.
@@ -13,9 +16,11 @@ public class HistoricoPanel extends br.com.trevizan.espetinhos.PadraoJPanel {
     private final java.awt.Color CINZA_CABECALHO = new java.awt.Color(135, 135, 132);
     private javax.swing.table.DefaultTableModel modeloTabela;
     private java.util.List<Comanda> comandas;
+    private ComandaDAO comandaDAO;
     
     public HistoricoPanel() {
         initComponents();
+        comandaDAO = new ComandaDAO();
         txtPesquisar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 16));
         txtPesquisar.putClientProperty("JTextField.placeholderText", "Pesquisar comanda, mesa, atendente ou item...");
         txtPesquisar.setHorizontalAlignment(javax.swing.JTextField.CENTER);
@@ -25,7 +30,19 @@ public class HistoricoPanel extends br.com.trevizan.espetinhos.PadraoJPanel {
         carregarHistorico();
         estilizarTabela();
         configurarPesquisa();
-    }
+        
+    // Atualiza a lista no banco de dados sempre que a tela for exibida pelo CardLayout
+    this.addComponentListener(new java.awt.event.ComponentAdapter() {
+        @Override
+        public void componentShown(java.awt.event.ComponentEvent evt) {
+            // Limpa o texto da pesquisa ao entrar na tela
+            txtPesquisar.setText(""); 
+            
+            // Faz a busca atualizada no banco de dados
+            carregarHistorico();
+        }
+    });
+}
 
 private void configurarTabela() {
     tabelaHistorico.getTableHeader().setReorderingAllowed(false);
@@ -43,36 +60,43 @@ private void configurarTabela() {
     * ==========================
     */
 private void carregarHistorico() {
-    // TODO: Substituir dados mockados pela chamada ao banco de dados (ex: comandaDAO.listarEncerradas())
-    comandas = java.util.Arrays.asList(
-        new Comanda("1001", "Mesa 04", "08/09/2026 19:30", "João", "2x Espeto Carne, 1x Cerveja, 1x Coca-Cola", 45.90),
-        new Comanda("1002", "Mesa 12", "08/09/2026 20:15", "Maria", "4x Espeto Frango, 2x Suco Laranja", 52.00),
-        new Comanda("1003", "Mesa 01", "08/09/2026 21:00", "Carlos", "1x Porção Fritas, 3x Cerveja", 65.50)
-    );
-
-    preencherTabela(comandas);
+    try {
+        // Requer a inclusão do método listarFechadas() no ComandaDAO
+        comandas = comandaDAO.listarFechadas(); 
+        preencherTabela(comandas);
+    } catch (Exception e) {
+        javax.swing.JOptionPane.showMessageDialog(this, 
+            "Erro ao carregar o histórico do banco de dados: " + e.getMessage(), 
+            "Erro", 
+            javax.swing.JOptionPane.ERROR_MESSAGE);
+    }
 }
 
 private void preencherTabela(java.util.List<Comanda> lista) {
     modeloTabela.setRowCount(0);
     
-    // Cria o formatador para transformar os números em formato R$ 0,00
     java.text.NumberFormat moeda = java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("pt", "BR"));
+    java.time.format.DateTimeFormatter formatoData = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     for (Comanda comanda : lista) {
+        // Formata a data de fechamento, caso exista
+        String dataFechamento = (comanda.getDataFechamento() != null) 
+                ? comanda.getDataFechamento().format(formatoData) 
+                : "Sem registro";
+
+        // Busca os itens concatenados direto do banco de dados
+        String itensConsumidos = comandaDAO.obterItensFormatados(comanda.getIdComanda());
+
         modeloTabela.addRow(new Object[]{
-            comanda.getNumero(),
-            comanda.getMesa(),
-            comanda.getData(),
-            comanda.getAtendente(),
-            comanda.getItens(),
+            comanda.getIdComanda(),
+            "Mesa " + comanda.getIdMesa(),
+            dataFechamento,
+            "Cód. " + comanda.getIdUsuario(),
+            itensConsumidos,
             moeda.format(comanda.getValorTotal())
-            // TODO no futuro: Aplicar formatação NumberFormat.getCurrencyInstance() 
-            // caso o modelo oficial inclua o "Valor Total" da comanda.
         });
     }
 }
-
 /*
  * ==========================
  * PESQUISA
@@ -92,25 +116,18 @@ private void configurarPesquisa() {
 }
 
 private void pesquisar() {
-    String texto = txtPesquisar.getText().trim().toLowerCase();
+    String texto = txtPesquisar.getText().trim();
+    javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> sorter = 
+        new javax.swing.table.TableRowSorter<>(modeloTabela);
+        
+    tabelaHistorico.setRowSorter(sorter);
 
-    // Se o campo estiver vazio, devolve a lista completa
     if (texto.isEmpty()) {
-        preencherTabela(comandas);
-        return;
+        sorter.setRowFilter(null);
+    } else {
+        // (?i) torna a pesquisa case-insensitive (ignora maiúsculas/minúsculas)
+        sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + texto));
     }
-
-    // Filtra a lista verificando se o texto de pesquisa existe em alguma das colunas
-    java.util.List<Comanda> filtrados = comandas.stream()
-        .filter(comanda -> 
-            comanda.getNumero().toLowerCase().contains(texto) ||
-            comanda.getMesa().toLowerCase().contains(texto) ||
-            comanda.getAtendente().toLowerCase().contains(texto) ||
-            comanda.getData().toLowerCase().contains(texto) ||
-            comanda.getItens().toLowerCase().contains(texto)
-        ).toList();
-
-    preencherTabela(filtrados);
 }
     
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -226,31 +243,4 @@ private void estilizarTabela() {
     jScrollPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(150, 150, 150)));
     jScrollPane1.getViewport().setBackground(CINZA_TABELA);
 }
-
-// TODO: Remover esta classe interna e importar a oficial assim que 'Comanda' for implementada no pacote 'model'
-private class Comanda {
-    private String numero;
-    private String mesa;
-    private String data;
-    private String atendente;
-    private String itens;
-    private double valorTotal;
-
-    public Comanda(String numero, String mesa, String data, String atendente, String itens, double valorTotal) {
-        this.numero = numero;
-        this.mesa = mesa;
-        this.data = data;
-        this.atendente = atendente;
-        this.itens = itens;
-        this.valorTotal = valorTotal;
-    }
-
-    public String getNumero() { return numero; }
-    public String getMesa() { return mesa; }
-    public String getData() { return data; }
-    public String getAtendente() { return atendente; }
-    public String getItens() { return itens; }
-    public double getValorTotal() { return valorTotal; }
-}
-
 }

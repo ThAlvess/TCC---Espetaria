@@ -204,15 +204,31 @@ public class MesaPanel extends PadraoJPanel {
     }
 
     private void abrirMesa(Mesa mesa) {
+
         if (mesa.isLivre()) {
-            int resposta = JOptionPane.showConfirmDialog(
+
+            String nomeCliente = JOptionPane.showInputDialog(
                     this,
-                    "Deseja abrir a Mesa " + mesa.getNumero() + "?",
-                    "Abrir mesa",
-                    JOptionPane.YES_NO_OPTION
+                    "Informe o nome do cliente:",
+                    "Abrir Mesa " + mesa.getNumero(),
+                    JOptionPane.QUESTION_MESSAGE
             );
 
-            if (resposta != JOptionPane.YES_OPTION) {
+            // Usuário clicou em Cancelar ou fechou a janela
+            if (nomeCliente == null) {
+                return;
+            }
+
+            nomeCliente = nomeCliente.trim();
+
+            // Não permite nome vazio
+            if (nomeCliente.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Informe o nome do cliente para abrir a comanda.",
+                        "Atenção",
+                        JOptionPane.WARNING_MESSAGE
+                );
                 return;
             }
 
@@ -220,47 +236,63 @@ public class MesaPanel extends PadraoJPanel {
                 int idComanda = comandaDAO.abrirComanda(
                         mesa.getIdMesa(),
                         usuarioLogado.getIdUsuario(),
-                        null
+                        nomeCliente
                 );
 
                 Comanda comanda = comandaDAO.buscarPorId(idComanda);
-                mesaDAO.atualizarStatus(mesa.getIdMesa(), "OCUPADA");
+
+                mesaDAO.atualizarStatus(
+                        mesa.getIdMesa(),
+                        "OCUPADA"
+                );
+
                 mesa.setStatus("OCUPADA");
+
                 mostrarComanda(mesa, comanda);
 
             } catch (RuntimeException e) {
+
                 JOptionPane.showMessageDialog(
                         this,
                         "Erro ao abrir a mesa:\n" + e.getMessage(),
                         "Erro",
                         JOptionPane.ERROR_MESSAGE
                 );
+
                 e.printStackTrace();
             }
 
         } else {
+
             try {
-                Comanda comanda = comandaDAO.buscarComandaAbertaPorMesa(mesa.getIdMesa());
+                Comanda comanda =
+                        comandaDAO.buscarComandaAbertaPorMesa(
+                                mesa.getIdMesa()
+                        );
 
                 if (comanda == null) {
+
                     JOptionPane.showMessageDialog(
                             this,
                             "A mesa está marcada como ocupada, mas não existe uma comanda aberta para ela.",
                             "Comanda não encontrada",
                             JOptionPane.WARNING_MESSAGE
                     );
+
                     return;
                 }
 
                 mostrarComanda(mesa, comanda);
 
             } catch (RuntimeException e) {
+
                 JOptionPane.showMessageDialog(
                         this,
                         "Erro ao carregar a comanda:\n" + e.getMessage(),
                         "Erro",
                         JOptionPane.ERROR_MESSAGE
                 );
+
                 e.printStackTrace();
             }
         }

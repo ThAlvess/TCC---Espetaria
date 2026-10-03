@@ -274,4 +274,70 @@ public class ComandaDAO {
 
         return comanda;
     }
+
+/**
+     * Lista todas as comandas que já foram encerradas (FECHADA ou CANCELADA)
+     * para alimentar a tabela de Histórico.
+     */
+    public java.util.List<Comanda> listarFechadas() {
+        String sql = """
+                SELECT
+                    id_comanda,
+                    id_mesa,
+                    id_usuario,
+                    nome_cliente,
+                    data_abertura,
+                    data_fechamento,
+                    status,
+                    valor_total
+                FROM comanda
+                WHERE status IN ('FECHADA', 'CANCELADA')
+                ORDER BY data_fechamento DESC
+                """;
+
+        java.util.List<Comanda> lista = new java.util.ArrayList<>();
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()
+        ) {
+            while (rs.next()) {
+                lista.add(criarComanda(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao listar histórico de comandas.", e);
+        }
+
+        return lista;
+    }
+
+    public String obterItensFormatados(int idComanda) {
+        String sql = """
+                SELECT ic.quantidade, p.nome
+                FROM item_comanda ic
+                INNER JOIN produto p ON ic.id_produto = p.id_produto
+                WHERE ic.id_comanda = ? AND ic.status_item <> 'CANCELADO'
+                """;
+
+        java.util.List<String> itens = new java.util.ArrayList<>();
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setInt(1, idComanda);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    itens.add(rs.getInt("quantidade") + "x " + rs.getString("nome"));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao buscar itens formatados: " + e.getMessage());
+            return "Erro ao carregar itens";
+        }
+
+        return itens.isEmpty() ? "Nenhum item" : String.join(", ", itens);
+    }
 }

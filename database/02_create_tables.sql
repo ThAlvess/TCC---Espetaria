@@ -42,15 +42,15 @@ CREATE TABLE usuario (
 -- =========================================================
 -- MESA
 -- =========================================================
+
 CREATE TABLE mesa (
-    id_mesa INT NOT NULL AUTO_INCREMENT,
-    numero INT NOT NULL,
-    status ENUM('LIVRE','OCUPADA') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'LIVRE',
-    PRIMARY KEY (id_mesa),
-    UNIQUE KEY uk_mesa_numero (numero)
-) ENGINE=InnoDB
-  DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_unicode_ci;
+                      id_mesa INT NOT NULL AUTO_INCREMENT,
+                      numero INT NOT NULL,
+                      status ENUM('LIVRE','OCUPADA') NOT NULL DEFAULT 'LIVRE',
+                      ativo BOOLEAN NOT NULL DEFAULT TRUE,
+                      PRIMARY KEY (id_mesa),
+                      UNIQUE KEY numero (numero)
+);
 
 -- =========================================================
 -- CATEGORIA

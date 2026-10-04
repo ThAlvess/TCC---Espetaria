@@ -2,6 +2,10 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.PadraoJPanel;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.dao.CaixaDAO;
+import java.math.BigDecimal;
+import javax.swing.JOptionPane;
+
 public class MainScreen extends javax.swing.JPanel {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(MainScreen.class.getName());
@@ -15,6 +19,7 @@ public class MainScreen extends javax.swing.JPanel {
     public MainScreen(Usuario usuarioLogado) {
         initComponents();
         this.usuarioLogado = usuarioLogado;
+        verificarAberturaCaixa();
         CenterPanel.add(new MesaPanel(usuarioLogado), "mesas");
         CenterPanel.add(new HistoricoPanel(), "historico");
         caixaPanel = new Caixa();
@@ -176,6 +181,133 @@ public class MainScreen extends javax.swing.JPanel {
         PainelMargem.add(CenterPanel, java.awt.BorderLayout.CENTER);
 
         add(PainelMargem, java.awt.BorderLayout.CENTER);
+    }
+
+    private void verificarAberturaCaixa() {
+
+        String perfil = usuarioLogado.getPerfil();
+
+        // Somente Caixa e Administrador podem iniciar o caixa
+        if (!"Caixa".equalsIgnoreCase(perfil)
+                && !"Administrador".equalsIgnoreCase(perfil)) {
+            return;
+        }
+
+        CaixaDAO caixaDAO = new CaixaDAO();
+
+        br.com.trevizan.espetinhos.model.Caixa caixaAberto =
+                caixaDAO.buscarCaixaAberto();
+
+        if (caixaAberto != null) {
+
+            // O caixa aberto pertence ao dia atual.
+            // Continua utilizando normalmente.
+            if (caixaDAO.caixaAbertoEhDeHoje(caixaAberto)) {
+                return;
+            }
+
+            // Existe um caixa aberto de um dia anterior.
+            BigDecimal totalVendas =
+                    caixaDAO.calcularTotalVendas(caixaAberto.getIdCaixa());
+
+            BigDecimal sangrias =
+                    caixaDAO.calcularSangrias(caixaAberto.getIdCaixa());
+
+            BigDecimal valorFinal =
+                    caixaAberto.getValorInicial()
+                            .add(totalVendas)
+                            .subtract(sangrias);
+
+            caixaDAO.fecharCaixa(
+                    caixaAberto.getIdCaixa(),
+                    valorFinal
+            );
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "O caixa anterior foi fechado automaticamente.\n\n"
+                            + "Data: "
+                            + caixaAberto.getDataHoraAbertura()
+                            .toLocalDate()
+                            .format(
+                                    java.time.format.DateTimeFormatter
+                                            .ofPattern("dd/MM/yyyy")
+                            )
+                            + "\nValor final: R$ "
+                            + valorFinal.setScale(
+                            2,
+                            java.math.RoundingMode.HALF_UP
+                    ),
+                    "Fechamento automático",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        }
+
+        while (true) {
+
+            String valorInformado = javax.swing.JOptionPane.showInputDialog(
+                    this,
+                    "Informe o valor inicial do caixa:",
+                    "Abertura de Caixa",
+                    javax.swing.JOptionPane.QUESTION_MESSAGE
+            );
+
+            // Usuário clicou em Cancelar
+            if (valorInformado == null) {
+                return;
+            }
+
+            valorInformado = valorInformado
+                    .trim()
+                    .replace(",", ".");
+
+            try {
+
+                java.math.BigDecimal valorInicial =
+                        new java.math.BigDecimal(valorInformado);
+
+                if (valorInicial.compareTo(java.math.BigDecimal.ZERO) < 0) {
+                    javax.swing.JOptionPane.showMessageDialog(
+                            this,
+                            "O valor inicial não pode ser negativo.",
+                            "Valor inválido",
+                            javax.swing.JOptionPane.WARNING_MESSAGE
+                    );
+                    continue;
+                }
+
+                br.com.trevizan.espetinhos.model.Caixa novoCaixa =
+                        new br.com.trevizan.espetinhos.model.Caixa();
+
+                novoCaixa.setUsuarioAbertura(usuarioLogado);
+                novoCaixa.setValorInicial(valorInicial);
+
+                caixaDAO.abrirCaixa(novoCaixa);
+
+                javax.swing.JOptionPane.showMessageDialog(
+                        this,
+                        "Caixa aberto com sucesso!\n"
+                                + "Valor inicial: R$ "
+                                + valorInicial.setScale(
+                                2,
+                                java.math.RoundingMode.HALF_UP
+                        ),
+                        "Caixa aberto",
+                        javax.swing.JOptionPane.INFORMATION_MESSAGE
+                );
+
+                break;
+
+            } catch (NumberFormatException e) {
+
+                javax.swing.JOptionPane.showMessageDialog(
+                        this,
+                        "Informe um valor válido.\nExemplo: 150,00",
+                        "Valor inválido",
+                        javax.swing.JOptionPane.WARNING_MESSAGE
+                );
+            }
+        }
     }
 
     private void resetarBotoes() {

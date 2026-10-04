@@ -11,53 +11,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CaixaDAO {
-
-    public void abrirCaixa(Caixa caixa) {
-
-        String sql = """
-                INSERT INTO caixa
-                (id_usuario_abertura, valor_inicial, status)
-                VALUES (?, ?, 'ABERTO')
-                """;
-
-        try (
-                Connection connection = ConnectionFactory.getConnection();
-                PreparedStatement statement = connection.prepareStatement(
-                        sql,
-                        Statement.RETURN_GENERATED_KEYS
-                )
-        ) {
-
-            statement.setInt(
-                    1,
-                    caixa.getUsuarioAbertura().getIdUsuario()
-            );
-
-            statement.setBigDecimal(
-                    2,
-                    caixa.getValorInicial()
-            );
-
-            statement.executeUpdate();
-
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-
-                if (generatedKeys.next()) {
-                    caixa.setIdCaixa(
-                            generatedKeys.getInt(1)
-                    );
-                }
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                    "Erro ao abrir caixa.",
-                    e
-            );
-        }
-    }
 
     public Caixa buscarCaixaAberto() {
 
@@ -127,6 +84,66 @@ public class CaixaDAO {
         return null;
     }
 
+    public void abrirCaixa(Caixa caixa) {
+
+        String sql = """
+                INSERT INTO caixa
+                (id_usuario_abertura, valor_inicial, status)
+                VALUES (?, ?, 'ABERTO')
+                """;
+
+        try (
+                Connection connection = ConnectionFactory.getConnection();
+                PreparedStatement statement = connection.prepareStatement(
+                        sql,
+                        Statement.RETURN_GENERATED_KEYS
+                )
+        ) {
+
+            statement.setInt(
+                    1,
+                    caixa.getUsuarioAbertura().getIdUsuario()
+            );
+
+            statement.setBigDecimal(
+                    2,
+                    caixa.getValorInicial()
+            );
+
+            statement.executeUpdate();
+
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+
+                if (generatedKeys.next()) {
+                    caixa.setIdCaixa(
+                            generatedKeys.getInt(1)
+                    );
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao abrir caixa.",
+                    e
+            );
+        }
+    }
+
+    public boolean caixaAbertoEhDeHoje(Caixa caixa) {
+
+        if (caixa == null || caixa.getDataHoraAbertura() == null) {
+            return false;
+        }
+
+        java.time.LocalDate dataAbertura =
+                caixa.getDataHoraAbertura().toLocalDate();
+
+        java.time.LocalDate hoje =
+                java.time.LocalDate.now();
+
+        return dataAbertura.equals(hoje);
+    }
+
     public void fecharCaixa(int idCaixa, BigDecimal valorFinal) {
 
         String sql = """
@@ -155,34 +172,125 @@ public class CaixaDAO {
         }
     }
 
-    public BigDecimal calcularTotalVendas(int idCaixa) {
+    public List<Caixa> listarCaixas() {
 
         String sql = """
-                SELECT COALESCE(SUM(p.valor), 0) AS total
-                FROM pagamento p
-                INNER JOIN comanda c ON p.id_comanda = c.id_comanda
-                INNER JOIN caixa cx ON cx.id_caixa = ?
-                WHERE p.data_hora >= cx.data_hora_abertura
-                  AND p.data_hora <= COALESCE(cx.data_hora_fechamento, NOW())
-                  AND c.status = 'FECHADA'
-                """;
+            SELECT
+                cx.id_caixa,
+                cx.id_usuario_abertura,
+                u.nome AS nome_usuario,
+                cx.data_hora_abertura,
+                cx.data_hora_fechamento,
+                cx.valor_inicial,
+                cx.valor_final,
+                cx.status
+            FROM caixa cx
+            INNER JOIN usuario u
+                ON u.id_usuario = cx.id_usuario_abertura
+            ORDER BY cx.data_hora_abertura DESC
+            """;
+
+        List<Caixa> caixas = new ArrayList<>();
 
         try (
                 Connection connection = ConnectionFactory.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
+                PreparedStatement statement = connection.prepareStatement(sql);
+                ResultSet resultSet = statement.executeQuery()
         ) {
 
-            statement.setInt(1, idCaixa);
+            while (resultSet.next()) {
 
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getBigDecimal("total");
+                Caixa caixa = new Caixa();
+
+                caixa.setIdCaixa(
+                        resultSet.getInt("id_caixa")
+                );
+
+                Usuario usuario = new Usuario();
+
+                usuario.setIdUsuario(
+                        resultSet.getInt("id_usuario_abertura")
+                );
+
+                usuario.setNome(
+                        resultSet.getString("nome_usuario")
+                );
+
+                caixa.setUsuarioAbertura(usuario);
+
+                Timestamp abertura =
+                        resultSet.getTimestamp("data_hora_abertura");
+
+                if (abertura != null) {
+                    caixa.setDataHoraAbertura(
+                            abertura.toLocalDateTime()
+                    );
                 }
+
+                Timestamp fechamento =
+                        resultSet.getTimestamp("data_hora_fechamento");
+
+                if (fechamento != null) {
+                    caixa.setDataHoraFechamento(
+                            fechamento.toLocalDateTime()
+                    );
+                }
+
+                caixa.setValorInicial(
+                        resultSet.getBigDecimal("valor_inicial")
+                );
+
+                caixa.setValorFinal(
+                        resultSet.getBigDecimal("valor_final")
+                );
+
+                caixa.setStatus(
+                        resultSet.getString("status")
+                );
+
+                caixas.add(caixa);
             }
 
         } catch (SQLException e) {
             throw new RuntimeException(
-                    "Erro ao calcular total de vendas.",
+                    "Erro ao listar histórico de caixas.",
+                    e
+            );
+        }
+
+        return caixas;
+    }
+
+    public BigDecimal calcularTotalVendas(int idCaixa) {
+
+        String sql = """
+            SELECT COALESCE(SUM(valor), 0) AS total
+            FROM movimentacao_caixa
+            WHERE id_caixa = ?
+              AND tipo = 'ENTRADA'
+            """;
+
+        try (
+                Connection connection =
+                        ConnectionFactory.getConnection();
+
+                PreparedStatement statement =
+                        connection.prepareStatement(sql)
+        ) {
+
+            statement.setInt(1, idCaixa);
+
+            try (ResultSet rs = statement.executeQuery()) {
+
+                if (rs.next()) {
+                    return rs.getBigDecimal("total");
+                }
+            }
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Erro ao calcular total de vendas do caixa.",
                     e
             );
         }
@@ -264,43 +372,67 @@ public class CaixaDAO {
     public java.util.List<ComandaResumo> listarComandasDoCaixa(int idCaixa) {
 
         String sql = """
-                SELECT
-                    c.id_comanda,
-                    m.numero AS numero_mesa,
-                    c.nome_cliente,
-                    c.status,
-                    c.valor_total
-                FROM comanda c
-                INNER JOIN mesa m ON c.id_mesa = m.id_mesa
-                INNER JOIN caixa cx ON cx.id_caixa = ?
-                WHERE c.data_fechamento >= cx.data_hora_abertura
-                  AND c.data_fechamento <= COALESCE(cx.data_hora_fechamento, NOW())
-                  AND c.status = 'FECHADA'
-                ORDER BY c.data_abertura DESC
-                """;
+            SELECT DISTINCT
+                c.id_comanda,
+                m.numero AS numero_mesa,
+                c.nome_cliente,
+                c.status,
+                c.valor_total
+            FROM movimentacao_caixa mc
+            INNER JOIN pagamento p
+                ON p.id_pagamento = mc.id_pagamento
+            INNER JOIN comanda c
+                ON c.id_comanda = p.id_comanda
+            INNER JOIN mesa m
+                ON m.id_mesa = c.id_mesa
+            WHERE mc.id_caixa = ?
+              AND mc.tipo = 'ENTRADA'
+              AND c.status = 'FECHADA'
+            ORDER BY c.id_comanda DESC
+            """;
 
-        java.util.List<ComandaResumo> lista = new java.util.ArrayList<>();
+        java.util.List<ComandaResumo> lista =
+                new java.util.ArrayList<>();
 
         try (
-                Connection connection = ConnectionFactory.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
+                Connection connection =
+                        ConnectionFactory.getConnection();
+
+                PreparedStatement statement =
+                        connection.prepareStatement(sql)
         ) {
 
             statement.setInt(1, idCaixa);
 
-            try (ResultSet resultSet = statement.executeQuery()) {
+            try (ResultSet resultSet =
+                         statement.executeQuery()) {
+
                 while (resultSet.next()) {
-                    ComandaResumo c = new ComandaResumo();
-                    c.idComanda = resultSet.getInt("id_comanda");
-                    c.numeroMesa = resultSet.getInt("numero_mesa");
-                    c.nomeCliente = resultSet.getString("nome_cliente");
-                    c.status = resultSet.getString("status");
-                    c.valorTotal = resultSet.getBigDecimal("valor_total");
+
+                    ComandaResumo c =
+                            new ComandaResumo();
+
+                    c.idComanda =
+                            resultSet.getInt("id_comanda");
+
+                    c.numeroMesa =
+                            resultSet.getInt("numero_mesa");
+
+                    c.nomeCliente =
+                            resultSet.getString("nome_cliente");
+
+                    c.status =
+                            resultSet.getString("status");
+
+                    c.valorTotal =
+                            resultSet.getBigDecimal("valor_total");
+
                     lista.add(c);
                 }
             }
 
         } catch (SQLException e) {
+
             throw new RuntimeException(
                     "Erro ao listar comandas do caixa.",
                     e

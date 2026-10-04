@@ -248,6 +248,83 @@ public class ComandaDAO {
         }
     }
 
+    /**
+     * Lista todas as comandas ABERTAS de uma mesa.
+     */
+    public java.util.List<Comanda> listarComandasAbertasPorMesa(int idMesa) {
+
+        String sql = """
+            SELECT
+                id_comanda,
+                id_mesa,
+                id_usuario,
+                nome_cliente,
+                data_abertura,
+                data_fechamento,
+                status,
+                valor_total
+            FROM comanda
+            WHERE id_mesa = ?
+              AND status = 'ABERTA'
+            ORDER BY data_abertura ASC
+            """;
+
+        java.util.List<Comanda> comandas =
+                new java.util.ArrayList<>();
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            stmt.setInt(1, idMesa);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    comandas.add(criarComanda(rs));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao listar comandas abertas da mesa.",
+                    e
+            );
+        }
+
+        return comandas;
+    }
+
+    public boolean existeComandaAbertaNaMesa(int idMesa) {
+
+        String sql = """
+            SELECT 1
+            FROM comanda
+            WHERE id_mesa = ?
+              AND status = 'ABERTA'
+            LIMIT 1
+            """;
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            stmt.setInt(1, idMesa);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao verificar comandas abertas da mesa.",
+                    e
+            );
+        }
+    }
+
     private Comanda criarComanda(ResultSet rs) throws SQLException {
 
         Comanda comanda = new Comanda();

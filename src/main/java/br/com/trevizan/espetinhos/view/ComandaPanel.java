@@ -240,7 +240,7 @@ public class ComandaPanel extends PadraoJPanel {
         rodape.add(btnPagamento);
         rodape.add(Box.createVerticalStrut(8));
 
-        RoundedButton btnFecharMesa = new RoundedButton("FECHAR MESA", 14);
+        RoundedButton btnFecharMesa = new RoundedButton("FECHAR COMANDA", 14);
         btnFecharMesa.setBackground(COR_DESTAQUE);
         btnFecharMesa.setForeground(Color.WHITE);
         btnFecharMesa.setBorderColor(COR_DESTAQUE);
@@ -1024,7 +1024,7 @@ public class ComandaPanel extends PadraoJPanel {
                 JOptionPane.showMessageDialog(
                         this,
                         "A comanda não possui valor para fechamento.",
-                        "Fechar mesa",
+                        "Fechar comanda",
                         JOptionPane.WARNING_MESSAGE
                 );
                 return;
@@ -1047,9 +1047,12 @@ public class ComandaPanel extends PadraoJPanel {
 
             int resposta = JOptionPane.showConfirmDialog(
                     this,
-                    "Confirma o fechamento da Mesa " + mesa.getNumero() + "?\n\n"
-                            + "Total: " + moeda.format(totalComanda),
-                    "Fechar mesa",
+                    "Confirma o fechamento da comanda de "
+                            + comanda.getNomeCliente()
+                            + "?\n\n"
+                            + "Mesa: " + mesa.getNumero()
+                            + "\nTotal: " + moeda.format(totalComanda),
+                    "Fechar comanda",
                     JOptionPane.YES_NO_OPTION
             );
 
@@ -1058,12 +1061,19 @@ public class ComandaPanel extends PadraoJPanel {
             }
 
             comandaDAO.fecharComanda(comanda.getIdComanda());
-            mesaDAO.atualizarStatus(mesa.getIdMesa(), "LIVRE");
-            mesa.setStatus("LIVRE");
+
+// Verifica se ainda existe alguma outra comanda aberta nesta mesa
+            boolean possuiComandasAbertas =
+                    comandaDAO.existeComandaAbertaNaMesa(mesa.getIdMesa());
+
+            if (!possuiComandasAbertas) {
+                mesaDAO.atualizarStatus(mesa.getIdMesa(), "LIVRE");
+                mesa.setStatus("LIVRE");
+            }
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Mesa " + mesa.getNumero() + " fechada com sucesso!"
+                    "Comanda fechada com sucesso!"
             );
 
             if (aoVoltar != null) {
@@ -1073,7 +1083,7 @@ public class ComandaPanel extends PadraoJPanel {
         } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Erro ao fechar mesa:\n" + e.getMessage(),
+                    "Erro ao fechar comanda:\n" + e.getMessage(),
                     "Erro",
                     JOptionPane.ERROR_MESSAGE
             );

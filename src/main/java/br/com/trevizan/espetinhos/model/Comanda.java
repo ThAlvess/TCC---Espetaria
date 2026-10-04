@@ -13,6 +13,7 @@ public class Comanda {
     private LocalDateTime dataFechamento;
     private String status;
     private BigDecimal valorTotal;
+    private String tipoAtendimento;
 
     public int getIdComanda() {
         return idComanda;
@@ -76,5 +77,13 @@ public class Comanda {
 
     public void setValorTotal(BigDecimal valorTotal) {
         this.valorTotal = valorTotal;
+    }
+
+    public String getTipoAtendimento() {
+        return tipoAtendimento;
+    }
+
+    public void setTipoAtendimento(String tipoAtendimento) {
+        this.tipoAtendimento = tipoAtendimento;
     }
 }

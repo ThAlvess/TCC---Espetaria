@@ -231,7 +231,7 @@ public class Caixa extends javax.swing.JPanel {
 
         // Tabela de comandas
         modeloTabelaComandas = new DefaultTableModel(
-                new Object[]{"Mesa", "Cliente", "Status", "Valor"}, 0
+                new Object[]{"Atendimento", "Cliente", "Status", "Valor"}, 0
         ) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -785,8 +785,17 @@ public class Caixa extends javax.swing.JPanel {
             List<CaixaDAO.ComandaResumo> comandas = caixaDAO.listarComandasDoCaixa(idCaixa);
 
             for (CaixaDAO.ComandaResumo c : comandas) {
+
+                String atendimento;
+
+                if ("MESA".equalsIgnoreCase(c.tipoAtendimento)) {
+                    atendimento = "Mesa " + c.numeroMesa;
+                } else {
+                    atendimento = c.tipoAtendimento;
+                }
+
                 modeloTabelaComandas.addRow(new Object[]{
-                        "Mesa " + c.numeroMesa,
+                        atendimento,
                         c.nomeCliente,
                         c.status,
                         "R$ " + c.valorTotal
@@ -1586,9 +1595,17 @@ public class Caixa extends javax.swing.JPanel {
 
             for (CaixaDAO.ComandaResumo comanda : comandas) {
 
+                String atendimento;
+
+                if ("MESA".equalsIgnoreCase(comanda.tipoAtendimento)) {
+                    atendimento = "Mesa " + comanda.numeroMesa;
+                } else {
+                    atendimento = comanda.tipoAtendimento;
+                }
+
                 modeloTabelaComandasDetalhes.addRow(
                         new Object[]{
-                                "Mesa " + comanda.numeroMesa,
+                                atendimento,
                                 comanda.nomeCliente,
                                 comanda.status,
                                 formatarMoeda(comanda.valorTotal)

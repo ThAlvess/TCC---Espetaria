@@ -121,6 +121,10 @@ public class MesaPanel extends PadraoJPanel {
         int livres = 0;
         int ocupadas = 0;
 
+// Atendimentos que não utilizam mesa física
+        painelMesas.add(criarCardAtendimento("RETIRADA"));
+        painelMesas.add(criarCardAtendimento("DELIVERY"));
+
         for (Mesa mesa : mesas) {
 
             if (mesa.isAtivo()) {
@@ -141,6 +145,336 @@ public class MesaPanel extends PadraoJPanel {
 
         painelMesas.revalidate();
         painelMesas.repaint();
+    }
+
+    private JPanel criarCardAtendimento(String tipoAtendimento) {
+
+        java.util.List<Comanda> pedidos =
+                comandaDAO.listarComandasAbertasPorTipo(tipoAtendimento);
+
+        int quantidadeAbertos = pedidos.size();
+
+        RoundedPanel card = new RoundedPanel(22, COR_CARD);
+        card.setLayout(new BorderLayout(0, 12));
+        card.setBorder(new EmptyBorder(16, 16, 16, 16));
+        card.setPreferredSize(new Dimension(230, 200));
+
+        JPanel topo = new JPanel(new BorderLayout());
+        topo.setOpaque(false);
+
+        JLabel categoria = new JLabel("ATENDIMENTO");
+        categoria.setFont(new Font("Arial", Font.BOLD, 11));
+        categoria.setForeground(COR_SECUNDARIO);
+
+        StatusBadge badge = new StatusBadge(
+                quantidadeAbertos == 1
+                        ? "1 ABERTO"
+                        : quantidadeAbertos + " ABERTOS",
+                quantidadeAbertos > 0
+                        ? COR_VERMELHO_CLARO
+                        : COR_VERDE_CLARO,
+                quantidadeAbertos > 0
+                        ? COR_VERMELHO
+                        : COR_VERDE_ESCURO
+        );
+
+        topo.add(categoria, BorderLayout.WEST);
+        topo.add(badge, BorderLayout.EAST);
+
+        JPanel centro = new JPanel();
+        centro.setOpaque(false);
+        centro.setLayout(
+                new BoxLayout(centro, BoxLayout.Y_AXIS)
+        );
+
+        JLabel titulo = new JLabel(tipoAtendimento);
+        titulo.setFont(
+                new Font("Arial", Font.BOLD, 25)
+        );
+        titulo.setForeground(COR_TEXTO);
+        titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel descricao = new JLabel(
+                "DELIVERY".equals(tipoAtendimento)
+                        ? "Pedidos para entrega"
+                        : "Pedidos para retirada"
+        );
+
+        descricao.setFont(
+                new Font("Arial", Font.PLAIN, 11)
+        );
+
+        descricao.setForeground(COR_SECUNDARIO);
+        descricao.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        centro.add(Box.createVerticalGlue());
+        centro.add(titulo);
+        centro.add(Box.createVerticalStrut(6));
+        centro.add(descricao);
+        centro.add(Box.createVerticalGlue());
+
+        String textoBotao =
+                quantidadeAbertos > 0
+                        ? "VER PEDIDOS"
+                        : "NOVO PEDIDO";
+
+        RoundedButton botao =
+                new RoundedButton(textoBotao, 14);
+
+        botao.setFont(
+                new Font("Arial", Font.BOLD, 12)
+        );
+
+        botao.setPreferredSize(
+                new Dimension(0, 38)
+        );
+
+        botao.setBackground(
+                quantidadeAbertos > 0
+                        ? COR_VERMELHO
+                        : COR_VERDE
+        );
+
+        botao.setForeground(Color.WHITE);
+
+        botao.setHoverColor(
+                quantidadeAbertos > 0
+                        ? new Color(150, 66, 54)
+                        : COR_VERDE_ESCURO
+        );
+
+        botao.addActionListener(e -> {
+
+            if (quantidadeAbertos > 0) {
+                mostrarPedidosAtendimento(tipoAtendimento);
+            } else {
+                abrirNovoPedidoAtendimento(tipoAtendimento);
+            }
+        });
+
+        card.add(topo, BorderLayout.NORTH);
+        card.add(centro, BorderLayout.CENTER);
+        card.add(botao, BorderLayout.SOUTH);
+
+        return card;
+    }
+
+    private void mostrarPedidosAtendimento(
+            String tipoAtendimento
+    ) {
+
+        try {
+
+            java.util.List<Comanda> pedidos =
+                    comandaDAO.listarComandasAbertasPorTipo(
+                            tipoAtendimento
+                    );
+
+            JPanel painel = new JPanel();
+
+            painel.setLayout(
+                    new BoxLayout(
+                            painel,
+                            BoxLayout.Y_AXIS
+                    )
+            );
+
+            JLabel titulo = new JLabel(
+                    "Pedidos abertos - " + tipoAtendimento
+            );
+
+            titulo.setFont(
+                    new Font(
+                            "Arial",
+                            Font.BOLD,
+                            16
+                    )
+            );
+
+            titulo.setAlignmentX(
+                    Component.LEFT_ALIGNMENT
+            );
+
+            painel.add(titulo);
+            painel.add(
+                    Box.createVerticalStrut(10)
+            );
+
+            for (Comanda comanda : pedidos) {
+
+                String nomeCliente =
+                        comanda.getNomeCliente();
+
+                if (nomeCliente == null
+                        || nomeCliente.isBlank()) {
+
+                    nomeCliente =
+                            "Cliente sem nome";
+                }
+
+                JButton btnPedido =
+                        new JButton(
+                                nomeCliente
+                                        + " - Comanda #"
+                                        + comanda.getIdComanda()
+                        );
+
+                btnPedido.setAlignmentX(
+                        Component.LEFT_ALIGNMENT
+                );
+
+                btnPedido.setMaximumSize(
+                        new Dimension(
+                                Integer.MAX_VALUE,
+                                40
+                        )
+                );
+
+                Comanda pedidoSelecionado = comanda;
+
+                btnPedido.addActionListener(e -> {
+
+                    Window janela =
+                            SwingUtilities
+                                    .getWindowAncestor(painel);
+
+                    if (janela != null) {
+                        janela.dispose();
+                    }
+
+                    abrirPedidoSemMesa(
+                            pedidoSelecionado
+                    );
+                });
+
+                painel.add(btnPedido);
+
+                painel.add(
+                        Box.createVerticalStrut(5)
+                );
+            }
+
+            painel.add(
+                    Box.createVerticalStrut(10)
+            );
+
+            JButton btnNovo =
+                    new JButton("+ NOVO PEDIDO");
+
+            btnNovo.setAlignmentX(
+                    Component.LEFT_ALIGNMENT
+            );
+
+            btnNovo.setMaximumSize(
+                    new Dimension(
+                            Integer.MAX_VALUE,
+                            40
+                    )
+            );
+
+            JOptionPane optionPane =
+                    new JOptionPane(
+                            painel,
+                            JOptionPane.PLAIN_MESSAGE,
+                            JOptionPane.DEFAULT_OPTION,
+                            null,
+                            new Object[]{
+                                    btnNovo,
+                                    "Fechar"
+                            }
+                    );
+
+            JDialog dialog =
+                    optionPane.createDialog(
+                            this,
+                            tipoAtendimento
+                    );
+
+            btnNovo.addActionListener(e -> {
+
+                dialog.dispose();
+
+                abrirNovoPedidoAtendimento(
+                        tipoAtendimento
+                );
+            });
+
+            dialog.setVisible(true);
+
+        } catch (RuntimeException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao carregar pedidos:\n"
+                            + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            e.printStackTrace();
+        }
+    }
+
+    private void abrirNovoPedidoAtendimento(
+            String tipoAtendimento
+    ) {
+
+        String nomeCliente =
+                JOptionPane.showInputDialog(
+                        this,
+                        "Informe o nome do cliente:",
+                        "Novo pedido - " + tipoAtendimento,
+                        JOptionPane.QUESTION_MESSAGE
+                );
+
+        if (nomeCliente == null) {
+            return;
+        }
+
+        nomeCliente = nomeCliente.trim();
+
+        if (nomeCliente.isEmpty()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Informe o nome do cliente.",
+                    "Atenção",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+
+        try {
+
+            int idComanda =
+                    comandaDAO.abrirComandaSemMesa(
+                            usuarioLogado.getIdUsuario(),
+                            nomeCliente,
+                            tipoAtendimento
+                    );
+
+            Comanda comanda =
+                    comandaDAO.buscarPorId(idComanda);
+
+            abrirPedidoSemMesa(comanda);
+
+        } catch (RuntimeException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao abrir pedido:\n"
+                            + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            e.printStackTrace();
+        }
+    }
+
+    private void abrirPedidoSemMesa(Comanda comanda) {
+        mostrarComanda(null, comanda);
     }
 
     private JPanel criarCardMesa(Mesa mesa) {
@@ -481,24 +815,33 @@ public class MesaPanel extends PadraoJPanel {
 
     private void abrirMesa(Mesa mesa) {
 
-        if (mesa.isLivre()) {
+        // Mesa inativa não pode abrir nem acessar comandas
+        if (!mesa.isAtivo()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Esta mesa está inativa.\nReative a mesa antes de abrir uma comanda.",
+                    "Mesa inativa",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        if ("LIVRE".equalsIgnoreCase(mesa.getStatus())) {
 
             String nomeCliente = JOptionPane.showInputDialog(
                     this,
                     "Informe o nome do cliente:",
                     "Abrir Mesa " + mesa.getNumero(),
-                    JOptionPane.QUESTION_MESSAGE
+                    JOptionPane.PLAIN_MESSAGE
             );
 
-
-            // Usuário clicou em Cancelar ou fechou a janela
+            // Cancelou
             if (nomeCliente == null) {
                 return;
             }
 
             nomeCliente = nomeCliente.trim();
 
-            // Não permite nome vazio
             if (nomeCliente.isEmpty()) {
                 JOptionPane.showMessageDialog(
                         this,
@@ -510,6 +853,7 @@ public class MesaPanel extends PadraoJPanel {
             }
 
             try {
+
                 int idComanda = comandaDAO.abrirComanda(
                         mesa.getIdMesa(),
                         usuarioLogado.getIdUsuario(),
@@ -541,11 +885,8 @@ public class MesaPanel extends PadraoJPanel {
 
         } else {
 
-        mostrarComandasDaMesa(mesa);
-
-    }
-
-
+            mostrarComandasDaMesa(mesa);
+        }
     }
 
 private void mostrarComandasDaMesa(Mesa mesa) {
@@ -681,64 +1022,71 @@ private void mostrarComandasDaMesa(Mesa mesa) {
     }
 }
 
-private void abrirNovaComanda(Mesa mesa) {
+    private void abrirNovaComanda(Mesa mesa) {
 
-    String nomeCliente =
-            JOptionPane.showInputDialog(
+        // Segurança: mesa inativa não recebe nova comanda
+        if (!mesa.isAtivo()) {
+            JOptionPane.showMessageDialog(
                     this,
-                    "Informe o nome do cliente:",
-                    "Nova Comanda - Mesa " + mesa.getNumero(),
-                    JOptionPane.QUESTION_MESSAGE
+                    "Esta mesa está inativa.\nReative a mesa antes de abrir uma nova comanda.",
+                    "Mesa inativa",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String nomeCliente = JOptionPane.showInputDialog(
+                this,
+                "Informe o nome do cliente:",
+                "Nova Comanda - Mesa " + mesa.getNumero(),
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (nomeCliente == null) {
+            return;
+        }
+
+        nomeCliente = nomeCliente.trim();
+
+        if (nomeCliente.isEmpty()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Informe o nome do cliente.",
+                    "Atenção",
+                    JOptionPane.WARNING_MESSAGE
             );
 
-    if (nomeCliente == null) {
-        return;
+            return;
+        }
+
+        try {
+
+            int idComanda = comandaDAO.abrirComanda(
+                    mesa.getIdMesa(),
+                    usuarioLogado.getIdUsuario(),
+                    nomeCliente
+            );
+
+            Comanda comanda = comandaDAO.buscarPorId(idComanda);
+
+            mostrarComanda(
+                    mesa,
+                    comanda
+            );
+
+        } catch (RuntimeException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao abrir nova comanda:\n" + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            e.printStackTrace();
+        }
     }
-
-    nomeCliente = nomeCliente.trim();
-
-    if (nomeCliente.isEmpty()) {
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Informe o nome do cliente.",
-                "Atenção",
-                JOptionPane.WARNING_MESSAGE
-        );
-
-        return;
-    }
-
-    try {
-
-        int idComanda =
-                comandaDAO.abrirComanda(
-                        mesa.getIdMesa(),
-                        usuarioLogado.getIdUsuario(),
-                        nomeCliente
-                );
-
-        Comanda comanda =
-                comandaDAO.buscarPorId(idComanda);
-
-        mostrarComanda(
-                mesa,
-                comanda
-        );
-
-    } catch (RuntimeException e) {
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Erro ao abrir nova comanda:\n"
-                        + e.getMessage(),
-                "Erro",
-                JOptionPane.ERROR_MESSAGE
-        );
-
-        e.printStackTrace();
-    }
-}
 
     private void mostrarComanda(Mesa mesa, Comanda comanda) {
         Component[] componentes = painelPrincipal.getComponents();

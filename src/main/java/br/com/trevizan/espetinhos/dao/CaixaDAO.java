@@ -367,14 +367,17 @@ public class CaixaDAO {
         public String nomeCliente;
         public String status;
         public BigDecimal valorTotal;
+        public String tipoAtendimento;
     }
 
     public java.util.List<ComandaResumo> listarComandasDoCaixa(int idCaixa) {
 
         String sql = """
-            SELECT DISTINCT
+            
+                SELECT
                 c.id_comanda,
                 m.numero AS numero_mesa,
+                c.tipo_atendimento,
                 c.nome_cliente,
                 c.status,
                 c.valor_total
@@ -383,8 +386,7 @@ public class CaixaDAO {
                 ON p.id_pagamento = mc.id_pagamento
             INNER JOIN comanda c
                 ON c.id_comanda = p.id_comanda
-            INNER JOIN mesa m
-                ON m.id_mesa = c.id_mesa
+            LEFT JOIN mesa m ON c.id_mesa = m.id_mesa
             WHERE mc.id_caixa = ?
               AND mc.tipo = 'ENTRADA'
               AND c.status = 'FECHADA'
@@ -426,6 +428,8 @@ public class CaixaDAO {
 
                     c.valorTotal =
                             resultSet.getBigDecimal("valor_total");
+
+                    c.tipoAtendimento = resultSet.getString("tipo_atendimento");
 
                     lista.add(c);
                 }

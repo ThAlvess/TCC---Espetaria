@@ -14,11 +14,12 @@ public class ComandaDAO {
     public int abrirComanda(int idMesa, int idUsuario, String nomeCliente) {
 
         String sql = """
-                INSERT INTO comanda
-                    (id_mesa, id_usuario, nome_cliente, status, valor_total)
-                VALUES
-                    (?, ?, ?, 'ABERTA', 0.00)
-                """;
+        INSERT INTO comanda
+            (id_mesa, id_usuario, tipo_atendimento,
+             nome_cliente, status, valor_total)
+        VALUES
+            (?, ?, 'MESA', ?, 'ABERTA', 0.00)
+        """;
 
         try (
                 Connection conn = ConnectionFactory.getConnection();
@@ -54,6 +55,74 @@ public class ComandaDAO {
         }
     }
 
+    public int abrirComandaSemMesa(
+            int idUsuario,
+            String nomeCliente,
+            String tipoAtendimento
+    ) {
+
+        if (!"DELIVERY".equalsIgnoreCase(tipoAtendimento)
+                && !"RETIRADA".equalsIgnoreCase(tipoAtendimento)) {
+
+            throw new IllegalArgumentException(
+                    "Tipo de atendimento inválido."
+            );
+        }
+
+        String sql = """
+            INSERT INTO comanda
+                (id_mesa, id_usuario, tipo_atendimento,
+                 nome_cliente, status, valor_total)
+            VALUES
+                (NULL, ?, ?, ?, 'ABERTA', 0.00)
+            """;
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(
+                        sql,
+                        Statement.RETURN_GENERATED_KEYS
+                )
+        ) {
+
+            stmt.setInt(1, idUsuario);
+            stmt.setString(
+                    2,
+                    tipoAtendimento.toUpperCase()
+            );
+
+            if (nomeCliente == null || nomeCliente.isBlank()) {
+                stmt.setNull(3, Types.VARCHAR);
+            } else {
+                stmt.setString(
+                        3,
+                        nomeCliente.trim()
+                );
+            }
+
+            stmt.executeUpdate();
+
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+
+            throw new RuntimeException(
+                    "A comanda foi criada, mas não foi possível obter seu ID."
+            );
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Erro ao abrir comanda de "
+                            + tipoAtendimento.toLowerCase() + ".",
+                    e
+            );
+        }
+    }
+
     /**
      * Busca a comanda ABERTA de uma mesa.
      */
@@ -64,6 +133,7 @@ public class ComandaDAO {
                     id_comanda,
                     id_mesa,
                     id_usuario,
+                    tipo_atendimento,
                     nome_cliente,
                     data_abertura,
                     data_fechamento,
@@ -106,6 +176,7 @@ public class ComandaDAO {
                     id_comanda,
                     id_mesa,
                     id_usuario,
+                    tipo_atendimento,
                     nome_cliente,
                     data_abertura,
                     data_fechamento,
@@ -258,6 +329,7 @@ public class ComandaDAO {
                 id_comanda,
                 id_mesa,
                 id_usuario,
+                tipo_atendimento,
                 nome_cliente,
                 data_abertura,
                 data_fechamento,
@@ -333,6 +405,9 @@ public class ComandaDAO {
         comanda.setIdMesa(rs.getInt("id_mesa"));
         comanda.setIdUsuario(rs.getInt("id_usuario"));
         comanda.setNomeCliente(rs.getString("nome_cliente"));
+        comanda.setTipoAtendimento(
+                rs.getString("tipo_atendimento")
+        );
 
         Timestamp abertura = rs.getTimestamp("data_abertura");
 
@@ -362,6 +437,7 @@ public class ComandaDAO {
                     id_comanda,
                     id_mesa,
                     id_usuario,
+                    tipo_atendimento,
                     nome_cliente,
                     data_abertura,
                     data_fechamento,
@@ -416,5 +492,66 @@ public class ComandaDAO {
         }
 
         return itens.isEmpty() ? "Nenhum item" : String.join(", ", itens);
+    }
+
+    public java.util.List<Comanda> listarComandasAbertasPorTipo(
+            String tipoAtendimento
+    ) {
+
+        if (!"DELIVERY".equalsIgnoreCase(tipoAtendimento)
+                && !"RETIRADA".equalsIgnoreCase(tipoAtendimento)) {
+
+            throw new IllegalArgumentException(
+                    "Tipo de atendimento inválido."
+            );
+        }
+
+        String sql = """
+            SELECT
+                id_comanda,
+                id_mesa,
+                id_usuario,
+                tipo_atendimento,
+                nome_cliente,
+                data_abertura,
+                data_fechamento,
+                status,
+                valor_total
+            FROM comanda
+            WHERE tipo_atendimento = ?
+              AND status = 'ABERTA'
+            ORDER BY data_abertura ASC
+            """;
+
+        java.util.List<Comanda> comandas =
+                new java.util.ArrayList<>();
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            stmt.setString(
+                    1,
+                    tipoAtendimento.toUpperCase()
+            );
+
+            try (ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    comandas.add(criarComanda(rs));
+                }
+            }
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Erro ao listar pedidos de "
+                            + tipoAtendimento.toLowerCase() + ".",
+                    e
+            );
+        }
+
+        return comandas;
     }
 }

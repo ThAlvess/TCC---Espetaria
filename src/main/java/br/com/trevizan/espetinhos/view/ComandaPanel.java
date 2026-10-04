@@ -134,12 +134,30 @@ public class ComandaPanel extends PadraoJPanel {
         lblIdComanda.setFont(new Font("Arial", Font.BOLD, 12));
         linhaVoltar.add(lblIdComanda, BorderLayout.EAST);
 
-        JLabel lblMesa = new JLabel("MESA " + mesa.getNumero());
+        String tituloAtendimento;
+
+        if ("MESA".equalsIgnoreCase(comanda.getTipoAtendimento())) {
+            tituloAtendimento = "MESA " + mesa.getNumero();
+        } else {
+            tituloAtendimento = comanda.getTipoAtendimento();
+        }
+
+        JLabel lblMesa = new JLabel(tituloAtendimento);
         lblMesa.setFont(new Font("Arial", Font.BOLD, 28));
         lblMesa.setForeground(COR_TEXTO);
         lblMesa.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lblAtendente = new JLabel("Atendente: " + usuarioLogado.getNome());
+        JLabel lblCliente = new JLabel(
+                "Cliente: " + comanda.getNomeCliente()
+        );
+
+        lblCliente.setFont(
+                new Font("Arial", Font.PLAIN, 13)
+        );
+
+        lblCliente.setForeground(COR_TEXTO_SECUNDARIO);
+        lblCliente.setAlignmentX(Component.LEFT_ALIGNMENT);
         lblAtendente.setFont(new Font("Arial", Font.PLAIN, 13));
         lblAtendente.setForeground(COR_TEXTO_SECUNDARIO);
         lblAtendente.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -148,7 +166,12 @@ public class ComandaPanel extends PadraoJPanel {
         separadorCabecalho.setForeground(COR_BORDA);
         separadorCabecalho.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel lblPedido = new JLabel("PEDIDO DA MESA");
+        String textoPedido =
+                "MESA".equalsIgnoreCase(comanda.getTipoAtendimento())
+                        ? "PEDIDO DA MESA"
+                        : "PEDIDO - " + comanda.getTipoAtendimento();
+
+        JLabel lblPedido = new JLabel(textoPedido);
         lblPedido.setFont(new Font("Arial", Font.BOLD, 13));
         lblPedido.setForeground(COR_VERDE);
         lblPedido.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -156,6 +179,8 @@ public class ComandaPanel extends PadraoJPanel {
         cabecalho.add(linhaVoltar);
         cabecalho.add(Box.createVerticalStrut(16));
         cabecalho.add(lblMesa);
+        cabecalho.add(Box.createVerticalStrut(3));
+        cabecalho.add(lblCliente);
         cabecalho.add(Box.createVerticalStrut(3));
         cabecalho.add(lblAtendente);
         cabecalho.add(Box.createVerticalStrut(14));
@@ -1045,12 +1070,22 @@ public class ComandaPanel extends PadraoJPanel {
                 return;
             }
 
+            String identificacaoAtendimento;
+
+            if ("MESA".equalsIgnoreCase(comanda.getTipoAtendimento())) {
+                identificacaoAtendimento =
+                        "Mesa: " + mesa.getNumero();
+            } else {
+                identificacaoAtendimento =
+                        "Atendimento: " + comanda.getTipoAtendimento();
+            }
+
             int resposta = JOptionPane.showConfirmDialog(
                     this,
                     "Confirma o fechamento da comanda de "
                             + comanda.getNomeCliente()
                             + "?\n\n"
-                            + "Mesa: " + mesa.getNumero()
+                            + identificacaoAtendimento
                             + "\nTotal: " + moeda.format(totalComanda),
                     "Fechar comanda",
                     JOptionPane.YES_NO_OPTION
@@ -1063,12 +1098,23 @@ public class ComandaPanel extends PadraoJPanel {
             comandaDAO.fecharComanda(comanda.getIdComanda());
 
 // Verifica se ainda existe alguma outra comanda aberta nesta mesa
-            boolean possuiComandasAbertas =
-                    comandaDAO.existeComandaAbertaNaMesa(mesa.getIdMesa());
+            if ("MESA".equalsIgnoreCase(comanda.getTipoAtendimento())
+                    && mesa != null) {
 
-            if (!possuiComandasAbertas) {
-                mesaDAO.atualizarStatus(mesa.getIdMesa(), "LIVRE");
-                mesa.setStatus("LIVRE");
+                boolean possuiComandasAbertas =
+                        comandaDAO.existeComandaAbertaNaMesa(
+                                mesa.getIdMesa()
+                        );
+
+                if (!possuiComandasAbertas) {
+
+                    mesaDAO.atualizarStatus(
+                            mesa.getIdMesa(),
+                            "LIVRE"
+                    );
+
+                    mesa.setStatus("LIVRE");
+                }
             }
 
             JOptionPane.showMessageDialog(

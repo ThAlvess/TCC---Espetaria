@@ -114,6 +114,12 @@ public class MesaPanel extends PadraoJPanel {
         cardLayout.show(painelPrincipal, "lista");
     }
 
+    private boolean usuarioEhAdministrador() {
+        return "Administrador".equalsIgnoreCase(
+                usuarioLogado.getPerfil()
+        );
+    }
+
     private void carregarMesas() {
         painelMesas.removeAll();
 
@@ -137,9 +143,10 @@ public class MesaPanel extends PadraoJPanel {
 
             painelMesas.add(criarCardMesa(mesa));
         }
-
-        // Card "+" sempre aparece depois da última mesa
-        painelMesas.add(criarCardAdicionarMesa());
+        // Somente Administrador pode adicionar novas mesas
+        if (usuarioEhAdministrador()) {
+            painelMesas.add(criarCardAdicionarMesa());
+        }
 
         lblResumo.setText("LIVRES  " + livres + "     •     OCUPADAS  " + ocupadas);
 
@@ -548,7 +555,7 @@ public class MesaPanel extends PadraoJPanel {
 
         ladoDireito.add(badge);
 
-        if (!ativo || livre) {
+        if (usuarioEhAdministrador() && (!ativo || livre)) {
             ladoDireito.add(btnOpcoes);
         }
 
@@ -631,6 +638,16 @@ public class MesaPanel extends PadraoJPanel {
     }
 
     private void alterarSituacaoMesa(Mesa mesa) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador pode ativar ou inativar mesas.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
 
         // =============================================
         // REATIVAR
@@ -774,6 +791,16 @@ public class MesaPanel extends PadraoJPanel {
     }
 
     private void adicionarMesa() {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador pode adicionar mesas.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
 
         int resposta = JOptionPane.showConfirmDialog(
                 this,

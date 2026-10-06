@@ -276,6 +276,11 @@ public class ComandaPanel extends PadraoJPanel {
         btnFecharMesa.setAlignmentX(Component.LEFT_ALIGNMENT);
         btnFecharMesa.addActionListener(e -> fecharMesa());
         rodape.add(btnFecharMesa);
+        // Atendente não pode receber pagamento nem fechar comanda
+        if ("Atendente".equalsIgnoreCase(usuarioLogado.getPerfil())) {
+            btnPagamento.setVisible(false);
+            btnFecharMesa.setVisible(false);
+        }
 
         painelComanda.add(rodape, BorderLayout.SOUTH);
         conteudo.add(painelComanda, BorderLayout.WEST);
@@ -938,6 +943,17 @@ public class ComandaPanel extends PadraoJPanel {
     }
 
     private void adicionarPagamento() {
+
+        if (!podeReceberPagamento()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Seu usuário não possui permissão para registrar pagamentos.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         BigDecimal totalComanda = comandaDAO.obterTotal(comanda.getIdComanda());
 
         if (totalComanda.compareTo(BigDecimal.ZERO) <= 0) {
@@ -1041,6 +1057,17 @@ public class ComandaPanel extends PadraoJPanel {
     // FECHAMENTO
     // ================================================================
     private void fecharMesa() {
+
+        if (!podeReceberPagamento()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Seu usuário não possui permissão para fechar comandas.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         try {
             BigDecimal totalComanda = comandaDAO.obterTotal(comanda.getIdComanda());
             BigDecimal totalPago = pagamentoDAO.obterTotalPago(comanda.getIdComanda());
@@ -1251,5 +1278,16 @@ public class ComandaPanel extends PadraoJPanel {
             g2.dispose();
             super.paintComponent(g);
         }
+    }
+
+    private boolean podeReceberPagamento() {
+        if (usuarioLogado == null || usuarioLogado.getPerfil() == null) {
+            return false;
+        }
+
+        String perfil = usuarioLogado.getPerfil();
+
+        return "Caixa".equalsIgnoreCase(perfil)
+                || "Administrador".equalsIgnoreCase(perfil);
     }
 }

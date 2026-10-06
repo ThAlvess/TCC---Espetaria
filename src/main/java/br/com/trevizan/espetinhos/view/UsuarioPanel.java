@@ -322,7 +322,8 @@ public class UsuarioPanel extends javax.swing.JPanel {
 
         JLabel lblCPerfil = new JLabel("Perfil:");
         lblCPerfil.setBounds(25, 220, 80, 25);
-        final JComboBox<String> cbPerfil = new JComboBox<>(new String[]{"Caixa", "Gerente", "Administrador"});
+        final JComboBox<String> cbPerfil =
+                new JComboBox<>(new String[]{"Atendente", "Caixa", "Administrador"});
         cbPerfil.setBounds(95, 220, 280, 28);
         cbPerfil.setBackground(Color.WHITE);
 
@@ -480,7 +481,8 @@ public class UsuarioPanel extends javax.swing.JPanel {
 
         JLabel lblEPerfil = new JLabel("Perfil:");
         lblEPerfil.setBounds(25, 180, 80, 25);
-        final JComboBox<String> editPerfil = new JComboBox<>(new String[]{"Caixa", "Gerente", "Administrador"});
+        final JComboBox<String> editPerfil =
+                new JComboBox<>(new String[]{"Atendente", "Caixa", "Administrador"});
         editPerfil.setSelectedItem(perfilAtual);
         editPerfil.setBounds(95, 180, 280, 28);
 

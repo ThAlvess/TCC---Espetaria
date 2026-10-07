@@ -1,3 +1,8 @@
+-- =========================================================
+-- ESPETINHOS TREVIZAN - DADOS FICTICIOS PARA RELATORIOS
+-- Arquivo 04/04 (opcional)
+-- =========================================================
+
 USE trevizan_espetinhos;
 
 -- =====================================================================
@@ -66,10 +71,11 @@ BEGIN
             ELSE 'ABERTA'
         END;
 
-        INSERT INTO comanda (id_mesa, id_usuario, nome_cliente, data_abertura, data_fechamento, status, valor_total)
+        INSERT INTO comanda (id_mesa, id_usuario, tipo_atendimento, nome_cliente, data_abertura, data_fechamento, status, valor_total)
         VALUES (
             v_id_mesa,
             v_id_usuario,
+            'MESA',
             NULL,
             v_data_abertura,
             IF(v_status = 'ABERTA', NULL, v_data_fechamento),

@@ -1,6 +1,6 @@
 -- =========================================================
 -- ESPETINHOS TREVIZAN - DADOS INICIAIS
--- Arquivo 03/03
+-- Arquivo 03/04
 -- Dados consolidados a partir dos dumps atuais do projeto.
 -- =========================================================
 
@@ -12,25 +12,25 @@ USE trevizan_espetinhos;
 INSERT INTO usuario
     (id_usuario, nome, login, senha, ativo, cpf, perfil)
 VALUES
-    (1, 'Administrador', 'admin', 'admin123', '1', '49080233870', 'Administrador'),
-    (21, 'admin', 'vini', 'admin123', '1', '413.830.238-75', 'Caixa');
+    (1, 'Administrador', 'admin', 'admin123', 1, '49080233870', 'Administrador'),
+    (21, 'admin', 'vini', 'admin123', 1, '413.830.238-75', 'Caixa');
 
 -- =========================================================
 -- MESAS
 -- =========================================================
 INSERT INTO mesa
-    (id_mesa, numero, status)
+    (id_mesa, numero, status, ativo)
 VALUES
-    (1, 1, 'LIVRE'),
-    (2, 2, 'LIVRE'),
-    (3, 3, 'LIVRE'),
-    (4, 4, 'LIVRE'),
-    (5, 5, 'LIVRE'),
-    (6, 6, 'LIVRE'),
-    (7, 7, 'LIVRE'),
-    (8, 8, 'LIVRE'),
-    (9, 9, 'LIVRE'),
-    (10, 10, 'LIVRE');
+    (1, 1, 'LIVRE', 1),
+    (2, 2, 'LIVRE', 1),
+    (3, 3, 'LIVRE', 1),
+    (4, 4, 'LIVRE', 1),
+    (5, 5, 'LIVRE', 1),
+    (6, 6, 'LIVRE', 1),
+    (7, 7, 'LIVRE', 1),
+    (8, 8, 'LIVRE', 1),
+    (9, 9, 'LIVRE', 1),
+    (10, 10, 'LIVRE', 1);
 
 -- =========================================================
 -- CATEGORIAS

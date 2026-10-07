@@ -47,7 +47,8 @@ public class MainScreen extends javax.swing.JPanel {
         btnRelatorios.putClientProperty("JButton.buttonType", "roundRect");
         btnUsuarios.putClientProperty("JButton.buttonType", "roundRect");
         // Adicionado para arredondar o novo botão
-        
+
+        configurarPermissoes();
         ativarBotao(btnMesas);
     }
 
@@ -310,6 +311,68 @@ public class MainScreen extends javax.swing.JPanel {
         }
     }
 
+    private boolean usuarioEhAdministrador() {
+        return usuarioLogado != null
+                && usuarioLogado.getPerfil() != null
+                && "Administrador".equalsIgnoreCase(usuarioLogado.getPerfil());
+    }
+
+    private boolean usuarioPodeAcessarCaixa() {
+        if (usuarioLogado == null || usuarioLogado.getPerfil() == null) {
+            return false;
+        }
+
+        String perfil = usuarioLogado.getPerfil();
+
+        return "Caixa".equalsIgnoreCase(perfil)
+                || "Administrador".equalsIgnoreCase(perfil);
+    }
+
+    private void configurarPermissoes() {
+
+        String perfil = usuarioLogado.getPerfil();
+
+        // Administrador pode acessar tudo
+        if ("Administrador".equalsIgnoreCase(perfil)) {
+            return;
+        }
+
+        // Caixa: Mesas + Caixa
+        if ("Caixa".equalsIgnoreCase(perfil)) {
+
+            btnMesas.setVisible(true);
+            btnCaixa.setVisible(true);
+
+            btnHistorico.setVisible(false);
+            btnProdutos.setVisible(false);
+            btnRelatorios.setVisible(false);
+            btnUsuarios.setVisible(false);
+
+            return;
+        }
+
+        // Atendente: somente Mesas
+        if ("Atendente".equalsIgnoreCase(perfil)) {
+
+            btnMesas.setVisible(true);
+
+            btnHistorico.setVisible(false);
+            btnCaixa.setVisible(false);
+            btnProdutos.setVisible(false);
+            btnRelatorios.setVisible(false);
+            btnUsuarios.setVisible(false);
+
+            return;
+        }
+
+        // Segurança para perfil desconhecido
+        btnHistorico.setVisible(false);
+        btnCaixa.setVisible(false);
+        btnProdutos.setVisible(false);
+        btnRelatorios.setVisible(false);
+        btnUsuarios.setVisible(false);
+    }
+
     private void resetarBotoes() {
         java.awt.Color verdeEscuro = new java.awt.Color(25, 100, 25);
         java.awt.Color branco = java.awt.Color.WHITE;
@@ -334,33 +397,90 @@ public class MainScreen extends javax.swing.JPanel {
         botaoAtivo.setForeground(java.awt.Color.WHITE);
     }
     
-    private void btnMesasActionPerformed(java.awt.event.ActionEvent evt) {                          
+    private void btnMesasActionPerformed(java.awt.event.ActionEvent evt) {
+        configurarPermissoes();
         ativarBotao(btnMesas);
         cardLayout.show(CenterPanel, "mesas");
     }                          
 
-    private void btnHistoricoActionPerformed(java.awt.event.ActionEvent evt) {                                             
+    private void btnHistoricoActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador possui acesso a esta função.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         ativarBotao(btnHistorico);
         cardLayout.show(CenterPanel, "historico");
     }                                            
 
-    private void btnCaixaActionPerformed(java.awt.event.ActionEvent evt) {                          
+    private void btnCaixaActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioPodeAcessarCaixa()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Seu usuário não possui permissão para acessar o Caixa.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         ativarBotao(btnCaixa);
         caixaPanel.atualizarDados();
         cardLayout.show(CenterPanel, "caixa");
     }                          
 
-    private void btnProdutosActionPerformed(java.awt.event.ActionEvent evt) {                                          
+    private void btnProdutosActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador possui acesso a esta função.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+
         ativarBotao(btnProdutos);
         cardLayout.show(CenterPanel, "produtos");
     }                                         
 
-    private void btnRelatoriosActionPerformed(java.awt.event.ActionEvent evt) {                                              
+    private void btnRelatoriosActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador possui acesso a esta função.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         ativarBotao(btnRelatorios);
         cardLayout.show(CenterPanel, "relatorios");
     }                                             
 
-    private void btnUsuariosActionPerformed(java.awt.event.ActionEvent evt) {                          
+    private void btnUsuariosActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador possui acesso a esta função.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
     ativarBotao(btnUsuarios);
     cardLayout.show(CenterPanel, "usuarios");
 }

@@ -17,10 +17,10 @@ public class ProdutoDAO {
     public void cadastrar(Produto produto) {
 
         String sql = """
-                INSERT INTO produto
-                (id_categoria, nome, descricao, preco, quantidade_estoque, ativo)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """;
+        INSERT INTO produto
+        (id_categoria, nome, descricao, preco, quantidade_estoque, local_preparo, ativo)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """;
 
         try (
                 Connection connection = ConnectionFactory.getConnection();
@@ -55,8 +55,13 @@ public class ProdutoDAO {
                     produto.getQuantidadeEstoque()
             );
 
-            statement.setBoolean(
+            statement.setString(
                     6,
+                    produto.getLocalPreparo()
+            );
+
+            statement.setBoolean(
+                    7,
                     produto.isAtivo()
             );
 
@@ -88,6 +93,9 @@ public class ProdutoDAO {
                     p.descricao,
                     p.preco,
                     p.quantidade_estoque,
+                    p.quantidade_estoque,
+                    p.local_preparo,
+                    p.ativo,
                     p.ativo,
                     c.id_categoria,
                     c.nome AS categoria_nome,
@@ -144,6 +152,10 @@ public class ProdutoDAO {
                         resultSet.getInt("quantidade_estoque")
                 );
 
+                produto.setLocalPreparo(
+                        resultSet.getString("local_preparo")
+                );
+
                 produto.setAtivo(
                         resultSet.getBoolean("ativo")
                 );
@@ -166,15 +178,16 @@ public class ProdutoDAO {
     public void atualizar(Produto produto) {
 
         String sql = """
-            UPDATE produto
-            SET nome = ?,
-                descricao = ?,
-                preco = ?,
-                quantidade_estoque = ?,
-                id_categoria = ?,
-                ativo = ?
-            WHERE id_produto = ?
-            """;
+    UPDATE produto
+    SET nome = ?,
+        descricao = ?,
+        preco = ?,
+        quantidade_estoque = ?,
+        id_categoria = ?,
+        local_preparo = ?,
+        ativo = ?
+    WHERE id_produto = ?
+    """;
 
         try (
                 Connection conexao = ConnectionFactory.getConnection();
@@ -186,8 +199,9 @@ public class ProdutoDAO {
             stmt.setBigDecimal(3, produto.getPreco());
             stmt.setInt(4, produto.getQuantidadeEstoque());
             stmt.setInt(5, produto.getCategoria().getIdCategoria());
-            stmt.setBoolean(6, produto.isAtivo());
-            stmt.setInt(7, produto.getIdProduto());
+            stmt.setString(6, produto.getLocalPreparo());
+            stmt.setBoolean(7, produto.isAtivo());
+            stmt.setInt(8, produto.getIdProduto());
 
             stmt.executeUpdate();
 

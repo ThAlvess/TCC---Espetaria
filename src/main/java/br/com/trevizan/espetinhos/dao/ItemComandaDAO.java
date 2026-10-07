@@ -268,6 +268,128 @@ public class ItemComandaDAO {
         }
     }
 
+
+    public void marcarItensCozinhaComoEntregues(int idComanda) {
+
+        String sql = """
+            UPDATE item_comanda ic
+            INNER JOIN produto p
+                ON p.id_produto = ic.id_produto
+            SET ic.status_item = 'ENTREGUE'
+            WHERE ic.id_comanda = ?
+              AND p.local_preparo = 'COZINHA'
+              AND ic.status_item <> 'CANCELADO'
+              AND ic.status_item <> 'ENTREGUE'
+            """;
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            stmt.setInt(1, idComanda);
+
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao marcar os itens da cozinha como entregues.",
+                    e
+            );
+        }
+    }
+
+    public List<ItemComanda> listarPendentesCozinha() {
+
+        List<ItemComanda> itens = new ArrayList<>();
+
+        String sql = """
+            SELECT
+                ic.id_item_comanda,
+                ic.id_comanda,
+                ic.id_produto,
+                ic.quantidade,
+                ic.preco_unitario,
+                ic.observacao,
+                ic.subtotal,
+                ic.status_item,
+
+                p.nome AS nome_produto,
+                p.local_preparo
+
+            FROM item_comanda ic
+
+            INNER JOIN produto p
+                ON p.id_produto = ic.id_produto
+
+            INNER JOIN comanda c
+                ON c.id_comanda = ic.id_comanda
+
+            WHERE p.local_preparo = 'COZINHA'
+              AND ic.status_item = 'PENDENTE'
+              AND c.status = 'ABERTA'
+
+            ORDER BY
+                c.data_abertura ASC,
+                ic.id_item_comanda ASC
+            """;
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()
+        ) {
+
+            while (rs.next()) {
+
+                ItemComanda item = new ItemComanda();
+
+                item.setIdItemComanda(
+                        rs.getInt("id_item_comanda")
+                );
+
+                item.setIdComanda(
+                        rs.getInt("id_comanda")
+                );
+
+                item.setIdProduto(
+                        rs.getInt("id_produto")
+                );
+
+                item.setQuantidade(
+                        rs.getInt("quantidade")
+                );
+
+                item.setPrecoUnitario(
+                        rs.getBigDecimal("preco_unitario")
+                );
+
+                item.setObservacao(
+                        rs.getString("observacao")
+                );
+
+                item.setSubtotal(
+                        rs.getBigDecimal("subtotal")
+                );
+
+                item.setStatusItem(
+                        rs.getString("status_item")
+                );
+
+                itens.add(item);
+            }
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Erro ao listar itens pendentes da cozinha.",
+                    e
+            );
+        }
+
+        return itens;
+    }
+
     /**
      * Em vez de apagar fisicamente o registro,
      * marcamos como CANCELADO.

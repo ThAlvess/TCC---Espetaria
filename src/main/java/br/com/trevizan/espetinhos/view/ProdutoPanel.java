@@ -225,6 +225,7 @@ public class ProdutoPanel extends PadraoJPanel {
                 "Produto",
                 "Descrição",
                 "Categoria",
+                "Destino",
                 "Preço",
                 "Estoque",
                 "Status",
@@ -477,7 +478,7 @@ public class ProdutoPanel extends PadraoJPanel {
 
         tabelaProdutos
                 .getColumnModel()
-                .getColumn(6)
+                .getColumn(7)
                 .setCellRenderer(
                         rendererAcao
                 );
@@ -560,6 +561,7 @@ public class ProdutoPanel extends PadraoJPanel {
                             produto.getNome(),
                             produto.getDescricao(),
                             produto.getCategoria().getNome(),
+                            produto.getLocalPreparo(),
                             moeda.format(produto.getPreco()),
                             produto.getQuantidadeEstoque(),
                             status,
@@ -687,7 +689,7 @@ public class ProdutoPanel extends PadraoJPanel {
                         if (
                                 linha >= 0
                                         &&
-                                        coluna == 6
+                                        coluna == 7
                         ) {
 
                             editarProduto(
@@ -730,6 +732,18 @@ public class ProdutoPanel extends PadraoJPanel {
 
         JComboBox<Categoria> cbCategoria =
                 new JComboBox<>();
+
+        JComboBox<String> cbLocalPreparo =
+                new JComboBox<>(
+                        new String[]{
+                                "COZINHA",
+                                "BALCAO"
+                        }
+                );
+
+        cbLocalPreparo.setSelectedItem(
+                produto.getLocalPreparo()
+        );
 
         for (Categoria categoria : categoriaDAO.listarAtivas()) {
 
@@ -777,6 +791,9 @@ public class ProdutoPanel extends PadraoJPanel {
 
         painel.add(new JLabel("Categoria:"));
         painel.add(cbCategoria);
+
+        painel.add(new JLabel("Local de preparo:"));
+        painel.add(cbLocalPreparo);
 
         painel.add(new JLabel("Preço:"));
         painel.add(txtPreco);
@@ -875,6 +892,9 @@ public class ProdutoPanel extends PadraoJPanel {
             produto.setPreco(preco);
             produto.setQuantidadeEstoque(estoque);
             produto.setCategoria(categoria);
+            produto.setLocalPreparo(
+                    (String) cbLocalPreparo.getSelectedItem()
+            );
             produto.setAtivo(
                     chkAtivo.isSelected()
             );
@@ -923,6 +943,14 @@ public class ProdutoPanel extends PadraoJPanel {
 
         JComboBox<Categoria> cbCategoria =
                 new JComboBox<>();
+
+        JComboBox<String> cbLocalPreparo =
+                new JComboBox<>(
+                        new String[]{
+                                "COZINHA",
+                                "BALCAO"
+                        }
+                );
 
         JCheckBox chkAtivo =
                 new JCheckBox(
@@ -998,6 +1026,16 @@ public class ProdutoPanel extends PadraoJPanel {
 
         painel.add(
                 cbCategoria
+        );
+
+        painel.add(
+                new JLabel(
+                        "Local de preparo:"
+                )
+        );
+
+        painel.add(
+                cbLocalPreparo
         );
 
         painel.add(
@@ -1183,9 +1221,14 @@ public class ProdutoPanel extends PadraoJPanel {
                     categoria
             );
 
+            produto.setLocalPreparo(
+                    (String) cbLocalPreparo.getSelectedItem()
+            );
+
             produto.setAtivo(
                     chkAtivo.isSelected()
             );
+
 
             produtoDAO.cadastrar(
                     produto

@@ -7,6 +7,7 @@ public class ItemComanda {
     private int idItemComanda;
     private int idComanda;
     private int idProduto;
+    private String nomeProduto;
     private int quantidade;
     private BigDecimal precoUnitario;
     private String observacao;
@@ -75,5 +76,13 @@ public class ItemComanda {
 
     public void setStatusItem(String statusItem) {
         this.statusItem = statusItem;
+    }
+
+    public String getNomeProduto() {
+        return nomeProduto;
+    }
+
+    public void setNomeProduto(String nomeProduto) {
+        this.nomeProduto = nomeProduto;
     }
 }

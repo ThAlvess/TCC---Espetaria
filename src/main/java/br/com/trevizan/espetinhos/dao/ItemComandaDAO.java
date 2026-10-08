@@ -269,18 +269,21 @@ public class ItemComandaDAO {
     }
 
 
-    public void marcarItensCozinhaComoEntregues(int idComanda) {
+
+    public int marcarItensCozinhaComoEntregues(int idComanda) {
 
         String sql = """
-            UPDATE item_comanda ic
-            INNER JOIN produto p
-                ON p.id_produto = ic.id_produto
-            SET ic.status_item = 'ENTREGUE'
-            WHERE ic.id_comanda = ?
-              AND p.local_preparo = 'COZINHA'
-              AND ic.status_item <> 'CANCELADO'
-              AND ic.status_item <> 'ENTREGUE'
-            """;
+        UPDATE item_comanda ic
+        INNER JOIN produto p
+            ON p.id_produto = ic.id_produto
+        INNER JOIN comanda c
+            ON c.id_comanda = ic.id_comanda
+        SET ic.status_item = 'ENTREGUE'
+        WHERE ic.id_comanda = ?
+          AND c.status = 'ABERTA'
+          AND p.local_preparo = 'COZINHA'
+          AND ic.status_item = 'PENDENTE'
+        """;
 
         try (
                 Connection conn = ConnectionFactory.getConnection();
@@ -289,7 +292,7 @@ public class ItemComandaDAO {
 
             stmt.setInt(1, idComanda);
 
-            stmt.executeUpdate();
+            return stmt.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException(
@@ -298,6 +301,7 @@ public class ItemComandaDAO {
             );
         }
     }
+
 
     public List<ItemComanda> listarPendentesCozinha() {
 

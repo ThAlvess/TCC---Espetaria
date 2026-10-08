@@ -25,6 +25,8 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ComandaPanel extends PadraoJPanel {
 
@@ -276,6 +278,26 @@ public class ComandaPanel extends PadraoJPanel {
         btnFecharMesa.setAlignmentX(Component.LEFT_ALIGNMENT);
         btnFecharMesa.addActionListener(e -> fecharMesa());
         rodape.add(btnFecharMesa);
+        rodape.add(Box.createVerticalStrut(8));
+
+        RoundedButton btnSaiuCozinha =
+                new RoundedButton("PEDIDO SAIU DA COZINHA", 14);
+
+        btnSaiuCozinha.setBackground(COR_VERDE);
+        btnSaiuCozinha.setForeground(Color.WHITE);
+        btnSaiuCozinha.setBorderColor(COR_VERDE);
+        btnSaiuCozinha.setHoverColor(COR_VERDE_ESCURO);
+        btnSaiuCozinha.setFont(new Font("Arial", Font.BOLD, 12));
+
+        btnSaiuCozinha.setMaximumSize(
+                new Dimension(Integer.MAX_VALUE, 42)
+        );
+        btnSaiuCozinha.setPreferredSize(new Dimension(0, 42));
+        btnSaiuCozinha.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        btnSaiuCozinha.addActionListener(e -> pedidoSaiuDaCozinha());
+
+        rodape.add(btnSaiuCozinha);
         // Atendente não pode receber pagamento nem fechar comanda
         if ("Atendente".equalsIgnoreCase(usuarioLogado.getPerfil())) {
             btnPagamento.setVisible(false);
@@ -1046,6 +1068,123 @@ public class ComandaPanel extends PadraoJPanel {
             JOptionPane.showMessageDialog(
                     this,
                     "Erro ao registrar pagamento:\n" + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            e.printStackTrace();
+        }
+    }
+
+
+    private boolean possuiAlteracoesNaoSalvas() {
+
+        if (!itensRemovidos.isEmpty()) {
+            return true;
+        }
+
+        List<ItemComanda> itensSalvos =
+                itemComandaDAO.listarPorComanda(comanda.getIdComanda());
+
+        Map<Integer, ItemComanda> itensPorId = new HashMap<>();
+
+        for (ItemComanda salvo : itensSalvos) {
+            itensPorId.put(salvo.getIdItemComanda(), salvo);
+        }
+
+        int quantidadeItensPersistidos = 0;
+
+        for (ItemTemporario item : itensTemporarios) {
+
+            if (item.idItemComanda == 0) {
+                return true;
+            }
+
+            quantidadeItensPersistidos++;
+
+            ItemComanda salvo = itensPorId.get(item.idItemComanda);
+
+            if (salvo == null) {
+                return true;
+            }
+
+            if (item.quantidade != salvo.getQuantidade()) {
+                return true;
+            }
+
+            String obsTela = item.observacao == null
+                    ? ""
+                    : item.observacao.trim();
+
+            String obsBanco = salvo.getObservacao() == null
+                    ? ""
+                    : salvo.getObservacao().trim();
+
+            if (!obsTela.equals(obsBanco)) {
+                System.out.println(
+                        "DIFERENÇA NA OBSERVAÇÃO - Item: "
+                                + item.idItemComanda
+                );
+                return true;
+            }
+        }
+
+        return quantidadeItensPersistidos != itensPorId.size();
+    }
+
+
+
+    private void pedidoSaiuDaCozinha() {
+
+        if (possuiAlteracoesNaoSalvas()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Existem alterações não salvas. Salve a comanda antes de confirmar a saída da cozinha.",
+                    "Atenção",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        int resposta = JOptionPane.showConfirmDialog(
+                this,
+                "Confirmar que os itens pendentes desta comanda saíram da cozinha?",
+                "Saída da cozinha",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (resposta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try {
+            int itensAtualizados =
+                    itemComandaDAO.marcarItensCozinhaComoEntregues(
+                            comanda.getIdComanda()
+                    );
+
+            if (itensAtualizados == 0) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Esta comanda não possui itens pendentes na cozinha.",
+                        "Cozinha",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+                return;
+            }
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Saída da cozinha confirmada com sucesso!",
+                    "Cozinha",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao confirmar saída da cozinha:\n" + e.getMessage(),
                     "Erro",
                     JOptionPane.ERROR_MESSAGE
             );

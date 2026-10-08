@@ -1,0 +1,285 @@
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f3f4f6;
+    color: #222;
+}
+
+header {
+    background: #202938;
+    color: white;
+    text-align: center;
+    padding: 22px;
+}
+
+header h1 {
+    margin: 0;
+}
+
+header p {
+    margin-bottom: 0;
+}
+
+main {
+    padding: 24px;
+}
+
+#pedidos {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(min(100%, 300px), 1fr)
+    );
+    gap: 20px;
+}
+
+.pedido {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border-top: 6px solid #e67e22;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.pedido h2 {
+    margin-top: 0;
+    color: #c45e12;
+}
+
+.pedido ul {
+    padding-left: 22px;
+}
+
+.pedido li {
+    margin-bottom: 14px;
+    font-size: 18px;
+}
+
+.observacao {
+    font-size: 14px;
+    color: #a33;
+    margin: 5px 0;
+}
+
+
+/* Cabeçalho da Smart TV */
+
+.topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    padding: 20px 32px;
+    text-align: left;
+}
+
+.identidade h1 {
+    font-size: 30px;
+    margin: 0;
+}
+
+.identidade p {
+    font-size: 14px;
+    margin-top: 8px;
+    opacity: 0.8;
+}
+
+.informacoes {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.resumo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 13px;
+}
+
+#total-pedidos {
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.relogio {
+    font-size: 30px;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+}
+
+.conexao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.indicador {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #999;
+    flex-shrink: 0;
+}
+
+.indicador.online {
+    background: #2ecc71;
+}
+
+.indicador.offline {
+    background: #e74c3c;
+}
+
+/* Adaptação para telas menores */
+
+@media (max-width: 900px) {
+    .topo {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .informacoes {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .identidade h1 {
+        font-size: 25px;
+    }
+}
+
+
+/* Diferenciação dos tipos de atendimento */
+
+.pedido-mesa {
+    border-top-color: #e67e22;
+}
+
+.pedido-retirada {
+    border-top-color: #2980b9;
+}
+
+.pedido-delivery {
+    border-top-color: #8e44ad;
+}
+
+.pedido-mesa h2 {
+    color: #c45e12;
+}
+
+.pedido-retirada h2 {
+    color: #2471a3;
+}
+
+.pedido-delivery h2 {
+    color: #7d3c98;
+}
+
+/* Melhor leitura dos pedidos na televisão */
+
+.pedido {
+    min-height: 240px;
+    padding: 24px;
+}
+
+.pedido h2 {
+    font-size: 26px;
+    margin-bottom: 16px;
+}
+
+.pedido ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+.pedido li {
+    font-size: 22px;
+    line-height: 1.4;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.pedido li:last-child {
+    border-bottom: none;
+}
+
+/* Destaque para observações dos produtos */
+
+.observacao {
+    display: block;
+    background: #fff0e8;
+    color: #a33;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    overflow-wrap: anywhere;
+}
+
+
+/* Destaque temporário para pedidos novos */
+
+.pedido-novo {
+    background-color: #fff9e6;
+    box-shadow:
+        0 0 0 4px #f1c40f,
+        0 4px 18px rgba(241, 196, 15, 0.25);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .pedido-novo {
+        animation: destacarPedido 1.5s ease-in-out infinite;
+    }
+
+    @keyframes destacarPedido {
+        0%, 100% {
+            box-shadow: 0 0 0 3px #f1c40f;
+        }
+
+        50% {
+            box-shadow:
+                0 0 0 6px #f39c12,
+                0 4px 20px rgba(243, 156, 18, 0.3);
+        }
+    }
+}
+
+
+/* Cronômetro de espera */
+
+.cronometro {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 26px;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+}
+
+.tempo-verde {
+    background: #e6f5ea;
+    color: #197a3e;
+}
+
+.tempo-amarelo {
+    background: #fff3cd;
+    color: #9a6700;
+}
+
+.tempo-vermelho {
+    background: #fde8e8;
+    color: #b42318;
+}

@@ -8,6 +8,7 @@ public class Comanda {
     private int idComanda;
     private int idMesa;
     private int idUsuario;
+    private String nomeAtendente;
     private String nomeCliente;
     private LocalDateTime dataAbertura;
     private LocalDateTime dataFechamento;
@@ -85,5 +86,12 @@ public class Comanda {
 
     public void setTipoAtendimento(String tipoAtendimento) {
         this.tipoAtendimento = tipoAtendimento;
+    }
+    public String getNomeAtendente() {
+        return nomeAtendente;
+    }
+
+    public void setNomeAtendente(String nomeAtendente) {
+        this.nomeAtendente = nomeAtendente;
     }
 }

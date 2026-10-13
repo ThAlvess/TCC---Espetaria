@@ -12,6 +12,7 @@ public class MainScreen extends javax.swing.JPanel {
     private java.awt.CardLayout cardLayout;
     private final Usuario usuarioLogado;
     private Caixa caixaPanel;
+    private javax.swing.JButton btnLogoff;
     
     /**
      * Creates new form MainScreen
@@ -74,6 +75,16 @@ public class MainScreen extends javax.swing.JPanel {
         btnProdutos = new javax.swing.JButton();
         btnRelatorios = new javax.swing.JButton();
         btnUsuarios = new javax.swing.JButton(); // Renomeado de jButton1 para btnUsuarios
+
+        btnLogoff = new javax.swing.JButton("Sair da conta");
+
+        btnLogoff.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnLogoff.setForeground(new java.awt.Color(170, 50, 40));
+        btnLogoff.setFocusable(false);
+        btnLogoff.putClientProperty("JButton.buttonType", "roundRect");
+
+        btnLogoff.addActionListener(evt -> confirmarLogoff());
+
         CenterPanel = new javax.swing.JPanel() {
             @Override
             protected void paintComponent(java.awt.Graphics g) {
@@ -146,6 +157,8 @@ public class MainScreen extends javax.swing.JPanel {
                 .addGap(25, 25, 25)
                 .addGroup(LateralPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(Logo)
+                        .addComponent(btnLogoff, javax.swing.GroupLayout.PREFERRED_SIZE, 150,
+                                javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnMesas, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnHistorico, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnCaixa, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -158,8 +171,11 @@ public class MainScreen extends javax.swing.JPanel {
             LateralPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(LateralPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(Logo)
-                .addGap(18, 18, 18)
+                    .addComponent(Logo)
+                    .addGap(8, 8, 8)
+                    .addComponent(btnLogoff, javax.swing.GroupLayout.PREFERRED_SIZE, 32,
+                            javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(18, 18, 18)
                 .addComponent(btnMesas, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(btnHistorico, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -434,7 +450,29 @@ public class MainScreen extends javax.swing.JPanel {
         ativarBotao(btnCaixa);
         caixaPanel.atualizarDados();
         cardLayout.show(CenterPanel, "caixa");
-    }                          
+    }
+
+
+    private void confirmarLogoff() {
+        int resposta = JOptionPane.showConfirmDialog(
+                this,
+                "Deseja realmente sair da sua conta?",
+                "Confirmar Logoff",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (resposta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        java.awt.Window janela = javax.swing.SwingUtilities.getWindowAncestor(this);
+
+        if (janela instanceof Login) {
+            ((Login) janela).voltarParaLogin();
+        }
+    }
+
 
     private void btnProdutosActionPerformed(java.awt.event.ActionEvent evt) {
 
@@ -480,6 +518,9 @@ public class MainScreen extends javax.swing.JPanel {
             );
             return;
         }
+
+
+
 
     ativarBotao(btnUsuarios);
     cardLayout.show(CenterPanel, "usuarios");

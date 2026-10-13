@@ -13,3 +13,15 @@ SELECT
     NOW() AS horario_mysql,
     @@session.time_zone AS fuso_sessao,
     @@system_time_zone AS fuso_sistema;
+
+
+ALTER TABLE caixa
+    ADD COLUMN valor_contado DECIMAL(10,2) NULL,
+    ADD COLUMN diferenca_caixa DECIMAL(10,2) NULL;
+
+ALTER TABLE usuario
+    ADD COLUMN troca_senha_obrigatoria BOOLEAN NOT NULL DEFAULT FALSE;
+
+UPDATE usuario
+SET troca_senha_obrigatoria = TRUE
+WHERE login = 'nome do login no bd';

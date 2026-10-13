@@ -3,7 +3,6 @@ package br.com.trevizan.espetinhos.view;
 import br.com.trevizan.espetinhos.dao.UsuarioDAO;
 import br.com.trevizan.espetinhos.model.Usuario;
 import br.com.trevizan.espetinhos.util.SessaoUsuario;
-import br.com.trevizan.espetinhos.util.SessaoUsuario;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -14,6 +13,94 @@ import javax.swing.JOptionPane;
  */
 public class Login extends javax.swing.JFrame {
 
+
+    private boolean senhaVisivel = false;
+    private char caractereSenhaOriginal;
+
+    private void configurarBotaoSenha() {
+        caractereSenhaOriginal = jPasswordField1.getEchoChar();
+
+        javax.swing.JButton btnOlho = new javax.swing.JButton() {
+            @Override
+            protected void paintComponent(java.awt.Graphics g) {
+                super.paintComponent(g);
+
+                java.awt.Graphics2D g2 =
+                        (java.awt.Graphics2D) g.create();
+
+                g2.setRenderingHint(
+                        java.awt.RenderingHints.KEY_ANTIALIASING,
+                        java.awt.RenderingHints.VALUE_ANTIALIAS_ON
+                );
+
+                g2.setColor(new java.awt.Color(90, 90, 90));
+                g2.setStroke(new java.awt.BasicStroke(1.8f));
+
+                int x = (getWidth() - 22) / 2;
+                int y = (getHeight() - 14) / 2;
+
+                // Contorno do olho
+                java.awt.geom.Path2D olho =
+                        new java.awt.geom.Path2D.Double();
+
+                olho.moveTo(x, y + 7);
+                olho.quadTo(x + 11, y - 5, x + 22, y + 7);
+                olho.quadTo(x + 11, y + 19, x, y + 7);
+
+                g2.draw(olho);
+
+                // Pupila
+                g2.fillOval(x + 8, y + 4, 6, 6);
+
+                // Risco quando a senha estiver oculta
+                if (!senhaVisivel) {
+                    g2.setColor(new java.awt.Color(180, 65, 55));
+                    g2.drawLine(x + 2, y + 14, x + 20, y);
+                }
+
+                g2.dispose();
+            }
+        };
+
+        btnOlho.setPreferredSize(new java.awt.Dimension(38, 28));
+        btnOlho.setBorderPainted(false);
+        btnOlho.setContentAreaFilled(false);
+        btnOlho.setFocusPainted(false);
+        btnOlho.setFocusable(false);
+        btnOlho.setCursor(
+                new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR)
+        );
+
+        btnOlho.setToolTipText("Mostrar senha");
+
+        btnOlho.addActionListener(e -> {
+            senhaVisivel = !senhaVisivel;
+
+            jPasswordField1.setEchoChar(
+                    senhaVisivel ? (char) 0 : caractereSenhaOriginal
+            );
+
+            btnOlho.setToolTipText(
+                    senhaVisivel ? "Ocultar senha" : "Mostrar senha"
+            );
+
+            btnOlho.repaint();
+        });
+
+        // Reserva espaço para o texto não ficar atrás do botão
+        jPasswordField1.setMargin(
+                new java.awt.Insets(2, 6, 2, 42)
+        );
+
+        // Posiciona o botão dentro do campo de senha
+        jPasswordField1.setLayout(new java.awt.BorderLayout());
+        jPasswordField1.add(
+                btnOlho,
+                java.awt.BorderLayout.EAST
+        );
+    }
+
+
     private static final java.util.logging.Logger logger =
             java.util.logging.Logger.getLogger(Login.class.getName());
 
@@ -23,6 +110,7 @@ public class Login extends javax.swing.JFrame {
     public Login() {
 
         initComponents();
+        configurarBotaoSenha();
 
         // Permite pressionar ENTER para executar o login
         getRootPane().setDefaultButton(jButton2);
@@ -47,7 +135,6 @@ public class Login extends javax.swing.JFrame {
         jTextField1 = new javax.swing.JTextField();
         jLabelSenha = new javax.swing.JLabel();
         jPasswordField1 = new javax.swing.JPasswordField();
-        jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         Logo = new javax.swing.JLabel();
 
@@ -77,9 +164,8 @@ public class Login extends javax.swing.JFrame {
 
         jPasswordField1.setBackground(new java.awt.Color(242, 242, 242));
 
-        jButton1.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
-        jButton1.setText("Esqueci a senha");
-        jButton1.addActionListener(this::jButton1ActionPerformed);
+
+
 
         jButton2.setBackground(new java.awt.Color(0, 102, 0));
         jButton2.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
@@ -89,51 +175,56 @@ public class Login extends javax.swing.JFrame {
 
         javax.swing.GroupLayout PainelCartaoLayout = new javax.swing.GroupLayout(PainelCartao);
         PainelCartao.setLayout(PainelCartaoLayout);
+
         PainelCartaoLayout.setHorizontalGroup(
-            PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(PainelCartaoLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addGap(177, 177, 177))
-            .addGroup(PainelCartaoLayout.createSequentialGroup()
-                .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(PainelCartaoLayout.createSequentialGroup()
-                        .addGap(66, 66, 66)
-                        .addComponent(jLabel2))
-                    .addGroup(PainelCartaoLayout.createSequentialGroup()
-                        .addGap(46, 46, 46)
-                        .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jLabelUsuário)
-                            .addComponent(jTextField1)
-                            .addComponent(jLabelSenha)
-                            .addComponent(jPasswordField1)
-                            .addGroup(PainelCartaoLayout.createSequentialGroup()
-                                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
-                                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addContainerGap(34, Short.MAX_VALUE))
+                PainelCartaoLayout.createParallelGroup(
+                                javax.swing.GroupLayout.Alignment.CENTER
+                        )
+                        .addGroup(PainelCartaoLayout.createSequentialGroup()
+                                .addGap(46)
+                                .addGroup(PainelCartaoLayout.createParallelGroup(
+                                                        javax.swing.GroupLayout.Alignment.LEADING
+                                                )
+                                                .addComponent(jLabelUsuário)
+                                                .addComponent(jTextField1, 357, 357, 357)
+                                                .addComponent(jLabelSenha)
+                                                .addComponent(jPasswordField1, 357, 357, 357)
+                                )
+                                .addGap(46)
+                        )
+                        .addComponent(jLabel1)
+                        .addComponent(jLabel2)
+                        .addComponent(jButton2, 220, 220, 220)
         );
+
         PainelCartaoLayout.setVerticalGroup(
-            PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(PainelCartaoLayout.createSequentialGroup()
-                .addGap(32, 32, 32)
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel2)
-                .addGap(24, 24, 24)
-                .addComponent(jLabelUsuário)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(jLabelSenha)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPasswordField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(29, 29, 29)
-                .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(0, 70, Short.MAX_VALUE))
+                PainelCartaoLayout.createSequentialGroup()
+                        .addGap(28)
+                        .addComponent(jLabel1)
+                        .addGap(8)
+                        .addComponent(jLabel2)
+                        .addGap(24)
+                        .addComponent(jLabelUsuário)
+                        .addGap(6)
+                        .addComponent(
+                                jTextField1,
+                                34, 34, 34
+                        )
+                        .addGap(18)
+                        .addComponent(jLabelSenha)
+                        .addGap(6)
+                        .addComponent(
+                                jPasswordField1,
+                                34, 34, 34
+                        )
+                        .addGap(24)
+                        .addComponent(
+                                jButton2,
+                                42, 42, 42
+                        )
+                        .addGap(25)
         );
+
 
         Logo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         Logo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/TrevizanPequeno.png"))); // NOI18N
@@ -175,18 +266,6 @@ public class Login extends javax.swing.JFrame {
     }//GEN-LAST:event_jTextField1ActionPerformed
 
 
-    private void jButton1ActionPerformed(
-            java.awt.event.ActionEvent evt
-    ) {//GEN-FIRST:event_jButton1ActionPerformed
-
-        JOptionPane.showMessageDialog(
-                this,
-                "Funcionalidade de recuperação de senha ainda não implementada.",
-                "Esqueci a senha",
-                JOptionPane.INFORMATION_MESSAGE
-        );
-
-    }//GEN-LAST:event_jButton1ActionPerformed
 
 
     private void jButton2ActionPerformed(
@@ -224,20 +303,37 @@ public class Login extends javax.swing.JFrame {
                             senha
                     );
 
+
             if (usuario != null) {
+
+                // Verifica se o usuário precisa trocar a senha.
+                if (usuario.isTrocaSenhaObrigatoria()) {
+
+                    TrocaSenhaObrigatoriaDialog dialog =
+                            new TrocaSenhaObrigatoriaDialog(this, usuario);
+
+                    dialog.setVisible(true);
+
+                    // Se fechar a janela sem alterar a senha,
+                    // o acesso ao sistema permanece bloqueado.
+                    if (!dialog.isSenhaAlterada()) {
+                        jPasswordField1.setText("");
+                        return;
+                    }
+                }
+
+                // A sessão só começa depois da troca obrigatória.
+                SessaoUsuario.login(usuario);
 
                 JOptionPane.showMessageDialog(
                         this,
-                        "Bem-vindo, "
-                                + usuario.getNome()
-                                + "!"
+                        "Bem-vindo, " + usuario.getNome() + "!"
                 );
-
-                SessaoUsuario.login(usuario);
 
                 abrirMainScreen(usuario);
 
             } else {
+
 
                 JOptionPane.showMessageDialog(
                         this,
@@ -293,6 +389,25 @@ public class Login extends javax.swing.JFrame {
     }
 
 
+
+    public void voltarParaLogin() {
+
+        // Encerra a sessão atual
+        SessaoUsuario.logout();
+
+        // Cria uma nova janela de login
+        Login novoLogin = new Login();
+
+        // Exibe a nova janela
+        novoLogin.setVisible(true);
+
+        // Fecha a janela anterior
+        dispose();
+    }
+
+
+
+
     /**
      * @param args the command line arguments
      */
@@ -316,7 +431,6 @@ public class Login extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel Logo;
     private javax.swing.JPanel PainelCartao;
-    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

@@ -429,7 +429,7 @@ public class UsuarioPanel extends javax.swing.JPanel {
         // Pega o nome e a senha real direto do banco para garantir que venham corretos
         Usuario usuarioBanco = usuarioDAO.buscarPorId(id);
         String nomeAtual = usuarioBanco != null && usuarioBanco.getNome() != null ? usuarioBanco.getNome() : "";
-        String senhaAtual = usuarioBanco != null ? usuarioBanco.getSenha() : "";
+
 
         // Cria a nova janela menor (Dialog) com os campos preenchidos
         JDialog dialogEdicao = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Editar Usuário", true);
@@ -476,7 +476,8 @@ public class UsuarioPanel extends javax.swing.JPanel {
 
         JLabel lblESenha = new JLabel("Senha:");
         lblESenha.setBounds(25, 140, 80, 25);
-        final JPasswordField editSenha = new JPasswordField(senhaAtual);
+        final JPasswordField editSenha = new JPasswordField();
+        editSenha.setToolTipText("Deixe em branco para manter a senha atual.");
         editSenha.setBounds(95, 140, 280, 28);
 
         JLabel lblEPerfil = new JLabel("Perfil:");
@@ -511,12 +512,12 @@ public class UsuarioPanel extends javax.swing.JPanel {
             String novoPerfil = (String) editPerfil.getSelectedItem();
             boolean novoStatus = "Ativo".equalsIgnoreCase((String) editStatus.getSelectedItem());
 
-            if (novoNome.isEmpty() || novoLogin.isEmpty() || novaSenha.isEmpty()) {
+            if (novoNome.isEmpty() || novoLogin.isEmpty()) {
                 JOptionPane.showMessageDialog(dialogEdicao, "Preencha todos os campos obrigatórios!", "Aviso", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            if (novaSenha.length() < 6) {
+            if (!novaSenha.isEmpty() && novaSenha.length() < 6) {
                 JOptionPane.showMessageDialog(dialogEdicao, "A senha deve ter no mínimo 6 caracteres!", "Aviso", JOptionPane.WARNING_MESSAGE);
                 return;
             }

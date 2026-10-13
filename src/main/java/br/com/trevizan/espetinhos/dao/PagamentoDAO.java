@@ -39,14 +39,31 @@ public class PagamentoDAO {
             // 1. Verifica o caixa aberto
             // ----------------------------------------
 
-            Caixa caixaAberto =
-                    caixaDAO.buscarCaixaAberto();
 
-            if (caixaAberto == null) {
-                throw new RuntimeException(
-                        "Não existe caixa aberto para registrar o pagamento."
-                );
+            int idCaixaAberto;
+
+            String sqlCaixa = """
+        SELECT id_caixa
+        FROM caixa
+        WHERE status = 'ABERTO'
+        ORDER BY data_hora_abertura DESC, id_caixa DESC
+        LIMIT 1
+        FOR UPDATE
+        """;
+
+            try (PreparedStatement stmtCaixa =
+                         conn.prepareStatement(sqlCaixa);
+                 ResultSet rsCaixa = stmtCaixa.executeQuery()) {
+
+                if (!rsCaixa.next()) {
+                    throw new IllegalStateException(
+                            "Não existe caixa aberto para registrar o pagamento."
+                    );
+                }
+
+                idCaixaAberto = rsCaixa.getInt("id_caixa");
             }
+
 
             // ----------------------------------------
             // 2. Registra o pagamento
@@ -100,7 +117,7 @@ public class PagamentoDAO {
 
             movimentacaoCaixaDAO.registrarEntradaPagamento(
                     conn,
-                    caixaAberto.getIdCaixa(),
+                    idCaixaAberto,
                     idGerado,
                     pagamento.getIdComanda(),
                     pagamento.getValor()

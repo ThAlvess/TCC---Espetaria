@@ -84,41 +84,143 @@ public class MovimentacaoCaixaDAO {
         }
     }
 
+
     public void registrarSaida(
             int idCaixa,
             String descricao,
             BigDecimal valor
     ) {
+        if (valor == null || valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "O valor da sangria deve ser maior que zero."
+            );
+        }
 
-        String sql = """
-            INSERT INTO movimentacao_caixa
-                (id_caixa, id_pagamento, tipo, descricao, valor)
-            VALUES
-                (?, NULL, 'SAIDA', ?, ?)
-            """;
+        String sqlCaixa = """
+        SELECT valor_inicial, status
+        FROM caixa
+        WHERE id_caixa = ?
+        FOR UPDATE
+        """;
 
-        try (
-                Connection connection =
-                        ConnectionFactory.getConnection();
+        String sqlDinheiro = """
+        SELECT COALESCE(SUM(mc.valor), 0) AS total
+        FROM movimentacao_caixa mc
+        INNER JOIN pagamento p
+            ON p.id_pagamento = mc.id_pagamento
+        WHERE mc.id_caixa = ?
+          AND mc.tipo = 'ENTRADA'
+          AND UPPER(TRIM(p.forma_pagamento)) = 'DINHEIRO'
+        """;
 
-                PreparedStatement statement =
-                        connection.prepareStatement(sql)
-        ) {
+        String sqlSangrias = """
+        SELECT COALESCE(SUM(valor), 0) AS total
+        FROM movimentacao_caixa
+        WHERE id_caixa = ?
+          AND tipo = 'SAIDA'
+        """;
 
-            statement.setInt(1, idCaixa);
-            statement.setString(2, descricao);
-            statement.setBigDecimal(3, valor);
+        String sqlInserir = """
+        INSERT INTO movimentacao_caixa
+            (id_caixa, id_pagamento, tipo, descricao, valor)
+        VALUES (?, NULL, 'SAIDA', ?, ?)
+        """;
 
-            statement.executeUpdate();
+        try (Connection connection = ConnectionFactory.getConnection()) {
+
+            connection.setAutoCommit(false);
+
+            try {
+                BigDecimal valorInicial;
+                String status;
+
+                // Bloqueia o registro do caixa durante a operação.
+                try (PreparedStatement ps =
+                             connection.prepareStatement(sqlCaixa)) {
+
+                    ps.setInt(1, idCaixa);
+
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            throw new IllegalStateException(
+                                    "Caixa não encontrado."
+                            );
+                        }
+
+                        valorInicial = rs.getBigDecimal("valor_inicial");
+                        status = rs.getString("status");
+                    }
+                }
+
+                if (!"ABERTO".equalsIgnoreCase(status)) {
+                    throw new IllegalStateException(
+                            "Não é possível registrar sangria em caixa fechado."
+                    );
+                }
+
+                BigDecimal dinheiroRecebido = BigDecimal.ZERO;
+
+                try (PreparedStatement ps =
+                             connection.prepareStatement(sqlDinheiro)) {
+
+                    ps.setInt(1, idCaixa);
+
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            dinheiroRecebido = rs.getBigDecimal("total");
+                        }
+                    }
+                }
+
+                BigDecimal sangriasAnteriores = BigDecimal.ZERO;
+
+                try (PreparedStatement ps =
+                             connection.prepareStatement(sqlSangrias)) {
+
+                    ps.setInt(1, idCaixa);
+
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            sangriasAnteriores = rs.getBigDecimal("total");
+                        }
+                    }
+                }
+
+                BigDecimal saldoDisponivel = valorInicial
+                        .add(dinheiroRecebido)
+                        .subtract(sangriasAnteriores);
+
+                if (valor.compareTo(saldoDisponivel) > 0) {
+                    throw new IllegalArgumentException(
+                            "Saldo insuficiente para sangria. Disponível: R$ "
+                                    + saldoDisponivel.toPlainString()
+                    );
+                }
+
+                try (PreparedStatement ps =
+                             connection.prepareStatement(sqlInserir)) {
+
+                    ps.setInt(1, idCaixa);
+                    ps.setString(2, descricao);
+                    ps.setBigDecimal(3, valor);
+                    ps.executeUpdate();
+                }
+
+                connection.commit();
+
+            } catch (SQLException | RuntimeException e) {
+                connection.rollback();
+                throw e;
+            }
 
         } catch (SQLException e) {
-
             throw new RuntimeException(
                     "Erro ao registrar sangria do caixa.",
                     e
             );
         }
     }
+
 
     public java.util.List<MovimentacaoResumo> listarPorCaixa(
             int idCaixa

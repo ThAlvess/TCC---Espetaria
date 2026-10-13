@@ -166,9 +166,40 @@ public class Caixa extends javax.swing.JPanel {
         btnVerHistorico.setFocusPainted(false);
         btnVerHistorico.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+
         btnVerHistorico.addActionListener(e -> mostrarHistorico());
 
-        painelIdentificacao.add(btnVerHistorico);
+// Botão de resumo financeiro
+        JButton btnResumoFinanceiro = new JButton("Resumo financeiro");
+        btnResumoFinanceiro.setFont(
+                new Font("SansSerif", Font.BOLD, 12)
+        );
+        btnResumoFinanceiro.setFocusPainted(false);
+
+        btnResumoFinanceiro.addActionListener(
+                e -> mostrarResumoFinanceiro()
+        );
+
+// Coloca os dois botões lado a lado
+        JPanel painelBotoesResumo = new JPanel(
+                new FlowLayout(FlowLayout.LEFT, 10, 0)
+        );
+
+        painelBotoesResumo.setMaximumSize(
+                new Dimension(Integer.MAX_VALUE, 35)
+        );
+        painelBotoesResumo.setPreferredSize(
+                new Dimension(400, 35)
+        );
+
+        painelBotoesResumo.setOpaque(false);
+        painelBotoesResumo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        painelBotoesResumo.add(btnVerHistorico);
+        painelBotoesResumo.add(btnResumoFinanceiro);
+
+        painelIdentificacao.add(painelBotoesResumo);
+
 
         // Linha de botões
         JPanel painelBotoes = new JPanel(new GridLayout(1, 3, 15, 0));
@@ -986,6 +1017,45 @@ public class Caixa extends javax.swing.JPanel {
 
         try {
 
+
+
+            java.util.Map<String, BigDecimal> totaisPorForma =
+                    pagamentoDAO.listarTotaisPorFormaDoCaixa(
+                            caixaAtual.getIdCaixa()
+                    );
+
+            BigDecimal totalEntradas =
+                    totaisPorForma.getOrDefault(
+                            "DINHEIRO",
+                            BigDecimal.ZERO
+                    );
+
+
+            BigDecimal totalSangrias =
+                    caixaDAO.calcularSangrias(caixaAtual.getIdCaixa());
+
+            BigDecimal saldoDisponivel =
+                    caixaAtual.getValorInicial()
+                            .add(totalEntradas)
+                            .subtract(totalSangrias);
+
+            if (valor.compareTo(saldoDisponivel) > 0) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Saldo insuficiente para realizar a sangria!\n\n"
+                                + "Saldo registrado: "
+                                + formatarMoeda(saldoDisponivel)
+                                + "\nValor solicitado: "
+                                + formatarMoeda(valor),
+                        "Sangria não permitida",
+                        JOptionPane.WARNING_MESSAGE
+                );
+
+                return;
+            }
+
+
             movimentacaoCaixaDAO.registrarSaida(
                     caixaAtual.getIdCaixa(),
                     motivo,
@@ -1697,35 +1767,119 @@ public class Caixa extends javax.swing.JPanel {
             }
         }
 
-        BigDecimal totalVendas = caixaDAO.calcularTotalVendas(caixaAtual.getIdCaixa());
-        BigDecimal sangrias = caixaDAO.calcularSangrias(caixaAtual.getIdCaixa());
-        BigDecimal valorFinal = caixaAtual.getValorInicial()
-                .add(totalVendas)
-                .subtract(sangrias);
-
-        int confirmacao = JOptionPane.showConfirmDialog(
-                this,
-                "Fechar o caixa com os seguintes valores?\n\n"
-                        + "Valor inicial: R$ " + caixaAtual.getValorInicial() + "\n"
-                        + "Total de vendas: R$ " + totalVendas + "\n"
-                        + "Sangrias: R$ " + sangrias + "\n"
-                        + "Valor final: R$ " + valorFinal,
-                "Confirmar fechamento",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-        );
-
-        if (confirmacao != JOptionPane.YES_OPTION) {
-            return;
-        }
 
         try {
-            caixaDAO.fecharCaixa(caixaAtual.getIdCaixa(), valorFinal);
+            int idCaixa = caixaAtual.getIdCaixa();
+
+            // Faturamento total: dinheiro, PIX e cartões
+            BigDecimal totalVendas =
+                    caixaDAO.calcularTotalVendas(idCaixa);
+
+            // Somente recebimentos em dinheiro
+            java.util.Map<String, BigDecimal> totaisPorForma =
+                    pagamentoDAO.listarTotaisPorFormaDoCaixa(idCaixa);
+
+            BigDecimal totalDinheiro =
+                    totaisPorForma.getOrDefault(
+                            "DINHEIRO",
+                            BigDecimal.ZERO
+                    );
+
+            BigDecimal sangrias =
+                    caixaDAO.calcularSangrias(idCaixa);
+
+            // Dinheiro físico esperado na gaveta
+            BigDecimal valorEsperado =
+                    caixaAtual.getValorInicial()
+                            .add(totalDinheiro)
+                            .subtract(sangrias);
+
+            String entrada = JOptionPane.showInputDialog(
+                    this,
+                    "CONFERÊNCIA DO CAIXA\n\n"
+                            + "Valor inicial: "
+                            + formatarMoeda(caixaAtual.getValorInicial())
+                            + "\nFaturamento total: "
+                            + formatarMoeda(totalVendas)
+                            + "\nRecebido em dinheiro: "
+                            + formatarMoeda(totalDinheiro)
+                            + "\nSangrias: "
+                            + formatarMoeda(sangrias)
+                            + "\n\nSaldo esperado na gaveta: "
+                            + formatarMoeda(valorEsperado)
+                            + "\n\nInforme o dinheiro contado (R$):",
+                    "Conferência de fechamento",
+                    JOptionPane.QUESTION_MESSAGE
+            );
+
+            if (entrada == null) {
+                return;
+            }
+
+            String textoValor = entrada.trim();
+
+            if (!textoValor.matches(
+                    "(?:\\d+(?:,\\d{1,2})?|\\d{1,3}(?:\\.\\d{3})+(?:,\\d{1,2})?)"
+            )) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Informe um valor válido. Exemplo: 150,00",
+                        "Valor inválido",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            BigDecimal valorContado = new BigDecimal(
+                    textoValor.replace(".", "").replace(",", ".")
+            );
+
+            BigDecimal diferenca =
+                    valorContado.subtract(valorEsperado);
+
+            String resultado;
+
+            if (diferenca.compareTo(BigDecimal.ZERO) == 0) {
+                resultado = "CAIXA CORRETO";
+            } else if (diferenca.compareTo(BigDecimal.ZERO) < 0) {
+                resultado = "FALTA DE DINHEIRO";
+            } else {
+                resultado = "SOBRA DE DINHEIRO";
+            }
+
+            int confirmacao = JOptionPane.showConfirmDialog(
+                    this,
+                    "CONFIRMAR FECHAMENTO\n\n"
+                            + "Saldo esperado: "
+                            + formatarMoeda(valorEsperado)
+                            + "\nValor contado: "
+                            + formatarMoeda(valorContado)
+                            + "\n\nResultado: " + resultado
+                            + "\nDiferença: "
+                            + formatarMoeda(diferenca)
+                            + "\n\nDeseja realmente fechar o caixa?",
+                    "Confirmar fechamento",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE
+            );
+
+            if (confirmacao != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            caixaDAO.fecharCaixa(
+                    idCaixa,
+                    valorEsperado,
+                    valorContado
+            );
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Caixa fechado com sucesso!",
-                    "Sucesso",
+                    "Caixa fechado com sucesso!\n\n"
+                            + "Resultado: " + resultado
+                            + "\nDiferença: "
+                            + formatarMoeda(diferenca),
+                    "Fechamento concluído",
                     JOptionPane.INFORMATION_MESSAGE
             );
 
@@ -1734,11 +1888,40 @@ public class Caixa extends javax.swing.JPanel {
         } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Erro ao fechar o caixa no banco de dados.",
+                    "Erro ao realizar o fechamento do caixa.\n"
+                            + e.getMessage(),
                     "Erro",
                     JOptionPane.ERROR_MESSAGE
             );
             e.printStackTrace();
         }
     }
+
+
+    private void mostrarResumoFinanceiro() {
+        try {
+            BigDecimal totalValoresFinais =
+                    caixaDAO.calcularTotalValoresFinais();
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "RESUMO FINANCEIRO\n\n"
+                            + "Total dos valores finais dos caixas fechados:\n"
+                            + formatarMoeda(totalValoresFinais),
+                    "Resumo financeiro",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Não foi possível carregar o resumo financeiro.\n"
+                            + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+
 }

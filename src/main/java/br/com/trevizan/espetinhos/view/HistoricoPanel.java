@@ -17,6 +17,7 @@ public class HistoricoPanel extends br.com.trevizan.espetinhos.PadraoJPanel {
     private javax.swing.table.DefaultTableModel modeloTabela;
     private java.util.List<Comanda> comandas;
     private ComandaDAO comandaDAO;
+    private javax.swing.table.TableRowSorter<DefaultTableModel> ordenadorTabela;
     
     public HistoricoPanel() {
         initComponents();
@@ -87,14 +88,30 @@ private void preencherTabela(java.util.List<Comanda> lista) {
         // Busca os itens concatenados direto do banco de dados
         String itensConsumidos = comandaDAO.obterItensFormatados(comanda.getIdComanda());
 
+
+        String tipoAtendimento = comanda.getTipoAtendimento();
+
+        String identificacaoAtendimento;
+
+        if ("RETIRADA".equalsIgnoreCase(tipoAtendimento)) {
+            identificacaoAtendimento = "Retirada";
+        } else if ("DELIVERY".equalsIgnoreCase(tipoAtendimento)) {
+            identificacaoAtendimento = "Delivery";
+        } else {
+            identificacaoAtendimento = "Mesa " + comanda.getIdMesa();
+        }
+
         modeloTabela.addRow(new Object[]{
-            comanda.getIdComanda(),
-            "Mesa " + comanda.getIdMesa(),
-            dataFechamento,
-            "Cód. " + comanda.getIdUsuario(),
-            itensConsumidos,
-            moeda.format(comanda.getValorTotal())
+                comanda.getIdComanda(),
+                identificacaoAtendimento,
+                dataFechamento,
+                comanda.getNomeAtendente() != null
+                        ? comanda.getNomeAtendente()
+                        : "Usuário não encontrado",
+                itensConsumidos,
+                moeda.format(comanda.getValorTotal())
         });
+
     }
 }
 /*
@@ -102,33 +119,75 @@ private void preencherTabela(java.util.List<Comanda> lista) {
  * PESQUISA
  * ==========================
  */
-private void configurarPesquisa() {
-    txtPesquisar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-        @Override
-        public void insertUpdate(javax.swing.event.DocumentEvent e) { pesquisar(); }
-        
-        @Override
-        public void removeUpdate(javax.swing.event.DocumentEvent e) { pesquisar(); }
-        
-        @Override
-        public void changedUpdate(javax.swing.event.DocumentEvent e) { pesquisar(); }
-    });
-}
 
-private void pesquisar() {
-    String texto = txtPesquisar.getText().trim();
-    javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> sorter = 
-        new javax.swing.table.TableRowSorter<>(modeloTabela);
-        
-    tabelaHistorico.setRowSorter(sorter);
+    private void configurarPesquisa() {
+        ordenadorTabela =
+                new javax.swing.table.TableRowSorter<>(modeloTabela);
 
-    if (texto.isEmpty()) {
-        sorter.setRowFilter(null);
-    } else {
-        // (?i) torna a pesquisa case-insensitive (ignora maiúsculas/minúsculas)
-        sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + texto));
+        tabelaHistorico.setRowSorter(ordenadorTabela);
+
+        txtPesquisar.getDocument().addDocumentListener(
+                new javax.swing.event.DocumentListener() {
+                    @Override
+                    public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                        pesquisar();
+                    }
+
+                    @Override
+                    public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                        pesquisar();
+                    }
+
+                    @Override
+                    public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                        pesquisar();
+                    }
+                }
+        );
     }
-}
+
+
+
+    private void pesquisar() {
+        String texto = normalizarTexto(txtPesquisar.getText().trim());
+
+        if (texto.isEmpty()) {
+            ordenadorTabela.setRowFilter(null);
+            return;
+        }
+
+        ordenadorTabela.setRowFilter(
+                new javax.swing.RowFilter<DefaultTableModel, Integer>() {
+                    @Override
+                    public boolean include(
+                            Entry<? extends DefaultTableModel, ? extends Integer> entrada) {
+
+                        for (int coluna = 0; coluna < entrada.getValueCount(); coluna++) {
+                            Object valor = entrada.getValue(coluna);
+
+                            if (valor != null &&
+                                    normalizarTexto(valor.toString()).contains(texto)) {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    }
+                }
+        );
+    }
+
+    private String normalizarTexto(String texto) {
+        String normalizado = java.text.Normalizer.normalize(
+                texto,
+                java.text.Normalizer.Form.NFD
+        );
+
+        return normalizado
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(java.util.Locale.ROOT);
+    }
+
     
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -195,7 +254,10 @@ private void pesquisar() {
                 .addGap(18, 18, 18)
                 .addComponent(txtPesquisar, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 900, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane1,
+                            300,
+                            javax.swing.GroupLayout.DEFAULT_SIZE,
+                            Short.MAX_VALUE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -242,5 +304,10 @@ private void estilizarTabela() {
     // 4. Estilo do fundo e borda do painel de rolagem
     jScrollPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(150, 150, 150)));
     jScrollPane1.getViewport().setBackground(CINZA_TABELA);
+    jScrollPane1.setVerticalScrollBarPolicy(
+            javax.swing.JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+    );
+
+    jScrollPane1.getVerticalScrollBar().setUnitIncrement(20);
 }
 }

@@ -432,21 +432,26 @@ public class ComandaDAO {
      * para alimentar a tabela de Histórico.
      */
     public java.util.List<Comanda> listarFechadas() {
+
         String sql = """
-                SELECT
-                    id_comanda,
-                    id_mesa,
-                    id_usuario,
-                    tipo_atendimento,
-                    nome_cliente,
-                    data_abertura,
-                    data_fechamento,
-                    status,
-                    valor_total
-                FROM comanda
-                WHERE status IN ('FECHADA', 'CANCELADA')
-                ORDER BY data_fechamento DESC
-                """;
+        SELECT
+            c.id_comanda,
+            c.id_mesa,
+            c.id_usuario,
+            c.tipo_atendimento,
+            c.nome_cliente,
+            c.data_abertura,
+            c.data_fechamento,
+            c.status,
+            c.valor_total,
+            u.nome AS nome_atendente
+        FROM comanda c
+        LEFT JOIN usuario u
+            ON u.id_usuario = c.id_usuario
+        WHERE c.status IN ('FECHADA', 'CANCELADA')
+        ORDER BY c.data_fechamento DESC
+        """;
+
 
         java.util.List<Comanda> lista = new java.util.ArrayList<>();
 
@@ -456,7 +461,9 @@ public class ComandaDAO {
                 ResultSet rs = stmt.executeQuery()
         ) {
             while (rs.next()) {
-                lista.add(criarComanda(rs));
+                Comanda comanda = criarComanda(rs);
+                comanda.setNomeAtendente(rs.getString("nome_atendente"));
+                lista.add(comanda);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao listar histórico de comandas.", e);

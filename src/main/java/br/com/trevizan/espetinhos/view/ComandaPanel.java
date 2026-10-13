@@ -17,6 +17,9 @@ import br.com.trevizan.espetinhos.model.Usuario;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.text.Normalizer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -68,6 +71,8 @@ public class ComandaPanel extends PadraoJPanel {
     private final JLabel lblRestante;
 
     private JButton botaoCategoriaSelecionada;
+    private final JTextField campoPesquisa = new JTextField();
+    private Categoria categoriaAtual;
 
     private final NumberFormat moeda =
             NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
@@ -342,7 +347,37 @@ public class ComandaPanel extends PadraoJPanel {
 
         painelCategorias = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         painelCategorias.setOpaque(false);
-        topoProdutos.add(painelCategorias, BorderLayout.CENTER);
+
+        // Mantém todas as categorias acessíveis mesmo em telas mais estreitas.
+        JScrollPane scrollCategorias = new JScrollPane(painelCategorias,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollCategorias.setBorder(null);
+        scrollCategorias.setOpaque(false);
+        scrollCategorias.getViewport().setOpaque(false);
+        scrollCategorias.getHorizontalScrollBar().setUnitIncrement(24);
+        scrollCategorias.setPreferredSize(new Dimension(0, 54));
+        topoProdutos.add(scrollCategorias, BorderLayout.CENTER);
+
+        campoPesquisa.setFont(new Font("Arial", Font.PLAIN, 14));
+        campoPesquisa.setToolTipText("Pesquise pelo nome do produto");
+        campoPesquisa.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COR_BORDA),
+                new EmptyBorder(9, 12, 9, 12)
+        ));
+        campoPesquisa.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { atualizarPesquisa(); }
+            @Override public void removeUpdate(DocumentEvent e) { atualizarPesquisa(); }
+            @Override public void changedUpdate(DocumentEvent e) { atualizarPesquisa(); }
+        });
+        JPanel linhaPesquisa = new JPanel(new BorderLayout(10, 0));
+        linhaPesquisa.setOpaque(false);
+        JLabel rotuloPesquisa = new JLabel("PESQUISAR:");
+        rotuloPesquisa.setFont(new Font("Arial", Font.BOLD, 11));
+        rotuloPesquisa.setForeground(COR_TEXTO_SECUNDARIO);
+        linhaPesquisa.add(rotuloPesquisa, BorderLayout.WEST);
+        linhaPesquisa.add(campoPesquisa, BorderLayout.CENTER);
+        topoProdutos.add(linhaPesquisa, BorderLayout.SOUTH);
         ladoDireito.add(topoProdutos, BorderLayout.NORTH);
 
         RoundedPanel areaProdutos = new RoundedPanel(22, new Color(246, 242, 239));
@@ -508,8 +543,20 @@ public class ComandaPanel extends PadraoJPanel {
     // ================================================================
     // PRODUTOS
     // ================================================================
+    private void atualizarPesquisa() {
+        carregarProdutos(categoriaAtual);
+    }
+
+    private String normalizarPesquisa(String valor) {
+        String normalizado = Normalizer.normalize(valor, Normalizer.Form.NFD);
+        return normalizado.replaceAll("\\p{M}+", "").toLowerCase(Locale.ROOT);
+    }
+
     private void carregarProdutos(Categoria categoria) {
+        categoriaAtual = categoria;
         painelProdutos.removeAll();
+        String pesquisa = normalizarPesquisa(campoPesquisa.getText().trim());
+        int encontrados = 0;
 
         List<Produto> produtos = produtoDAO.listar();
 
@@ -522,10 +569,19 @@ public class ComandaPanel extends PadraoJPanel {
             if (!produto.isAtivo()) {
                 continue;
             }
+            if (!normalizarPesquisa(produto.getNome()).contains(pesquisa)) {
+                continue;
+            }
 
             painelProdutos.add(criarCardProduto(produto));
+            encontrados++;
         }
 
+        if (encontrados == 0) {
+            JLabel semResultados = new JLabel("Nenhum produto encontrado.", SwingConstants.CENTER);
+            semResultados.setForeground(COR_TEXTO_SECUNDARIO);
+            painelProdutos.add(semResultados);
+        }
         painelProdutos.revalidate();
         painelProdutos.repaint();
     }

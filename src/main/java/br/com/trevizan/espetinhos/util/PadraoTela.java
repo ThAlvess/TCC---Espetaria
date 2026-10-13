@@ -14,8 +14,8 @@ import javax.swing.JLabel;
  *   <li>canto superior esquerdo do título a {@link #MARGEM_LATERAL} px da
  *       esquerda e {@link #MARGEM_TOPO} px do topo da tela — o conteúdo
  *       abaixo também começa na mesma margem lateral, alinhado ao título;</li>
- *   <li>subtítulo na mesma fonte do título (Segoe UI), sem negrito, com o
- *       tamanho do subtítulo da tela de Mesas (13) e cinza (112, 112, 112).</li>
+ *   <li>subtítulo na mesma fonte do título (Segoe UI), sem negrito,
+ *       tamanho 14 e cinza escuro (68, 68, 68).</li>
  * </ul>
  *
  * Para mudar o padrão de todas as telas de uma vez, basta alterar as
@@ -26,8 +26,9 @@ public final class PadraoTela {
     public static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 28);
     public static final Color COR_TITULO = new Color(21, 97, 0);
 
-    public static final Font FONTE_SUBTITULO = new Font("Segoe UI", Font.PLAIN, 13);
-    public static final Color COR_SUBTITULO = new Color(112, 112, 112);
+    public static final Font FONTE_SUBTITULO = new Font("Segoe UI", Font.PLAIN, 14);
+    /** Cinza escuro do subtítulo. */
+    public static final Color COR_SUBTITULO = new Color(68, 68, 68);
 
     /** Distância do topo da tela até o título (igual à tela de Relatórios). */
     public static final int MARGEM_TOPO = 51;

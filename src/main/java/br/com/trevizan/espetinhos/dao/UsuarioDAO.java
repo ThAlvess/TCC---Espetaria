@@ -2,6 +2,7 @@ package br.com.trevizan.espetinhos.dao;
 
 import br.com.trevizan.espetinhos.connection.ConnectionFactory;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.SenhaUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,43 +13,109 @@ import java.util.List;
 
 public class UsuarioDAO {
 
+    /**
+     * Confere login e senha de um usuário ativo.
+     *
+     * <p>A senha é conferida com {@link SenhaUtil#conferir}. Se o valor
+     * gravado estiver em texto puro, ele é regravado como hash.</p>
+     *
+     * @return o usuário, ou {@code null} se login/senha não conferem ou se o
+     *         usuário estiver inativo
+     */
     public Usuario autenticar(String login, String senha) {
         String sql = """
                 SELECT id_usuario, nome, login, senha, ativo, cpf, perfil
                 FROM usuario
                 WHERE login = ?
-                  AND senha = ?
                   AND ativo = true
                 """;
+
+        Usuario usuario = null;
+        String senhaGravada = null;
 
         try (
                 Connection conexao = ConnectionFactory.getConnection();
                 PreparedStatement stmt = conexao.prepareStatement(sql)
         ) {
             stmt.setString(1, login);
-            stmt.setString(2, senha);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    Usuario usuario = new Usuario();
+                    senhaGravada = rs.getString("senha");
+                    usuario = new Usuario();
                     usuario.setIdUsuario(rs.getInt("id_usuario"));
                     usuario.setNome(rs.getString("nome"));
                     usuario.setLogin(rs.getString("login"));
-                    usuario.setSenha(rs.getString("senha"));
+                    usuario.setSenha(senhaGravada);
                     usuario.setAtivo(rs.getBoolean("ativo"));
                     usuario.setCpf(rs.getString("cpf"));
                     usuario.setPerfil(rs.getString("perfil"));
-                    return usuario;
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao autenticar usuário.", e);
         }
-        return null;
+
+        if (usuario == null || !SenhaUtil.conferir(senha, senhaGravada)) {
+            return null;
+        }
+
+        // senha gravada em texto puro: regrava como hash
+        if (!SenhaUtil.estaCriptografada(senhaGravada)) {
+            alterarSenha(usuario.getIdUsuario(), senha);
+            usuario.setSenha(null);
+        }
+
+        return usuario;
+    }
+
+    /** Indica se o usuário ainda usa a senha padrão (primeiro acesso ou senha resetada). */
+    public boolean precisaTrocarSenha(int idUsuario) {
+        return SenhaUtil.usaSenhaPadrao(buscarSenhaGravada(idUsuario));
+    }
+
+    /** Confere a senha atual de um usuário (usado na troca de senha). */
+    public boolean conferirSenha(int idUsuario, String senha) {
+        return SenhaUtil.conferir(senha, buscarSenhaGravada(idUsuario));
+    }
+
+    /** Grava uma nova senha (sempre criptografada). */
+    public void alterarSenha(int idUsuario, String novaSenha) {
+        String sql = "UPDATE usuario SET senha = ? WHERE id_usuario = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, SenhaUtil.gerarHash(novaSenha));
+            stmt.setInt(2, idUsuario);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao alterar a senha.", e);
+        }
+    }
+
+    /**
+     * Volta a senha do usuário para a padrão ({@link SenhaUtil#SENHA_PADRAO}).
+     * No próximo login ele será obrigado a criar uma senha pessoal.
+     */
+    public void redefinirSenhaPadrao(int idUsuario) {
+        alterarSenha(idUsuario, SenhaUtil.SENHA_PADRAO);
+    }
+
+    private String buscarSenhaGravada(int idUsuario) {
+        String sql = "SELECT senha FROM usuario WHERE id_usuario = ?";
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idUsuario);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getString("senha") : null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao consultar a senha do usuário.", e);
+        }
     }
 
     public Usuario buscarPorId(int id) {
-        String sql = "SELECT id_usuario, nome, login, senha, ativo, cpf, perfil FROM usuario WHERE id_usuario = ?";
+        // não carrega a senha
+        String sql = "SELECT id_usuario, nome, login, ativo, cpf, perfil FROM usuario WHERE id_usuario = ?";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
@@ -58,7 +125,6 @@ public class UsuarioDAO {
                     u.setIdUsuario(rs.getInt("id_usuario"));
                     u.setNome(rs.getString("nome"));
                     u.setLogin(rs.getString("login"));
-                    u.setSenha(rs.getString("senha"));
                     u.setAtivo(rs.getBoolean("ativo"));
                     u.setCpf(rs.getString("cpf"));
                     u.setPerfil(rs.getString("perfil"));
@@ -104,7 +170,8 @@ public class UsuarioDAO {
     }
 
     public List<Usuario> listar() {
-        String sql = "SELECT id_usuario, nome, login, senha, ativo, cpf, perfil FROM usuario";
+        // não carrega a senha
+        String sql = "SELECT id_usuario, nome, login, ativo, cpf, perfil FROM usuario";
         List<Usuario> usuarios = new ArrayList<>();
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -114,7 +181,6 @@ public class UsuarioDAO {
                 u.setIdUsuario(rs.getInt("id_usuario"));
                 u.setNome(rs.getString("nome"));
                 u.setLogin(rs.getString("login"));
-                u.setSenha(rs.getString("senha"));
                 u.setAtivo(rs.getBoolean("ativo"));
                 u.setCpf(rs.getString("cpf"));
                 u.setPerfil(rs.getString("perfil"));
@@ -126,13 +192,20 @@ public class UsuarioDAO {
         return usuarios;
     }
 
+    /**
+     * Cadastra o usuário. Se nenhuma senha for informada, ele recebe a
+     * senha padrão e terá que criar a própria senha no primeiro login.
+     */
     public void cadastrar(Usuario u) {
+        String senhaInicial = u.getSenha() != null && !u.getSenha().isEmpty()
+                ? u.getSenha()
+                : SenhaUtil.SENHA_PADRAO;
         String sql = "INSERT INTO usuario (nome, login, senha, ativo, cpf, perfil) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, u.getNome());
             stmt.setString(2, u.getLogin());
-            stmt.setString(3, u.getSenha());
+            stmt.setString(3, SenhaUtil.gerarHash(senhaInicial));
             stmt.setBoolean(4, u.isAtivo());
             stmt.setString(5, u.getCpf());
             stmt.setString(6, u.getPerfil());
@@ -145,19 +218,26 @@ public class UsuarioDAO {
         }
     }
 
+    /**
+     * Atualiza os dados cadastrais (nome, login, status, CPF e perfil).
+     * A senha não é alterada aqui — use {@link #alterarSenha} ou
+     * {@link #redefinirSenhaPadrao}.
+     */
     public void atualizar(Usuario u) {
-        String sql = "UPDATE usuario SET nome = ?, login = ?, senha = ?, ativo = ?, cpf = ?, perfil = ? WHERE id_usuario = ?";
+        String sql = "UPDATE usuario SET nome = ?, login = ?, ativo = ?, cpf = ?, perfil = ? WHERE id_usuario = ?";
         try (Connection conn = ConnectionFactory.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, u.getNome());
             stmt.setString(2, u.getLogin());
-            stmt.setString(3, u.getSenha());
-            stmt.setBoolean(4, u.isAtivo());
-            stmt.setString(5, u.getCpf());
-            stmt.setString(6, u.getPerfil());
-            stmt.setInt(7, u.getIdUsuario());
+            stmt.setBoolean(3, u.isAtivo());
+            stmt.setString(4, u.getCpf());
+            stmt.setString(5, u.getPerfil());
+            stmt.setInt(6, u.getIdUsuario());
             stmt.executeUpdate();
         } catch (SQLException e) {
+            if (e.getErrorCode() == 1062) {
+                throw new RuntimeException("Este nome de usuário (login) já está em uso.", e);
+            }
             throw new RuntimeException("Erro ao atualizar usuário.", e);
         }
     }

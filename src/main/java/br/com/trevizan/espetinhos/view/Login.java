@@ -2,7 +2,9 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.dao.UsuarioDAO;
 import br.com.trevizan.espetinhos.model.Usuario;
-import br.com.trevizan.espetinhos.util.SessaoUsuario;
+import br.com.trevizan.espetinhos.util.LogoNitida;
+import br.com.trevizan.espetinhos.util.PadraoComponentes;
+import br.com.trevizan.espetinhos.util.PadraoTela;
 import br.com.trevizan.espetinhos.util.SessaoUsuario;
 
 import javax.swing.JFrame;
@@ -24,11 +26,128 @@ public class Login extends javax.swing.JFrame {
 
         initComponents();
 
+        // Logo + cartão de login sempre no centro da janela (maximizada ou não)
+        centralizarConteudo();
+
         // Permite pressionar ENTER para executar o login
         getRootPane().setDefaultButton(jButton2);
 
         // Centraliza a janela
         setLocationRelativeTo(null);
+
+        // Botão de "olho" dentro do campo para mostrar/ocultar a senha
+        br.com.trevizan.espetinhos.util.PadraoComponentes.habilitarMostrarSenha(jPasswordField1);
+    }
+
+    /**
+     * Reorganiza a tela de login em tempo de execução (o initComponents()
+     * gerado pelo NetBeans não é alterado):
+     * <ul>
+     *   <li>logo + cartão centralizados na janela com GridBagLayout; o
+     *       tamanho original da janela passa a ser o tamanho mínimo;</li>
+     *   <li>fundo bege, cartão branco arredondado, botões e campos
+     *       estilizados com {@link PadraoComponentes};</li>
+     *   <li>logo desenhada com {@link LogoNitida}.</li>
+     * </ul>
+     */
+    private void centralizarConteudo() {
+        java.awt.Dimension tamanhoOriginal = getSize();
+
+        // ---------- logo em alta resolução ----------
+        javax.swing.Icon logoNitida = LogoNitida.criar(177);
+        if (logoNitida != null) {
+            Logo.setIcon(logoNitida);
+        }
+        Logo.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+
+        // ---------- textos ----------
+        jLabel1.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 22));
+        jLabel1.setForeground(PadraoTela.COR_TITULO);
+        jLabel2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13));
+        jLabel2.setForeground(PadraoTela.COR_SUBTITULO);
+        for (javax.swing.JLabel rotulo : new javax.swing.JLabel[]{jLabelUsuário, jLabelSenha}) {
+            rotulo.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
+            rotulo.setForeground(PadraoComponentes.COR_TEXTO);
+        }
+
+        // ---------- campos e botões ----------
+        PadraoComponentes.aplicarEstiloCampo(jTextField1);
+        PadraoComponentes.aplicarEstiloCampo(jPasswordField1);
+        PadraoComponentes.aplicarEstiloPrimario(jButton2);   // Entrar
+        PadraoComponentes.aplicarEstiloSecundario(jButton1); // Esqueci a senha
+
+        // ---------- cartão branco arredondado ----------
+        javax.swing.JPanel cartao = PadraoComponentes.criarCartao();
+        cartao.setLayout(new javax.swing.BoxLayout(cartao, javax.swing.BoxLayout.Y_AXIS));
+        cartao.setBorder(javax.swing.BorderFactory.createEmptyBorder(30, 46, 30, 46));
+        java.awt.Dimension tamanhoCartao = new java.awt.Dimension(449, 350);
+        cartao.setPreferredSize(tamanhoCartao);
+        cartao.setMinimumSize(tamanhoCartao);
+        cartao.setMaximumSize(tamanhoCartao);
+        cartao.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+
+        java.awt.Dimension alturaCampo = new java.awt.Dimension(Integer.MAX_VALUE, PadraoComponentes.ALTURA_BOTAO);
+
+        javax.swing.JPanel linhaBotoes = new javax.swing.JPanel(new java.awt.GridLayout(1, 2, 16, 0));
+        linhaBotoes.setOpaque(false);
+        linhaBotoes.add(jButton2);
+        linhaBotoes.add(jButton1);
+        linhaBotoes.setMaximumSize(alturaCampo);
+        linhaBotoes.setPreferredSize(new java.awt.Dimension(100, PadraoComponentes.ALTURA_BOTAO));
+
+        // todos alinhados à esquerda no BoxLayout, ocupando a largura toda;
+        // os títulos centralizam o próprio texto
+        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        javax.swing.JComponent[] componentes = {
+            jLabel1, jLabel2, jLabelUsuário, jTextField1, jLabelSenha, jPasswordField1, linhaBotoes
+        };
+        for (javax.swing.JComponent componente : componentes) {
+            componente.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        }
+        jLabel1.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, jLabel1.getPreferredSize().height));
+        jLabel2.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, jLabel2.getPreferredSize().height));
+        jTextField1.setMaximumSize(alturaCampo);
+        jPasswordField1.setMaximumSize(alturaCampo);
+        jTextField1.setPreferredSize(new java.awt.Dimension(100, PadraoComponentes.ALTURA_BOTAO));
+        jPasswordField1.setPreferredSize(new java.awt.Dimension(100, PadraoComponentes.ALTURA_BOTAO));
+
+        cartao.add(jLabel1);
+        cartao.add(javax.swing.Box.createVerticalStrut(4));
+        cartao.add(jLabel2);
+        cartao.add(javax.swing.Box.createVerticalStrut(22));
+        cartao.add(jLabelUsuário);
+        cartao.add(javax.swing.Box.createVerticalStrut(6));
+        cartao.add(jTextField1);
+        cartao.add(javax.swing.Box.createVerticalStrut(14));
+        cartao.add(jLabelSenha);
+        cartao.add(javax.swing.Box.createVerticalStrut(6));
+        cartao.add(jPasswordField1);
+        cartao.add(javax.swing.Box.createVerticalStrut(26));
+        cartao.add(linhaBotoes);
+        cartao.add(javax.swing.Box.createVerticalGlue());
+        for (java.awt.Component filho : cartao.getComponents()) {
+            if (filho instanceof javax.swing.JComponent jc) {
+                jc.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+            }
+        }
+
+        // ---------- bloco centralizado ----------
+        javax.swing.JPanel bloco = new javax.swing.JPanel();
+        bloco.setOpaque(false);
+        bloco.setLayout(new javax.swing.BoxLayout(bloco, javax.swing.BoxLayout.Y_AXIS));
+        bloco.add(Logo);
+        bloco.add(javax.swing.Box.createVerticalStrut(10));
+        bloco.add(cartao);
+
+        java.awt.Container conteudo = getContentPane();
+        conteudo.removeAll();
+        conteudo.setBackground(PadraoComponentes.COR_FUNDO);
+        conteudo.setLayout(new java.awt.GridBagLayout());
+        conteudo.add(bloco, new java.awt.GridBagConstraints());
+
+        setMinimumSize(tamanhoOriginal);
+        setSize(tamanhoOriginal);
     }
 
     /**
@@ -181,7 +300,9 @@ public class Login extends javax.swing.JFrame {
 
         JOptionPane.showMessageDialog(
                 this,
-                "Funcionalidade de recuperação de senha ainda não implementada.",
+                "Peça ao administrador para resetar a sua senha\n"
+                        + "(tela Usuários → botão \"Resetar senha\").\n\n"
+                        + "Depois, entre com a senha padrão e crie uma senha nova.",
                 "Esqueci a senha",
                 JOptionPane.INFORMATION_MESSAGE
         );
@@ -226,6 +347,16 @@ public class Login extends javax.swing.JFrame {
 
             if (usuario != null) {
 
+                // entrou com a senha padrão: abre a criação da senha pessoal
+                if (br.com.trevizan.espetinhos.util.SenhaUtil.SENHA_PADRAO.equals(senha)) {
+                    boolean senhaCriada = TrocarSenhaDialog.mostrar(this, usuario, true);
+                    if (!senhaCriada) {
+                        jPasswordField1.setText("");
+                        jPasswordField1.requestFocusInWindow();
+                        return;
+                    }
+                }
+
                 JOptionPane.showMessageDialog(
                         this,
                         "Bem-vindo, "
@@ -245,6 +376,11 @@ public class Login extends javax.swing.JFrame {
                         "Erro de autenticação",
                         JOptionPane.ERROR_MESSAGE
                 );
+
+                // Mantém o usuário digitado e limpa só a senha,
+                // já deixando o cursor nela para digitar de novo
+                jPasswordField1.setText("");
+                jPasswordField1.requestFocusInWindow();
             }
 
         } catch (RuntimeException e) {

@@ -1,135 +1,282 @@
 package br.com.trevizan.espetinhos.view;
 
-import javax.swing.table.DefaultTableModel;
-import br.com.trevizan.espetinhos.model.Comanda;
 import br.com.trevizan.espetinhos.dao.ComandaDAO;
+import br.com.trevizan.espetinhos.dao.MesaDAO;
+import br.com.trevizan.espetinhos.dao.UsuarioDAO;
+import br.com.trevizan.espetinhos.model.Comanda;
+import br.com.trevizan.espetinhos.model.Mesa;
+import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.FiltroPeriodo;
+import br.com.trevizan.espetinhos.util.PadraoComponentes;
+import br.com.trevizan.espetinhos.util.PadraoTela;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Painel responsável por exibir o Histórico de Comandas encerradas.
- * Possui filtro de busca em tempo real e herda o padrão visual do sistema.
+ *
+ * <p>O layout gerado pelo NetBeans (initComponents) é reorganizado em
+ * tempo de execução por {@link #montarLayout()}:</p>
+ * <ul>
+ *   <li>filtro de datas "De ... até ..." (em branco mostra tudo);</li>
+ *   <li>pesquisa com o texto alinhado à esquerda;</li>
+ *   <li>tabela "clean" com linhas zebradas dentro de um cartão branco.</li>
+ * </ul>
  */
 public class HistoricoPanel extends br.com.trevizan.espetinhos.PadraoJPanel {
 
-    private final java.awt.Color VERDE = new java.awt.Color(20, 115, 10);
-    private final java.awt.Color CINZA_TABELA = new java.awt.Color(224, 224, 224);
-    private final java.awt.Color CINZA_CABECALHO = new java.awt.Color(135, 135, 132);
+    private static final int COL_COMANDA = 0;
+    private static final int COL_ITENS = 4;
+    private static final int COL_VALOR = 5;
+
     private javax.swing.table.DefaultTableModel modeloTabela;
-    private java.util.List<Comanda> comandas;
+    private javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> sorter;
+    private java.util.List<Comanda> comandas = new ArrayList<>();
+    /** Valor de cada linha do modelo (para somar o total do que está visível). */
+    private final List<BigDecimal> valoresLinhas = new ArrayList<>();
     private ComandaDAO comandaDAO;
-    
+    private FiltroPeriodo filtroPeriodo;
+    private javax.swing.JLabel lblResumo;
+
     public HistoricoPanel() {
         initComponents();
         comandaDAO = new ComandaDAO();
-        txtPesquisar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 16));
-        txtPesquisar.putClientProperty("JTextField.placeholderText", "Pesquisar comanda, mesa, atendente ou item...");
-        txtPesquisar.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        br.com.trevizan.espetinhos.util.PadraoTela.aplicarTitulo(jLabel1);
+        PadraoTela.aplicarTitulo(jLabel1);
+        PadraoComponentes.aplicarCampoPesquisa(txtPesquisar,
+                "Pesquisar comanda, mesa, atendente ou item...");
+
         modeloTabela = (javax.swing.table.DefaultTableModel) tabelaHistorico.getModel();
-        configurarTabela();
-        carregarHistorico();
+        modeloTabela.setRowCount(0);
+        sorter = new javax.swing.table.TableRowSorter<>(modeloTabela);
+        sorter.setSortable(COL_VALOR, false);
+        tabelaHistorico.setRowSorter(sorter);
+
+        filtroPeriodo = new FiltroPeriodo(this::carregarHistorico);
+
         estilizarTabela();
+        configurarTabela();
+        montarLayout();
         configurarPesquisa();
-        
-    // Atualiza a lista no banco de dados sempre que a tela for exibida pelo CardLayout
-    this.addComponentListener(new java.awt.event.ComponentAdapter() {
-        @Override
-        public void componentShown(java.awt.event.ComponentEvent evt) {
-            // Limpa o texto da pesquisa ao entrar na tela
-            txtPesquisar.setText(""); 
-            
-            // Faz a busca atualizada no banco de dados
-            carregarHistorico();
-        }
-    });
-}
+        carregarHistorico();
 
-private void configurarTabela() {
-    tabelaHistorico.getTableHeader().setReorderingAllowed(false);
-    
-    tabelaHistorico.getColumnModel().getColumn(0).setPreferredWidth(80);  // Comanda
-    tabelaHistorico.getColumnModel().getColumn(1).setPreferredWidth(80);  // Mesa
-    tabelaHistorico.getColumnModel().getColumn(2).setPreferredWidth(150); // Data
-    tabelaHistorico.getColumnModel().getColumn(3).setPreferredWidth(120); // Atendente
-    tabelaHistorico.getColumnModel().getColumn(4).setPreferredWidth(350); // Itens
-    tabelaHistorico.getColumnModel().getColumn(5).setPreferredWidth(100); // Valor Total
-}
-   /*
-    * ==========================
-    * CARREGAR HISTÓRICO
-    * ==========================
-    */
-private void carregarHistorico() {
-    try {
-        // Requer a inclusão do método listarFechadas() no ComandaDAO
-        comandas = comandaDAO.listarFechadas(); 
-        preencherTabela(comandas);
-    } catch (Exception e) {
-        javax.swing.JOptionPane.showMessageDialog(this, 
-            "Erro ao carregar o histórico do banco de dados: " + e.getMessage(), 
-            "Erro", 
-            javax.swing.JOptionPane.ERROR_MESSAGE);
-    }
-}
+        // Atualiza a lista no banco de dados sempre que a tela for exibida pelo CardLayout
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                // Limpa o texto da pesquisa ao entrar na tela
+                txtPesquisar.setText("");
 
-private void preencherTabela(java.util.List<Comanda> lista) {
-    modeloTabela.setRowCount(0);
-    
-    java.text.NumberFormat moeda = java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("pt", "BR"));
-    java.time.format.DateTimeFormatter formatoData = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
-    for (Comanda comanda : lista) {
-        // Formata a data de fechamento, caso exista
-        String dataFechamento = (comanda.getDataFechamento() != null) 
-                ? comanda.getDataFechamento().format(formatoData) 
-                : "Sem registro";
-
-        // Busca os itens concatenados direto do banco de dados
-        String itensConsumidos = comandaDAO.obterItensFormatados(comanda.getIdComanda());
-
-        modeloTabela.addRow(new Object[]{
-            comanda.getIdComanda(),
-            "Mesa " + comanda.getIdMesa(),
-            dataFechamento,
-            "Cód. " + comanda.getIdUsuario(),
-            itensConsumidos,
-            moeda.format(comanda.getValorTotal())
+                // Faz a busca atualizada no banco de dados
+                carregarHistorico();
+            }
         });
     }
-}
-/*
- * ==========================
- * PESQUISA
- * ==========================
- */
-private void configurarPesquisa() {
-    txtPesquisar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-        @Override
-        public void insertUpdate(javax.swing.event.DocumentEvent e) { pesquisar(); }
-        
-        @Override
-        public void removeUpdate(javax.swing.event.DocumentEvent e) { pesquisar(); }
-        
-        @Override
-        public void changedUpdate(javax.swing.event.DocumentEvent e) { pesquisar(); }
-    });
-}
 
-private void pesquisar() {
-    String texto = txtPesquisar.getText().trim();
-    javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> sorter = 
-        new javax.swing.table.TableRowSorter<>(modeloTabela);
-        
-    tabelaHistorico.setRowSorter(sorter);
+    /**
+     * Reorganiza a tela: título, filtro de datas, pesquisa e o cartão com a
+     * tabela (que ocupa o restante da altura).
+     */
+    private void montarLayout() {
+        removeAll();
+        setLayout(new java.awt.BorderLayout(0, 14));
+        setBorder(javax.swing.BorderFactory.createEmptyBorder(
+                PadraoTela.MARGEM_TOPO, PadraoTela.MARGEM_LATERAL, 30, PadraoTela.MARGEM_LATERAL));
 
-    if (texto.isEmpty()) {
-        sorter.setRowFilter(null);
-    } else {
-        // (?i) torna a pesquisa case-insensitive (ignora maiúsculas/minúsculas)
-        sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + texto));
+        javax.swing.JPanel topo = new javax.swing.JPanel();
+        topo.setOpaque(false);
+        topo.setLayout(new javax.swing.BoxLayout(topo, javax.swing.BoxLayout.Y_AXIS));
+
+        jLabel1.setAlignmentX(LEFT_ALIGNMENT);
+        topo.add(jLabel1);
+        topo.add(javax.swing.Box.createVerticalStrut(14));
+
+        // filtro "De ... até ..." (datas em branco = todas as comandas)
+        javax.swing.JPanel linhaFiltro = new javax.swing.JPanel(new java.awt.BorderLayout());
+        linhaFiltro.setOpaque(false);
+        linhaFiltro.setAlignmentX(LEFT_ALIGNMENT);
+        linhaFiltro.add(filtroPeriodo, java.awt.BorderLayout.WEST);
+        topo.add(linhaFiltro);
+        topo.add(javax.swing.Box.createVerticalStrut(10));
+
+        txtPesquisar.setAlignmentX(LEFT_ALIGNMENT);
+        txtPesquisar.setPreferredSize(new java.awt.Dimension(400, PadraoComponentes.ALTURA_PESQUISA));
+        txtPesquisar.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, PadraoComponentes.ALTURA_PESQUISA));
+        topo.add(txtPesquisar);
+
+        lblResumo = new javax.swing.JLabel(" ");
+        lblResumo.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13));
+        lblResumo.setForeground(PadraoComponentes.COR_TEXTO_SUAVE);
+
+        add(topo, java.awt.BorderLayout.NORTH);
+        add(PadraoComponentes.criarCartaoTabela("Comandas encerradas", tabelaHistorico, lblResumo),
+                java.awt.BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
-}
-    
+
+    private void configurarTabela() {
+        // {largura preferida, largura mínima} de cada coluna
+        int[][] larguras = {
+            {100, 95},  // Comanda
+            {100, 80},  // Mesa
+            {165, 155}, // Data
+            {140, 110}, // Atendente
+            {480, 160}, // Itens
+            {120, 100}  // Valor Total
+        };
+        for (int i = 0; i < larguras.length; i++) {
+            tabelaHistorico.getColumnModel().getColumn(i).setPreferredWidth(larguras[i][0]);
+            tabelaHistorico.getColumnModel().getColumn(i).setMinWidth(larguras[i][1]);
+        }
+    }
+
+    /*
+     * ==========================
+     * CARREGAR HISTÓRICO
+     * ==========================
+     */
+    private void carregarHistorico() {
+        try {
+            comandas = comandaDAO.listarFechadas();
+
+            List<Comanda> doPeriodo = new ArrayList<>();
+            for (Comanda comanda : comandas) {
+                if (filtroPeriodo.contem(comanda.getDataFechamento())) {
+                    doPeriodo.add(comanda);
+                }
+            }
+            preencherTabela(doPeriodo);
+        } catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Erro ao carregar o histórico do banco de dados: " + e.getMessage(),
+                "Erro",
+                javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void preencherTabela(java.util.List<Comanda> lista) {
+        modeloTabela.setRowCount(0);
+        valoresLinhas.clear();
+
+        java.text.NumberFormat moeda = java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("pt", "BR"));
+        java.time.format.DateTimeFormatter formatoData = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        Map<Integer, Integer> numerosMesas = carregarNumerosMesas();
+        Map<Integer, String> nomesAtendentes = carregarNomesAtendentes();
+
+        for (Comanda comanda : lista) {
+            // Formata a data de fechamento, caso exista
+            String dataFechamento = (comanda.getDataFechamento() != null)
+                    ? comanda.getDataFechamento().format(formatoData)
+                    : "Sem registro";
+
+            // Busca os itens concatenados direto do banco de dados
+            String itensConsumidos = comandaDAO.obterItensFormatados(comanda.getIdComanda());
+
+            BigDecimal valor = comanda.getValorTotal() != null ? comanda.getValorTotal() : BigDecimal.ZERO;
+            valoresLinhas.add(valor);
+
+            modeloTabela.addRow(new Object[]{
+                String.valueOf(comanda.getIdComanda()),
+                descreverAtendimento(comanda, numerosMesas),
+                dataFechamento,
+                nomesAtendentes.getOrDefault(comanda.getIdUsuario(), "Cód. " + comanda.getIdUsuario()),
+                itensConsumidos,
+                moeda.format(valor)
+            });
+        }
+        atualizarResumo();
+    }
+
+    /** "Mesa 4" para comandas de mesa; "Delivery" / "Retirada" para as demais. */
+    private String descreverAtendimento(Comanda comanda, Map<Integer, Integer> numerosMesas) {
+        String tipo = comanda.getTipoAtendimento();
+        if (tipo != null && !"MESA".equalsIgnoreCase(tipo)) {
+            return tipo.substring(0, 1).toUpperCase() + tipo.substring(1).toLowerCase();
+        }
+        Integer numero = numerosMesas.get(comanda.getIdMesa());
+        return "Mesa " + (numero != null ? numero : comanda.getIdMesa());
+    }
+
+    private Map<Integer, Integer> carregarNumerosMesas() {
+        Map<Integer, Integer> mapa = new HashMap<>();
+        try {
+            for (Mesa mesa : new MesaDAO().listarTodas()) {
+                mapa.put(mesa.getIdMesa(), mesa.getNumero());
+            }
+        } catch (RuntimeException e) {
+            // sem o número da mesa, a tabela mostra o código dela
+        }
+        return mapa;
+    }
+
+    private Map<Integer, String> carregarNomesAtendentes() {
+        Map<Integer, String> mapa = new HashMap<>();
+        try {
+            List<Usuario> usuarios = new UsuarioDAO().listar();
+            if (usuarios != null) {
+                for (Usuario usuario : usuarios) {
+                    mapa.put(usuario.getIdUsuario(), usuario.getNome());
+                }
+            }
+        } catch (RuntimeException e) {
+            // sem o nome, a tabela mostra o código do atendente
+        }
+        return mapa;
+    }
+
+    /** Quantidade e soma das comandas que estão aparecendo na tabela. */
+    private void atualizarResumo() {
+        if (lblResumo == null) {
+            return;
+        }
+        BigDecimal total = BigDecimal.ZERO;
+        int quantidade = tabelaHistorico.getRowCount();
+        for (int i = 0; i < quantidade; i++) {
+            int linhaModelo = tabelaHistorico.convertRowIndexToModel(i);
+            if (linhaModelo >= 0 && linhaModelo < valoresLinhas.size()) {
+                total = total.add(valoresLinhas.get(linhaModelo));
+            }
+        }
+        java.text.NumberFormat moeda = java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("pt", "BR"));
+        lblResumo.setText(quantidade + (quantidade == 1 ? " comanda" : " comandas") + "  •  Total " + moeda.format(total));
+    }
+
+    /*
+     * ==========================
+     * PESQUISA
+     * ==========================
+     */
+    private void configurarPesquisa() {
+        txtPesquisar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { pesquisar(); }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { pesquisar(); }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { pesquisar(); }
+        });
+    }
+
+    private void pesquisar() {
+        String texto = txtPesquisar.getText().trim();
+
+        if (texto.isEmpty()) {
+            sorter.setRowFilter(null);
+        } else {
+            // (?i) ignora maiúsculas/minúsculas; quote evita erro com caracteres como "(" ou "+"
+            sorter.setRowFilter(javax.swing.RowFilter.regexFilter(
+                    "(?i)" + java.util.regex.Pattern.quote(texto)));
+        }
+        atualizarResumo();
+    }
+
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -138,7 +285,7 @@ private void pesquisar() {
         tabelaHistorico = new javax.swing.JTable();
         txtPesquisar = new javax.swing.JTextField();
 
-        setBackground(new java.awt.Color(240, 235, 235));
+        setBackground(new java.awt.Color(238, 232, 227));
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 28)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(21, 97, 0));
@@ -214,33 +361,10 @@ private void pesquisar() {
     private javax.swing.JTextField txtPesquisar;
     // End of variables declaration//GEN-END:variables
 
-private void estilizarTabela() {
-    // 1. Estilo base da Tabela
-    tabelaHistorico.setRowHeight(66);
-    tabelaHistorico.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 15));
-    tabelaHistorico.setForeground(VERDE);
-    tabelaHistorico.setBackground(CINZA_TABELA);
-    tabelaHistorico.setGridColor(new java.awt.Color(100, 100, 100));
-    tabelaHistorico.setShowVerticalLines(true);
-    tabelaHistorico.setShowHorizontalLines(true);
-    tabelaHistorico.setSelectionBackground(new java.awt.Color(210, 225, 210));
-    tabelaHistorico.setSelectionForeground(VERDE);
-
-    // 2. Estilo do Cabeçalho
-    tabelaHistorico.getTableHeader().setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 15));
-    tabelaHistorico.getTableHeader().setForeground(java.awt.Color.WHITE);
-    tabelaHistorico.getTableHeader().setBackground(CINZA_CABECALHO);
-    tabelaHistorico.getTableHeader().setPreferredSize(new java.awt.Dimension(0, 55));
-
-    // 3. Centralizar o conteúdo das células
-    javax.swing.table.DefaultTableCellRenderer centralizado = new javax.swing.table.DefaultTableCellRenderer();
-    centralizado.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-    for (int i = 0; i < tabelaHistorico.getColumnCount(); i++) {
-        tabelaHistorico.getColumnModel().getColumn(i).setCellRenderer(centralizado);
+    private void estilizarTabela() {
+        PadraoComponentes.estilizarTabela(tabelaHistorico);
+        PadraoComponentes.alinharColuna(tabelaHistorico, COL_COMANDA, javax.swing.SwingConstants.CENTER);
+        PadraoComponentes.alinharColuna(tabelaHistorico, COL_ITENS, javax.swing.SwingConstants.LEFT);
+        PadraoComponentes.alinharColuna(tabelaHistorico, COL_VALOR, javax.swing.SwingConstants.RIGHT);
     }
-
-    // 4. Estilo do fundo e borda do painel de rolagem
-    jScrollPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(150, 150, 150)));
-    jScrollPane1.getViewport().setBackground(CINZA_TABELA);
-}
 }

@@ -5,6 +5,7 @@ import br.com.trevizan.espetinhos.dao.CategoriaDAO;
 import br.com.trevizan.espetinhos.dao.ProdutoDAO;
 import br.com.trevizan.espetinhos.model.Categoria;
 import br.com.trevizan.espetinhos.model.Produto;
+import br.com.trevizan.espetinhos.util.PadraoComponentes;
 import br.com.trevizan.espetinhos.util.PadraoTela;
 
 import javax.swing.*;
@@ -33,14 +34,12 @@ public class ProdutoPanel extends PadraoJPanel {
     private List<Produto> produtos;
     private List<Produto> produtosExibidos;
 
-    private final Color VERDE =
-            new Color(20, 115, 10);
+    private JLabel lblResumo;
 
-    private final Color CINZA_TABELA =
-            new Color(224, 224, 224);
-
-    private final Color CINZA_CABECALHO =
-            new Color(135, 135, 132);
+    private static final int COL_PRECO = 4;
+    private static final int COL_ESTOQUE = 5;
+    private static final int COL_STATUS = 6;
+    private static final int COL_ACOES = 7;
 
     public ProdutoPanel() {
 
@@ -142,71 +141,37 @@ public class ProdutoPanel extends PadraoJPanel {
         );
 
         txtPesquisar =
-                new JTextField();
-
-        txtPesquisar.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        16
-                )
-        );
-
-        txtPesquisar.setPreferredSize(
-                new Dimension(
-                        500,
-                        48
-                )
-        );
-
-        txtPesquisar.putClientProperty(
-                "JTextField.placeholderText",
-                "Pesquisar"
-        );
-
-        txtPesquisar.setHorizontalAlignment(
-                JTextField.CENTER
-        );
-
-        btnNovoProduto =
-                new JButton(
-                        "+  Novo produto"
+                PadraoComponentes.criarCampoPesquisa(
+                        "Pesquisar produto ou categoria..."
                 );
 
-        btnNovoProduto.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        16
-                )
-        );
-
-        btnNovoProduto.setForeground(
-                Color.WHITE
-        );
-
-        btnNovoProduto.setBackground(
-                VERDE
-        );
-
-        btnNovoProduto.setFocusPainted(
-                false
-        );
-
-        btnNovoProduto.setPreferredSize(
-                new Dimension(
-                        220,
-                        48
-                )
-        );
+        btnNovoProduto =
+                PadraoComponentes.criarBotaoPrimario(
+                        "Novo produto",
+                        PadraoComponentes.iconeMais(Color.WHITE)
+                );
 
         painelTopo.add(
                 txtPesquisar,
                 BorderLayout.CENTER
         );
 
+        // GridBagLayout mantém o botão na altura padrão, centralizado na linha
+        JPanel painelBotao =
+                new JPanel(
+                        new GridBagLayout()
+                );
+
+        painelBotao.setOpaque(
+                false
+        );
+
+        painelBotao.add(
+                btnNovoProduto
+        );
+
         painelTopo.add(
-                btnNovoProduto,
+                painelBotao,
                 BorderLayout.EAST
         );
 
@@ -255,29 +220,27 @@ public class ProdutoPanel extends PadraoJPanel {
 
         configurarTabela();
 
-        JScrollPane scrollPane =
-                new JScrollPane(
-                        tabelaProdutos
-                );
+        lblResumo =
+                new JLabel(" ");
 
-        scrollPane.setBorder(
-                BorderFactory.createLineBorder(
-                        new Color(
-                                150,
-                                150,
-                                150
-                        )
+        lblResumo.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.PLAIN,
+                        13
                 )
         );
 
-        scrollPane
-                .getViewport()
-                .setBackground(
-                        CINZA_TABELA
-                );
+        lblResumo.setForeground(
+                PadraoComponentes.COR_TEXTO_SECUNDARIO
+        );
 
         painelConteudo.add(
-                scrollPane,
+                PadraoComponentes.criarCartaoTabela(
+                        "Produtos cadastrados",
+                        tabelaProdutos,
+                        lblResumo
+                ),
                 BorderLayout.CENTER
         );
 
@@ -308,192 +271,139 @@ public class ProdutoPanel extends PadraoJPanel {
 
     private void configurarTabela() {
 
-        tabelaProdutos.setRowHeight(
-                66
-        );
-
-        tabelaProdutos.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        15
-                )
-        );
-
-        tabelaProdutos.setForeground(
-                VERDE
-        );
-
-        tabelaProdutos.setBackground(
-                CINZA_TABELA
-        );
-
-        tabelaProdutos.setGridColor(
-                new Color(
-                        100,
-                        100,
-                        100
-                )
-        );
-
-        tabelaProdutos.setShowVerticalLines(
-                true
-        );
-
-        tabelaProdutos.setShowHorizontalLines(
-                true
-        );
-
-        tabelaProdutos.setSelectionBackground(
-                new Color(
-                        210,
-                        225,
-                        210
-                )
-        );
-
-        tabelaProdutos.setSelectionForeground(
-                VERDE
-        );
-
         /*
-         * Cabeçalho
+         * Estilo da tabela (zebrado, sem grade, cabeçalho com linha inferior)
          */
 
-        tabelaProdutos
-                .getTableHeader()
-                .setFont(
-                        new Font(
-                                "Segoe UI",
-                                Font.BOLD,
-                                15
-                        )
-                );
-
-        tabelaProdutos
-                .getTableHeader()
-                .setForeground(
-                        Color.WHITE
-                );
-
-        tabelaProdutos
-                .getTableHeader()
-                .setBackground(
-                        CINZA_CABECALHO
-                );
-
-        tabelaProdutos
-                .getTableHeader()
-                .setPreferredSize(
-                        new Dimension(
-                                0,
-                                55
-                        )
-                );
-
-        /*
-         * Centraliza células
-         */
-
-        DefaultTableCellRenderer centralizado =
-                new DefaultTableCellRenderer();
-
-        centralizado.setHorizontalAlignment(
-                SwingConstants.CENTER
+        PadraoComponentes.estilizarTabela(
+                tabelaProdutos
         );
 
-        for (
-                int i = 0;
-                i < tabelaProdutos.getColumnCount();
-                i++
-        ) {
+        tabelaProdutos.setSelectionMode(
+                ListSelectionModel.SINGLE_SELECTION
+        );
 
-            tabelaProdutos
-                    .getColumnModel()
-                    .getColumn(i)
-                    .setCellRenderer(
-                            centralizado
-                    );
-        }
+        PadraoComponentes.alinharColuna(tabelaProdutos, COL_PRECO, SwingConstants.RIGHT);
+        PadraoComponentes.alinharColuna(tabelaProdutos, COL_ESTOQUE, SwingConstants.CENTER);
 
         /*
-         * Renderer específico
-         * da coluna Ações
+         * Status colorido:
+         * verde = ativo, laranja = sem estoque, vermelho = inativo
          */
-
-        DefaultTableCellRenderer rendererAcao =
-                new DefaultTableCellRenderer() {
-
-                    @Override
-                    public Component getTableCellRendererComponent(
-                            JTable table,
-                            Object value,
-                            boolean isSelected,
-                            boolean hasFocus,
-                            int row,
-                            int column
-                    ) {
-
-                        JLabel label =
-                                new JLabel(
-                                        "Editar"
-                                );
-
-                        label.setHorizontalAlignment(
-                                SwingConstants.CENTER
-                        );
-
-                        label.setForeground(
-                                VERDE
-                        );
-
-                        label.setFont(
-                                new Font(
-                                        "Segoe UI",
-                                        Font.BOLD,
-                                        14
-                                )
-                        );
-
-                        if (isSelected) {
-
-                            label.setBackground(
-                                    table.getSelectionBackground()
-                            );
-
-                        } else {
-
-                            label.setBackground(
-                                    table.getBackground()
-                            );
-                        }
-
-                        label.setOpaque(
-                                true
-                        );
-
-                        return label;
-                    }
-                };
 
         tabelaProdutos
                 .getColumnModel()
-                .getColumn(7)
+                .getColumn(COL_STATUS)
                 .setCellRenderer(
-                        rendererAcao
+                        new PadraoComponentes.RendererCelula(SwingConstants.LEFT) {
+
+                            @Override
+                            public Component getTableCellRendererComponent(
+                                    JTable table,
+                                    Object value,
+                                    boolean isSelected,
+                                    boolean hasFocus,
+                                    int row,
+                                    int column
+                            ) {
+
+                                super.getTableCellRendererComponent(
+                                        table, value, isSelected, hasFocus, row, column
+                                );
+
+                                String status = value != null ? value.toString() : "";
+
+                                setFont(getFont().deriveFont(Font.BOLD));
+
+                                if ("Inativo".equals(status)) {
+                                    setForeground(PadraoComponentes.VERMELHO);
+                                } else if ("Sem estoque".equals(status)) {
+                                    setForeground(PadraoComponentes.LARANJA);
+                                } else {
+                                    setForeground(PadraoComponentes.VERDE);
+                                }
+
+                                return this;
+                            }
+                        }
                 );
+
+        /*
+         * Coluna Ações: "Editar" com ícone de lápis
+         */
+
+        tabelaProdutos
+                .getColumnModel()
+                .getColumn(COL_ACOES)
+                .setCellRenderer(
+                        new PadraoComponentes.RendererCelula(SwingConstants.CENTER) {
+
+                            @Override
+                            public Component getTableCellRendererComponent(
+                                    JTable table,
+                                    Object value,
+                                    boolean isSelected,
+                                    boolean hasFocus,
+                                    int row,
+                                    int column
+                            ) {
+
+                                super.getTableCellRendererComponent(
+                                        table, "Editar", isSelected, hasFocus, row, column
+                                );
+
+                                setIcon(
+                                        PadraoComponentes.iconeEditar(
+                                                PadraoComponentes.VERDE
+                                        )
+                                );
+
+                                setIconTextGap(6);
+                                setForeground(PadraoComponentes.VERDE);
+                                setFont(getFont().deriveFont(Font.BOLD));
+
+                                return this;
+                            }
+                        }
+                );
+
+        /*
+         * Cursor de "mãozinha" sobre o Editar
+         */
+
+        tabelaProdutos.addMouseMotionListener(
+                new java.awt.event.MouseMotionAdapter() {
+
+                    @Override
+                    public void mouseMoved(
+                            java.awt.event.MouseEvent evt
+                    ) {
+
+                        boolean sobreEditar =
+                                tabelaProdutos.columnAtPoint(evt.getPoint()) == COL_ACOES
+                                        && tabelaProdutos.rowAtPoint(evt.getPoint()) >= 0;
+
+                        tabelaProdutos.setCursor(
+                                sobreEditar
+                                        ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                                        : Cursor.getDefaultCursor()
+                        );
+                    }
+                }
+        );
 
         /*
          * Largura das colunas
          */
 
-        tabelaProdutos.getColumnModel().getColumn(0).setPreferredWidth(200); // Produto
+        tabelaProdutos.getColumnModel().getColumn(0).setPreferredWidth(190); // Produto
         tabelaProdutos.getColumnModel().getColumn(1).setPreferredWidth(260); // Descrição
-        tabelaProdutos.getColumnModel().getColumn(2).setPreferredWidth(160); // Categoria
-        tabelaProdutos.getColumnModel().getColumn(3).setPreferredWidth(100); // Preço
-        tabelaProdutos.getColumnModel().getColumn(4).setPreferredWidth(90);  // Estoque
-        tabelaProdutos.getColumnModel().getColumn(5).setPreferredWidth(110); // Status
-        tabelaProdutos.getColumnModel().getColumn(6).setPreferredWidth(100); // Ações
+        tabelaProdutos.getColumnModel().getColumn(2).setPreferredWidth(120); // Categoria
+        tabelaProdutos.getColumnModel().getColumn(3).setPreferredWidth(100); // Destino
+        tabelaProdutos.getColumnModel().getColumn(COL_PRECO).setPreferredWidth(100);
+        tabelaProdutos.getColumnModel().getColumn(COL_ESTOQUE).setPreferredWidth(90);
+        tabelaProdutos.getColumnModel().getColumn(COL_STATUS).setPreferredWidth(110);
+        tabelaProdutos.getColumnModel().getColumn(COL_ACOES).setPreferredWidth(110);
     }
 
     /*
@@ -567,6 +477,12 @@ public class ProdutoPanel extends PadraoJPanel {
                             status,
                             "Editar"
                     }
+            );
+        }
+
+        if (lblResumo != null) {
+            lblResumo.setText(
+                    lista.size() + (lista.size() == 1 ? " produto" : " produtos")
             );
         }
     }
@@ -689,7 +605,7 @@ public class ProdutoPanel extends PadraoJPanel {
                         if (
                                 linha >= 0
                                         &&
-                                        coluna == 7
+                                        coluna == COL_ACOES
                         ) {
 
                             editarProduto(
@@ -703,7 +619,7 @@ public class ProdutoPanel extends PadraoJPanel {
 
     private void editarProduto(int linha) {
 
-        if (linha < 0 || linha >= produtos.size()) {
+        if (linha < 0 || produtosExibidos == null || linha >= produtosExibidos.size()) {
             return;
         }
 
@@ -1257,4 +1173,4 @@ public class ProdutoPanel extends PadraoJPanel {
             );
         }
     }
-}
+}

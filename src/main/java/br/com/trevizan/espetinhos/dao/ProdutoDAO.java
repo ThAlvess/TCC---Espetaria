@@ -17,10 +17,10 @@ public class ProdutoDAO {
     public void cadastrar(Produto produto) {
 
         String sql = """
-                INSERT INTO produto
-                (id_categoria, nome, descricao, preco, quantidade_estoque, ativo)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """;
+        INSERT INTO produto
+        (id_categoria, nome, descricao, preco, quantidade_estoque, local_preparo, ativo)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """;
 
         try (
                 Connection connection = ConnectionFactory.getConnection();
@@ -55,8 +55,13 @@ public class ProdutoDAO {
                     produto.getQuantidadeEstoque()
             );
 
-            statement.setBoolean(
+            statement.setString(
                     6,
+                    produto.getLocalPreparo()
+            );
+
+            statement.setBoolean(
+                    7,
                     produto.isAtivo()
             );
 
@@ -88,6 +93,9 @@ public class ProdutoDAO {
                     p.descricao,
                     p.preco,
                     p.quantidade_estoque,
+                    p.quantidade_estoque,
+                    p.local_preparo,
+                    p.ativo,
                     p.ativo,
                     c.id_categoria,
                     c.nome AS categoria_nome,
@@ -144,6 +152,10 @@ public class ProdutoDAO {
                         resultSet.getInt("quantidade_estoque")
                 );
 
+                produto.setLocalPreparo(
+                        resultSet.getString("local_preparo")
+                );
+
                 produto.setAtivo(
                         resultSet.getBoolean("ativo")
                 );
@@ -161,5 +173,43 @@ public class ProdutoDAO {
         }
 
         return produtos;
+    }
+
+    public void atualizar(Produto produto) {
+
+        String sql = """
+    UPDATE produto
+    SET nome = ?,
+        descricao = ?,
+        preco = ?,
+        quantidade_estoque = ?,
+        id_categoria = ?,
+        local_preparo = ?,
+        ativo = ?
+    WHERE id_produto = ?
+    """;
+
+        try (
+                Connection conexao = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conexao.prepareStatement(sql)
+        ) {
+
+            stmt.setString(1, produto.getNome());
+            stmt.setString(2, produto.getDescricao());
+            stmt.setBigDecimal(3, produto.getPreco());
+            stmt.setInt(4, produto.getQuantidadeEstoque());
+            stmt.setInt(5, produto.getCategoria().getIdCategoria());
+            stmt.setString(6, produto.getLocalPreparo());
+            stmt.setBoolean(7, produto.isAtivo());
+            stmt.setInt(8, produto.getIdProduto());
+
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao atualizar produto.",
+                    e
+            );
+        }
     }
 }

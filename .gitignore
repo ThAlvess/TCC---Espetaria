@@ -69,3 +69,5 @@ Thumbs.db
 # Configurações locais
 .env
 application.properties
+# Arquivos de apoio gerados nas conversas com o Claude
+Claude outputs/

@@ -1,22 +1,122 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package br.com.trevizan.espetinhos.view;
+
+import br.com.trevizan.espetinhos.dao.UsuarioDAO;
+import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.SessaoUsuario;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 /**
  *
  * @author thiag
  */
 public class Login extends javax.swing.JFrame {
-    
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Login.class.getName());
+
+
+    private boolean senhaVisivel = false;
+    private char caractereSenhaOriginal;
+
+    private void configurarBotaoSenha() {
+        caractereSenhaOriginal = jPasswordField1.getEchoChar();
+
+        javax.swing.JButton btnOlho = new javax.swing.JButton() {
+            @Override
+            protected void paintComponent(java.awt.Graphics g) {
+                super.paintComponent(g);
+
+                java.awt.Graphics2D g2 =
+                        (java.awt.Graphics2D) g.create();
+
+                g2.setRenderingHint(
+                        java.awt.RenderingHints.KEY_ANTIALIASING,
+                        java.awt.RenderingHints.VALUE_ANTIALIAS_ON
+                );
+
+                g2.setColor(new java.awt.Color(90, 90, 90));
+                g2.setStroke(new java.awt.BasicStroke(1.8f));
+
+                int x = (getWidth() - 22) / 2;
+                int y = (getHeight() - 14) / 2;
+
+                // Contorno do olho
+                java.awt.geom.Path2D olho =
+                        new java.awt.geom.Path2D.Double();
+
+                olho.moveTo(x, y + 7);
+                olho.quadTo(x + 11, y - 5, x + 22, y + 7);
+                olho.quadTo(x + 11, y + 19, x, y + 7);
+
+                g2.draw(olho);
+
+                // Pupila
+                g2.fillOval(x + 8, y + 4, 6, 6);
+
+                // Risco quando a senha estiver oculta
+                if (!senhaVisivel) {
+                    g2.setColor(new java.awt.Color(180, 65, 55));
+                    g2.drawLine(x + 2, y + 14, x + 20, y);
+                }
+
+                g2.dispose();
+            }
+        };
+
+        btnOlho.setPreferredSize(new java.awt.Dimension(38, 28));
+        btnOlho.setBorderPainted(false);
+        btnOlho.setContentAreaFilled(false);
+        btnOlho.setFocusPainted(false);
+        btnOlho.setFocusable(false);
+        btnOlho.setCursor(
+                new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR)
+        );
+
+        btnOlho.setToolTipText("Mostrar senha");
+
+        btnOlho.addActionListener(e -> {
+            senhaVisivel = !senhaVisivel;
+
+            jPasswordField1.setEchoChar(
+                    senhaVisivel ? (char) 0 : caractereSenhaOriginal
+            );
+
+            btnOlho.setToolTipText(
+                    senhaVisivel ? "Ocultar senha" : "Mostrar senha"
+            );
+
+            btnOlho.repaint();
+        });
+
+        // Reserva espaço para o texto não ficar atrás do botão
+        jPasswordField1.setMargin(
+                new java.awt.Insets(2, 6, 2, 42)
+        );
+
+        // Posiciona o botão dentro do campo de senha
+        jPasswordField1.setLayout(new java.awt.BorderLayout());
+        jPasswordField1.add(
+                btnOlho,
+                java.awt.BorderLayout.EAST
+        );
+    }
+
+
+    private static final java.util.logging.Logger logger =
+            java.util.logging.Logger.getLogger(Login.class.getName());
 
     /**
      * Creates new form Login
      */
     public Login() {
+
         initComponents();
+        configurarBotaoSenha();
+
+        // Permite pressionar ENTER para executar o login
+        getRootPane().setDefaultButton(jButton2);
+
+        // Centraliza a janela
+        setLocationRelativeTo(null);
     }
 
     /**
@@ -35,10 +135,7 @@ public class Login extends javax.swing.JFrame {
         jTextField1 = new javax.swing.JTextField();
         jLabelSenha = new javax.swing.JLabel();
         jPasswordField1 = new javax.swing.JPasswordField();
-        jButton1 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
-        jLabel3 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
         Logo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -67,9 +164,8 @@ public class Login extends javax.swing.JFrame {
 
         jPasswordField1.setBackground(new java.awt.Color(242, 242, 242));
 
-        jButton1.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
-        jButton1.setText("Esqueci a senha");
-        jButton1.addActionListener(this::jButton1ActionPerformed);
+
+
 
         jButton2.setBackground(new java.awt.Color(0, 102, 0));
         jButton2.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
@@ -77,73 +173,58 @@ public class Login extends javax.swing.JFrame {
         jButton2.setText("Entrar");
         jButton2.addActionListener(this::jButton2ActionPerformed);
 
-        jLabel3.setText("Não tem um cadastro?");
-
-        jLabel4.setForeground(new java.awt.Color(0, 102, 204));
-        jLabel4.setText("<html><u>Cadastrar-se</u></html>");
-        jLabel4.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        jLabel4.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jLabel4MouseClicked(evt);
-            }
-        });
-
         javax.swing.GroupLayout PainelCartaoLayout = new javax.swing.GroupLayout(PainelCartao);
         PainelCartao.setLayout(PainelCartaoLayout);
+
         PainelCartaoLayout.setHorizontalGroup(
-            PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(PainelCartaoLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addGap(177, 177, 177))
-            .addGroup(PainelCartaoLayout.createSequentialGroup()
-                .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(PainelCartaoLayout.createSequentialGroup()
-                        .addGap(66, 66, 66)
-                        .addComponent(jLabel2))
-                    .addGroup(PainelCartaoLayout.createSequentialGroup()
-                        .addGap(46, 46, 46)
-                        .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(PainelCartaoLayout.createSequentialGroup()
-                                .addComponent(jLabel3)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                .addComponent(jLabelUsuário)
-                                .addComponent(jTextField1)
-                                .addComponent(jLabelSenha)
-                                .addComponent(jPasswordField1)
-                                .addGroup(PainelCartaoLayout.createSequentialGroup()
-                                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 27, Short.MAX_VALUE)
-                                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE))))))
-                .addContainerGap(34, Short.MAX_VALUE))
+                PainelCartaoLayout.createParallelGroup(
+                                javax.swing.GroupLayout.Alignment.CENTER
+                        )
+                        .addGroup(PainelCartaoLayout.createSequentialGroup()
+                                .addGap(46)
+                                .addGroup(PainelCartaoLayout.createParallelGroup(
+                                                        javax.swing.GroupLayout.Alignment.LEADING
+                                                )
+                                                .addComponent(jLabelUsuário)
+                                                .addComponent(jTextField1, 357, 357, 357)
+                                                .addComponent(jLabelSenha)
+                                                .addComponent(jPasswordField1, 357, 357, 357)
+                                )
+                                .addGap(46)
+                        )
+                        .addComponent(jLabel1)
+                        .addComponent(jLabel2)
+                        .addComponent(jButton2, 220, 220, 220)
         );
+
         PainelCartaoLayout.setVerticalGroup(
-            PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(PainelCartaoLayout.createSequentialGroup()
-                .addGap(32, 32, 32)
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel2)
-                .addGap(24, 24, 24)
-                .addComponent(jLabelUsuário)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(jLabelSenha)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPasswordField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(29, 29, 29)
-                .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(PainelCartaoLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(0, 36, Short.MAX_VALUE))
+                PainelCartaoLayout.createSequentialGroup()
+                        .addGap(28)
+                        .addComponent(jLabel1)
+                        .addGap(8)
+                        .addComponent(jLabel2)
+                        .addGap(24)
+                        .addComponent(jLabelUsuário)
+                        .addGap(6)
+                        .addComponent(
+                                jTextField1,
+                                34, 34, 34
+                        )
+                        .addGap(18)
+                        .addComponent(jLabelSenha)
+                        .addGap(6)
+                        .addComponent(
+                                jPasswordField1,
+                                34, 34, 34
+                        )
+                        .addGap(24)
+                        .addComponent(
+                                jButton2,
+                                42, 42, 42
+                        )
+                        .addGap(25)
         );
+
 
         Logo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         Logo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/TrevizanPequeno.png"))); // NOI18N
@@ -174,58 +255,185 @@ public class Login extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
-        // TODO add your handling code here:
+
+    private void jTextField1ActionPerformed(
+            java.awt.event.ActionEvent evt
+    ) {//GEN-FIRST:event_jTextField1ActionPerformed
+
+        // Ao pressionar Enter no usuário, passa para a senha
+        jPasswordField1.requestFocus();
+
     }//GEN-LAST:event_jTextField1ActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton1ActionPerformed
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TODO add your handling code here:
+
+
+    private void jButton2ActionPerformed(
+            java.awt.event.ActionEvent evt
+    ) {//GEN-FIRST:event_jButton2ActionPerformed
+
+        String login =
+                jTextField1.getText().trim();
+
+        String senha =
+                new String(
+                        jPasswordField1.getPassword()
+                );
+
+        if (login.isEmpty() || senha.isEmpty()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Preencha o usuário e a senha.",
+                    "Campos obrigatórios",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+
+        try {
+
+            UsuarioDAO usuarioDAO =
+                    new UsuarioDAO();
+
+            Usuario usuario =
+                    usuarioDAO.autenticar(
+                            login,
+                            senha
+                    );
+
+
+            if (usuario != null) {
+
+                // Verifica se o usuário precisa trocar a senha.
+                if (usuario.isTrocaSenhaObrigatoria()) {
+
+                    TrocaSenhaObrigatoriaDialog dialog =
+                            new TrocaSenhaObrigatoriaDialog(this, usuario);
+
+                    dialog.setVisible(true);
+
+                    // Se fechar a janela sem alterar a senha,
+                    // o acesso ao sistema permanece bloqueado.
+                    if (!dialog.isSenhaAlterada()) {
+                        jPasswordField1.setText("");
+                        return;
+                    }
+                }
+
+                // A sessão só começa depois da troca obrigatória.
+                SessaoUsuario.login(usuario);
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Bem-vindo, " + usuario.getNome() + "!"
+                );
+
+                abrirMainScreen(usuario);
+
+            } else {
+
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Usuário ou senha inválidos.",
+                        "Erro de autenticação",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+
+        } catch (RuntimeException e) {
+
+            // Pega a causa original do erro para mostrar ao usuário
+            Throwable causa = e;
+            while (causa.getCause() != null) {
+                causa = causa.getCause();
+            }
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Não foi possível acessar o banco de dados.\n"
+                            + "Verifique a conexão com o MySQL.\n\n"
+                            + "Detalhe: " + causa.getMessage(),
+                    "Erro de conexão",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            e.printStackTrace();
+        }
+
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    private void jLabel4MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel4MouseClicked
-        Cadastro telaCadastro = new Cadastro();
-        telaCadastro.setVisible(true);
-        this.dispose();            // TODO add your handling code here:
-    }//GEN-LAST:event_jLabel4MouseClicked
+
+
+    /**
+     * Mantém o JFrame do Login aberto e substitui
+     * seu conteúdo pela MainScreen.
+     *
+     * A MainScreen deve estender JPanel.
+     */
+    private void abrirMainScreen(Usuario usuarioLogado) {
+
+        MainScreen mainScreen =
+                new MainScreen(usuarioLogado);
+
+        setContentPane(mainScreen);
+
+        setTitle("Espetinhos Trevizan");
+
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+
+        revalidate();
+        repaint();
+    }
+
+
+
+    public void voltarParaLogin() {
+
+        // Encerra a sessão atual
+        SessaoUsuario.logout();
+
+        // Cria uma nova janela de login
+        Login novoLogin = new Login();
+
+        // Exibe a nova janela
+        novoLogin.setVisible(true);
+
+        // Fecha a janela anterior
+        dispose();
+    }
+
+
+
 
     /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
 
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Login().setVisible(true));
+        // Ativa o FlatLaf
+        com.formdev.flatlaf.FlatLightLaf.setup();
+
+        java.awt.EventQueue.invokeLater(
+                () -> {
+
+                    Login login =
+                            new Login();
+
+                    login.setVisible(true);
+                }
+        );
     }
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel Logo;
     private javax.swing.JPanel PainelCartao;
-    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabelSenha;
     private javax.swing.JLabel jLabelUsuário;
     private javax.swing.JPasswordField jPasswordField1;

@@ -25,6 +25,8 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ComandaPanel extends PadraoJPanel {
 
@@ -134,12 +136,30 @@ public class ComandaPanel extends PadraoJPanel {
         lblIdComanda.setFont(new Font("Arial", Font.BOLD, 12));
         linhaVoltar.add(lblIdComanda, BorderLayout.EAST);
 
-        JLabel lblMesa = new JLabel("MESA " + mesa.getNumero());
+        String tituloAtendimento;
+
+        if ("MESA".equalsIgnoreCase(comanda.getTipoAtendimento())) {
+            tituloAtendimento = "MESA " + mesa.getNumero();
+        } else {
+            tituloAtendimento = comanda.getTipoAtendimento();
+        }
+
+        JLabel lblMesa = new JLabel(tituloAtendimento);
         lblMesa.setFont(new Font("Arial", Font.BOLD, 28));
         lblMesa.setForeground(COR_TEXTO);
         lblMesa.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lblAtendente = new JLabel("Atendente: " + usuarioLogado.getNome());
+        JLabel lblCliente = new JLabel(
+                "Cliente: " + comanda.getNomeCliente()
+        );
+
+        lblCliente.setFont(
+                new Font("Arial", Font.PLAIN, 13)
+        );
+
+        lblCliente.setForeground(COR_TEXTO_SECUNDARIO);
+        lblCliente.setAlignmentX(Component.LEFT_ALIGNMENT);
         lblAtendente.setFont(new Font("Arial", Font.PLAIN, 13));
         lblAtendente.setForeground(COR_TEXTO_SECUNDARIO);
         lblAtendente.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -148,7 +168,12 @@ public class ComandaPanel extends PadraoJPanel {
         separadorCabecalho.setForeground(COR_BORDA);
         separadorCabecalho.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel lblPedido = new JLabel("PEDIDO DA MESA");
+        String textoPedido =
+                "MESA".equalsIgnoreCase(comanda.getTipoAtendimento())
+                        ? "PEDIDO DA MESA"
+                        : "PEDIDO - " + comanda.getTipoAtendimento();
+
+        JLabel lblPedido = new JLabel(textoPedido);
         lblPedido.setFont(new Font("Arial", Font.BOLD, 13));
         lblPedido.setForeground(COR_VERDE);
         lblPedido.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -156,6 +181,8 @@ public class ComandaPanel extends PadraoJPanel {
         cabecalho.add(linhaVoltar);
         cabecalho.add(Box.createVerticalStrut(16));
         cabecalho.add(lblMesa);
+        cabecalho.add(Box.createVerticalStrut(3));
+        cabecalho.add(lblCliente);
         cabecalho.add(Box.createVerticalStrut(3));
         cabecalho.add(lblAtendente);
         cabecalho.add(Box.createVerticalStrut(14));
@@ -240,7 +267,7 @@ public class ComandaPanel extends PadraoJPanel {
         rodape.add(btnPagamento);
         rodape.add(Box.createVerticalStrut(8));
 
-        RoundedButton btnFecharMesa = new RoundedButton("FECHAR MESA", 14);
+        RoundedButton btnFecharMesa = new RoundedButton("FECHAR COMANDA", 14);
         btnFecharMesa.setBackground(COR_DESTAQUE);
         btnFecharMesa.setForeground(Color.WHITE);
         btnFecharMesa.setBorderColor(COR_DESTAQUE);
@@ -251,6 +278,31 @@ public class ComandaPanel extends PadraoJPanel {
         btnFecharMesa.setAlignmentX(Component.LEFT_ALIGNMENT);
         btnFecharMesa.addActionListener(e -> fecharMesa());
         rodape.add(btnFecharMesa);
+        rodape.add(Box.createVerticalStrut(8));
+
+        RoundedButton btnSaiuCozinha =
+                new RoundedButton("PEDIDO SAIU DA COZINHA", 14);
+
+        btnSaiuCozinha.setBackground(COR_VERDE);
+        btnSaiuCozinha.setForeground(Color.WHITE);
+        btnSaiuCozinha.setBorderColor(COR_VERDE);
+        btnSaiuCozinha.setHoverColor(COR_VERDE_ESCURO);
+        btnSaiuCozinha.setFont(new Font("Arial", Font.BOLD, 12));
+
+        btnSaiuCozinha.setMaximumSize(
+                new Dimension(Integer.MAX_VALUE, 42)
+        );
+        btnSaiuCozinha.setPreferredSize(new Dimension(0, 42));
+        btnSaiuCozinha.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        btnSaiuCozinha.addActionListener(e -> pedidoSaiuDaCozinha());
+
+        rodape.add(btnSaiuCozinha);
+        // Atendente não pode receber pagamento nem fechar comanda
+        if ("Atendente".equalsIgnoreCase(usuarioLogado.getPerfil())) {
+            btnPagamento.setVisible(false);
+            btnFecharMesa.setVisible(false);
+        }
 
         painelComanda.add(rodape, BorderLayout.SOUTH);
         conteudo.add(painelComanda, BorderLayout.WEST);
@@ -913,6 +965,17 @@ public class ComandaPanel extends PadraoJPanel {
     }
 
     private void adicionarPagamento() {
+
+        if (!podeReceberPagamento()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Seu usuário não possui permissão para registrar pagamentos.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         BigDecimal totalComanda = comandaDAO.obterTotal(comanda.getIdComanda());
 
         if (totalComanda.compareTo(BigDecimal.ZERO) <= 0) {
@@ -1012,10 +1075,138 @@ public class ComandaPanel extends PadraoJPanel {
         }
     }
 
+
+    private boolean possuiAlteracoesNaoSalvas() {
+
+        if (!itensRemovidos.isEmpty()) {
+            return true;
+        }
+
+        List<ItemComanda> itensSalvos =
+                itemComandaDAO.listarPorComanda(comanda.getIdComanda());
+
+        Map<Integer, ItemComanda> itensPorId = new HashMap<>();
+
+        for (ItemComanda salvo : itensSalvos) {
+            itensPorId.put(salvo.getIdItemComanda(), salvo);
+        }
+
+        int quantidadeItensPersistidos = 0;
+
+        for (ItemTemporario item : itensTemporarios) {
+
+            if (item.idItemComanda == 0) {
+                return true;
+            }
+
+            quantidadeItensPersistidos++;
+
+            ItemComanda salvo = itensPorId.get(item.idItemComanda);
+
+            if (salvo == null) {
+                return true;
+            }
+
+            if (item.quantidade != salvo.getQuantidade()) {
+                return true;
+            }
+
+            String obsTela = item.observacao == null
+                    ? ""
+                    : item.observacao.trim();
+
+            String obsBanco = salvo.getObservacao() == null
+                    ? ""
+                    : salvo.getObservacao().trim();
+
+            if (!obsTela.equals(obsBanco)) {
+                System.out.println(
+                        "DIFERENÇA NA OBSERVAÇÃO - Item: "
+                                + item.idItemComanda
+                );
+                return true;
+            }
+        }
+
+        return quantidadeItensPersistidos != itensPorId.size();
+    }
+
+
+
+    private void pedidoSaiuDaCozinha() {
+
+        if (possuiAlteracoesNaoSalvas()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Existem alterações não salvas. Salve a comanda antes de confirmar a saída da cozinha.",
+                    "Atenção",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        int resposta = JOptionPane.showConfirmDialog(
+                this,
+                "Confirmar que os itens pendentes desta comanda saíram da cozinha?",
+                "Saída da cozinha",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (resposta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try {
+            int itensAtualizados =
+                    itemComandaDAO.marcarItensCozinhaComoEntregues(
+                            comanda.getIdComanda()
+                    );
+
+            if (itensAtualizados == 0) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Esta comanda não possui itens pendentes na cozinha.",
+                        "Cozinha",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+                return;
+            }
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Saída da cozinha confirmada com sucesso!",
+                    "Cozinha",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao confirmar saída da cozinha:\n" + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            e.printStackTrace();
+        }
+    }
+
     // ================================================================
     // FECHAMENTO
     // ================================================================
     private void fecharMesa() {
+
+        if (!podeReceberPagamento()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Seu usuário não possui permissão para fechar comandas.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         try {
             BigDecimal totalComanda = comandaDAO.obterTotal(comanda.getIdComanda());
             BigDecimal totalPago = pagamentoDAO.obterTotalPago(comanda.getIdComanda());
@@ -1024,7 +1215,7 @@ public class ComandaPanel extends PadraoJPanel {
                 JOptionPane.showMessageDialog(
                         this,
                         "A comanda não possui valor para fechamento.",
-                        "Fechar mesa",
+                        "Fechar comanda",
                         JOptionPane.WARNING_MESSAGE
                 );
                 return;
@@ -1045,11 +1236,24 @@ public class ComandaPanel extends PadraoJPanel {
                 return;
             }
 
+            String identificacaoAtendimento;
+
+            if ("MESA".equalsIgnoreCase(comanda.getTipoAtendimento())) {
+                identificacaoAtendimento =
+                        "Mesa: " + mesa.getNumero();
+            } else {
+                identificacaoAtendimento =
+                        "Atendimento: " + comanda.getTipoAtendimento();
+            }
+
             int resposta = JOptionPane.showConfirmDialog(
                     this,
-                    "Confirma o fechamento da Mesa " + mesa.getNumero() + "?\n\n"
-                            + "Total: " + moeda.format(totalComanda),
-                    "Fechar mesa",
+                    "Confirma o fechamento da comanda de "
+                            + comanda.getNomeCliente()
+                            + "?\n\n"
+                            + identificacaoAtendimento
+                            + "\nTotal: " + moeda.format(totalComanda),
+                    "Fechar comanda",
                     JOptionPane.YES_NO_OPTION
             );
 
@@ -1058,12 +1262,30 @@ public class ComandaPanel extends PadraoJPanel {
             }
 
             comandaDAO.fecharComanda(comanda.getIdComanda());
-            mesaDAO.atualizarStatus(mesa.getIdMesa(), "LIVRE");
-            mesa.setStatus("LIVRE");
+
+// Verifica se ainda existe alguma outra comanda aberta nesta mesa
+            if ("MESA".equalsIgnoreCase(comanda.getTipoAtendimento())
+                    && mesa != null) {
+
+                boolean possuiComandasAbertas =
+                        comandaDAO.existeComandaAbertaNaMesa(
+                                mesa.getIdMesa()
+                        );
+
+                if (!possuiComandasAbertas) {
+
+                    mesaDAO.atualizarStatus(
+                            mesa.getIdMesa(),
+                            "LIVRE"
+                    );
+
+                    mesa.setStatus("LIVRE");
+                }
+            }
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Mesa " + mesa.getNumero() + " fechada com sucesso!"
+                    "Comanda fechada com sucesso!"
             );
 
             if (aoVoltar != null) {
@@ -1073,7 +1295,7 @@ public class ComandaPanel extends PadraoJPanel {
         } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Erro ao fechar mesa:\n" + e.getMessage(),
+                    "Erro ao fechar comanda:\n" + e.getMessage(),
                     "Erro",
                     JOptionPane.ERROR_MESSAGE
             );
@@ -1195,5 +1417,16 @@ public class ComandaPanel extends PadraoJPanel {
             g2.dispose();
             super.paintComponent(g);
         }
+    }
+
+    private boolean podeReceberPagamento() {
+        if (usuarioLogado == null || usuarioLogado.getPerfil() == null) {
+            return false;
+        }
+
+        String perfil = usuarioLogado.getPerfil();
+
+        return "Caixa".equalsIgnoreCase(perfil)
+                || "Administrador".equalsIgnoreCase(perfil);
     }
 }

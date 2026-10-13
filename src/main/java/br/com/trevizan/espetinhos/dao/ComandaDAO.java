@@ -14,11 +14,12 @@ public class ComandaDAO {
     public int abrirComanda(int idMesa, int idUsuario, String nomeCliente) {
 
         String sql = """
-                INSERT INTO comanda
-                    (id_mesa, id_usuario, nome_cliente, status, valor_total)
-                VALUES
-                    (?, ?, ?, 'ABERTA', 0.00)
-                """;
+        INSERT INTO comanda
+            (id_mesa, id_usuario, tipo_atendimento,
+             nome_cliente, status, valor_total)
+        VALUES
+            (?, ?, 'MESA', ?, 'ABERTA', 0.00)
+        """;
 
         try (
                 Connection conn = ConnectionFactory.getConnection();
@@ -54,6 +55,74 @@ public class ComandaDAO {
         }
     }
 
+    public int abrirComandaSemMesa(
+            int idUsuario,
+            String nomeCliente,
+            String tipoAtendimento
+    ) {
+
+        if (!"DELIVERY".equalsIgnoreCase(tipoAtendimento)
+                && !"RETIRADA".equalsIgnoreCase(tipoAtendimento)) {
+
+            throw new IllegalArgumentException(
+                    "Tipo de atendimento inválido."
+            );
+        }
+
+        String sql = """
+            INSERT INTO comanda
+                (id_mesa, id_usuario, tipo_atendimento,
+                 nome_cliente, status, valor_total)
+            VALUES
+                (NULL, ?, ?, ?, 'ABERTA', 0.00)
+            """;
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(
+                        sql,
+                        Statement.RETURN_GENERATED_KEYS
+                )
+        ) {
+
+            stmt.setInt(1, idUsuario);
+            stmt.setString(
+                    2,
+                    tipoAtendimento.toUpperCase()
+            );
+
+            if (nomeCliente == null || nomeCliente.isBlank()) {
+                stmt.setNull(3, Types.VARCHAR);
+            } else {
+                stmt.setString(
+                        3,
+                        nomeCliente.trim()
+                );
+            }
+
+            stmt.executeUpdate();
+
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+
+            throw new RuntimeException(
+                    "A comanda foi criada, mas não foi possível obter seu ID."
+            );
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Erro ao abrir comanda de "
+                            + tipoAtendimento.toLowerCase() + ".",
+                    e
+            );
+        }
+    }
+
     /**
      * Busca a comanda ABERTA de uma mesa.
      */
@@ -64,6 +133,7 @@ public class ComandaDAO {
                     id_comanda,
                     id_mesa,
                     id_usuario,
+                    tipo_atendimento,
                     nome_cliente,
                     data_abertura,
                     data_fechamento,
@@ -106,6 +176,7 @@ public class ComandaDAO {
                     id_comanda,
                     id_mesa,
                     id_usuario,
+                    tipo_atendimento,
                     nome_cliente,
                     data_abertura,
                     data_fechamento,
@@ -248,6 +319,84 @@ public class ComandaDAO {
         }
     }
 
+    /**
+     * Lista todas as comandas ABERTAS de uma mesa.
+     */
+    public java.util.List<Comanda> listarComandasAbertasPorMesa(int idMesa) {
+
+        String sql = """
+            SELECT
+                id_comanda,
+                id_mesa,
+                id_usuario,
+                tipo_atendimento,
+                nome_cliente,
+                data_abertura,
+                data_fechamento,
+                status,
+                valor_total
+            FROM comanda
+            WHERE id_mesa = ?
+              AND status = 'ABERTA'
+            ORDER BY data_abertura ASC
+            """;
+
+        java.util.List<Comanda> comandas =
+                new java.util.ArrayList<>();
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            stmt.setInt(1, idMesa);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    comandas.add(criarComanda(rs));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao listar comandas abertas da mesa.",
+                    e
+            );
+        }
+
+        return comandas;
+    }
+
+    public boolean existeComandaAbertaNaMesa(int idMesa) {
+
+        String sql = """
+            SELECT 1
+            FROM comanda
+            WHERE id_mesa = ?
+              AND status = 'ABERTA'
+            LIMIT 1
+            """;
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            stmt.setInt(1, idMesa);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao verificar comandas abertas da mesa.",
+                    e
+            );
+        }
+    }
+
     private Comanda criarComanda(ResultSet rs) throws SQLException {
 
         Comanda comanda = new Comanda();
@@ -256,6 +405,9 @@ public class ComandaDAO {
         comanda.setIdMesa(rs.getInt("id_mesa"));
         comanda.setIdUsuario(rs.getInt("id_usuario"));
         comanda.setNomeCliente(rs.getString("nome_cliente"));
+        comanda.setTipoAtendimento(
+                rs.getString("tipo_atendimento")
+        );
 
         Timestamp abertura = rs.getTimestamp("data_abertura");
 
@@ -280,20 +432,26 @@ public class ComandaDAO {
      * para alimentar a tabela de Histórico.
      */
     public java.util.List<Comanda> listarFechadas() {
+
         String sql = """
-                SELECT
-                    id_comanda,
-                    id_mesa,
-                    id_usuario,
-                    nome_cliente,
-                    data_abertura,
-                    data_fechamento,
-                    status,
-                    valor_total
-                FROM comanda
-                WHERE status IN ('FECHADA', 'CANCELADA')
-                ORDER BY data_fechamento DESC
-                """;
+        SELECT
+            c.id_comanda,
+            c.id_mesa,
+            c.id_usuario,
+            c.tipo_atendimento,
+            c.nome_cliente,
+            c.data_abertura,
+            c.data_fechamento,
+            c.status,
+            c.valor_total,
+            u.nome AS nome_atendente
+        FROM comanda c
+        LEFT JOIN usuario u
+            ON u.id_usuario = c.id_usuario
+        WHERE c.status IN ('FECHADA', 'CANCELADA')
+        ORDER BY c.data_fechamento DESC
+        """;
+
 
         java.util.List<Comanda> lista = new java.util.ArrayList<>();
 
@@ -303,7 +461,9 @@ public class ComandaDAO {
                 ResultSet rs = stmt.executeQuery()
         ) {
             while (rs.next()) {
-                lista.add(criarComanda(rs));
+                Comanda comanda = criarComanda(rs);
+                comanda.setNomeAtendente(rs.getString("nome_atendente"));
+                lista.add(comanda);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao listar histórico de comandas.", e);
@@ -339,5 +499,66 @@ public class ComandaDAO {
         }
 
         return itens.isEmpty() ? "Nenhum item" : String.join(", ", itens);
+    }
+
+    public java.util.List<Comanda> listarComandasAbertasPorTipo(
+            String tipoAtendimento
+    ) {
+
+        if (!"DELIVERY".equalsIgnoreCase(tipoAtendimento)
+                && !"RETIRADA".equalsIgnoreCase(tipoAtendimento)) {
+
+            throw new IllegalArgumentException(
+                    "Tipo de atendimento inválido."
+            );
+        }
+
+        String sql = """
+            SELECT
+                id_comanda,
+                id_mesa,
+                id_usuario,
+                tipo_atendimento,
+                nome_cliente,
+                data_abertura,
+                data_fechamento,
+                status,
+                valor_total
+            FROM comanda
+            WHERE tipo_atendimento = ?
+              AND status = 'ABERTA'
+            ORDER BY data_abertura ASC
+            """;
+
+        java.util.List<Comanda> comandas =
+                new java.util.ArrayList<>();
+
+        try (
+                Connection conn = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            stmt.setString(
+                    1,
+                    tipoAtendimento.toUpperCase()
+            );
+
+            try (ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    comandas.add(criarComanda(rs));
+                }
+            }
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Erro ao listar pedidos de "
+                            + tipoAtendimento.toLowerCase() + ".",
+                    e
+            );
+        }
+
+        return comandas;
     }
 }

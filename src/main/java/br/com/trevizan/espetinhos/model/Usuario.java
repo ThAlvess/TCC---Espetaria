@@ -8,6 +8,7 @@ public class Usuario {
     private String perfil;
     private boolean ativo;
     private String senha;
+    private boolean trocaSenhaObrigatoria;
 
     public int getId() {
         return id;
@@ -96,4 +97,14 @@ public class Usuario {
     public void setSenha(String senha) {
         this.senha = senha;
     }
+
+
+    public boolean isTrocaSenhaObrigatoria() {
+        return trocaSenhaObrigatoria;
+    }
+
+    public void setTrocaSenhaObrigatoria(boolean trocaSenhaObrigatoria) {
+        this.trocaSenhaObrigatoria = trocaSenhaObrigatoria;
+    }
+
 }

@@ -2,12 +2,17 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.PadraoJPanel;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.dao.CaixaDAO;
+import java.math.BigDecimal;
+import javax.swing.JOptionPane;
+
 public class MainScreen extends javax.swing.JPanel {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(MainScreen.class.getName());
     private java.awt.CardLayout cardLayout;
     private final Usuario usuarioLogado;
     private Caixa caixaPanel;
+    private javax.swing.JButton btnLogoff;
     
     /**
      * Creates new form MainScreen
@@ -15,6 +20,7 @@ public class MainScreen extends javax.swing.JPanel {
     public MainScreen(Usuario usuarioLogado) {
         initComponents();
         this.usuarioLogado = usuarioLogado;
+        verificarAberturaCaixa();
         CenterPanel.add(new MesaPanel(usuarioLogado), "mesas");
         CenterPanel.add(new HistoricoPanel(), "historico");
         caixaPanel = new Caixa();
@@ -42,7 +48,8 @@ public class MainScreen extends javax.swing.JPanel {
         btnRelatorios.putClientProperty("JButton.buttonType", "roundRect");
         btnUsuarios.putClientProperty("JButton.buttonType", "roundRect");
         // Adicionado para arredondar o novo botão
-        
+
+        configurarPermissoes();
         ativarBotao(btnMesas);
     }
 
@@ -68,6 +75,16 @@ public class MainScreen extends javax.swing.JPanel {
         btnProdutos = new javax.swing.JButton();
         btnRelatorios = new javax.swing.JButton();
         btnUsuarios = new javax.swing.JButton(); // Renomeado de jButton1 para btnUsuarios
+
+        btnLogoff = new javax.swing.JButton("Sair da conta");
+
+        btnLogoff.setFont(new java.awt.Font("Segoe UI", 1, 11));
+        btnLogoff.setForeground(new java.awt.Color(170, 50, 40));
+        btnLogoff.setFocusable(false);
+        btnLogoff.putClientProperty("JButton.buttonType", "roundRect");
+
+        btnLogoff.addActionListener(evt -> confirmarLogoff());
+
         CenterPanel = new javax.swing.JPanel() {
             @Override
             protected void paintComponent(java.awt.Graphics g) {
@@ -140,6 +157,8 @@ public class MainScreen extends javax.swing.JPanel {
                 .addGap(25, 25, 25)
                 .addGroup(LateralPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(Logo)
+                        .addComponent(btnLogoff, javax.swing.GroupLayout.PREFERRED_SIZE, 150,
+                                javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnMesas, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnHistorico, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnCaixa, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -152,8 +171,11 @@ public class MainScreen extends javax.swing.JPanel {
             LateralPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(LateralPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(Logo)
-                .addGap(18, 18, 18)
+                    .addComponent(Logo)
+                    .addGap(8, 8, 8)
+                    .addComponent(btnLogoff, javax.swing.GroupLayout.PREFERRED_SIZE, 32,
+                            javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(18, 18, 18)
                 .addComponent(btnMesas, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(btnHistorico, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -176,6 +198,195 @@ public class MainScreen extends javax.swing.JPanel {
         PainelMargem.add(CenterPanel, java.awt.BorderLayout.CENTER);
 
         add(PainelMargem, java.awt.BorderLayout.CENTER);
+    }
+
+    private void verificarAberturaCaixa() {
+
+        String perfil = usuarioLogado.getPerfil();
+
+        // Somente Caixa e Administrador podem iniciar o caixa
+        if (!"Caixa".equalsIgnoreCase(perfil)
+                && !"Administrador".equalsIgnoreCase(perfil)) {
+            return;
+        }
+
+        CaixaDAO caixaDAO = new CaixaDAO();
+
+        br.com.trevizan.espetinhos.model.Caixa caixaAberto =
+                caixaDAO.buscarCaixaAberto();
+
+        if (caixaAberto != null) {
+
+            // O caixa aberto pertence ao dia atual.
+            // Continua utilizando normalmente.
+            if (caixaDAO.caixaAbertoEhDeHoje(caixaAberto)) {
+                return;
+            }
+
+            // Existe um caixa aberto de um dia anterior.
+            BigDecimal totalVendas =
+                    caixaDAO.calcularTotalVendas(caixaAberto.getIdCaixa());
+
+            BigDecimal sangrias =
+                    caixaDAO.calcularSangrias(caixaAberto.getIdCaixa());
+
+            BigDecimal valorFinal =
+                    caixaAberto.getValorInicial()
+                            .add(totalVendas)
+                            .subtract(sangrias);
+
+            caixaDAO.fecharCaixa(
+                    caixaAberto.getIdCaixa(),
+                    valorFinal
+            );
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "O caixa anterior foi fechado automaticamente.\n\n"
+                            + "Data: "
+                            + caixaAberto.getDataHoraAbertura()
+                            .toLocalDate()
+                            .format(
+                                    java.time.format.DateTimeFormatter
+                                            .ofPattern("dd/MM/yyyy")
+                            )
+                            + "\nValor final: R$ "
+                            + valorFinal.setScale(
+                            2,
+                            java.math.RoundingMode.HALF_UP
+                    ),
+                    "Fechamento automático",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        }
+
+        while (true) {
+
+            String valorInformado = javax.swing.JOptionPane.showInputDialog(
+                    this,
+                    "Informe o valor inicial do caixa:",
+                    "Abertura de Caixa",
+                    javax.swing.JOptionPane.QUESTION_MESSAGE
+            );
+
+            // Usuário clicou em Cancelar
+            if (valorInformado == null) {
+                return;
+            }
+
+            valorInformado = valorInformado
+                    .trim()
+                    .replace(",", ".");
+
+            try {
+
+                java.math.BigDecimal valorInicial =
+                        new java.math.BigDecimal(valorInformado);
+
+                if (valorInicial.compareTo(java.math.BigDecimal.ZERO) < 0) {
+                    javax.swing.JOptionPane.showMessageDialog(
+                            this,
+                            "O valor inicial não pode ser negativo.",
+                            "Valor inválido",
+                            javax.swing.JOptionPane.WARNING_MESSAGE
+                    );
+                    continue;
+                }
+
+                br.com.trevizan.espetinhos.model.Caixa novoCaixa =
+                        new br.com.trevizan.espetinhos.model.Caixa();
+
+                novoCaixa.setUsuarioAbertura(usuarioLogado);
+                novoCaixa.setValorInicial(valorInicial);
+
+                caixaDAO.abrirCaixa(novoCaixa);
+
+                javax.swing.JOptionPane.showMessageDialog(
+                        this,
+                        "Caixa aberto com sucesso!\n"
+                                + "Valor inicial: R$ "
+                                + valorInicial.setScale(
+                                2,
+                                java.math.RoundingMode.HALF_UP
+                        ),
+                        "Caixa aberto",
+                        javax.swing.JOptionPane.INFORMATION_MESSAGE
+                );
+
+                break;
+
+            } catch (NumberFormatException e) {
+
+                javax.swing.JOptionPane.showMessageDialog(
+                        this,
+                        "Informe um valor válido.\nExemplo: 150,00",
+                        "Valor inválido",
+                        javax.swing.JOptionPane.WARNING_MESSAGE
+                );
+            }
+        }
+    }
+
+    private boolean usuarioEhAdministrador() {
+        return usuarioLogado != null
+                && usuarioLogado.getPerfil() != null
+                && "Administrador".equalsIgnoreCase(usuarioLogado.getPerfil());
+    }
+
+    private boolean usuarioPodeAcessarCaixa() {
+        if (usuarioLogado == null || usuarioLogado.getPerfil() == null) {
+            return false;
+        }
+
+        String perfil = usuarioLogado.getPerfil();
+
+        return "Caixa".equalsIgnoreCase(perfil)
+                || "Administrador".equalsIgnoreCase(perfil);
+    }
+
+    private void configurarPermissoes() {
+
+        String perfil = usuarioLogado.getPerfil();
+
+        // Administrador pode acessar tudo
+        if ("Administrador".equalsIgnoreCase(perfil)) {
+            return;
+        }
+
+        // Caixa: Mesas + Caixa
+        if ("Caixa".equalsIgnoreCase(perfil)) {
+
+            btnMesas.setVisible(true);
+            btnCaixa.setVisible(true);
+
+            btnHistorico.setVisible(false);
+            btnProdutos.setVisible(false);
+            btnRelatorios.setVisible(false);
+            btnUsuarios.setVisible(false);
+
+            return;
+        }
+
+        // Atendente: somente Mesas
+        if ("Atendente".equalsIgnoreCase(perfil)) {
+
+            btnMesas.setVisible(true);
+
+            btnHistorico.setVisible(false);
+            btnCaixa.setVisible(false);
+            btnProdutos.setVisible(false);
+            btnRelatorios.setVisible(false);
+            btnUsuarios.setVisible(false);
+
+            return;
+        }
+
+        // Segurança para perfil desconhecido
+        btnHistorico.setVisible(false);
+        btnCaixa.setVisible(false);
+        btnProdutos.setVisible(false);
+        btnRelatorios.setVisible(false);
+        btnUsuarios.setVisible(false);
     }
 
     private void resetarBotoes() {
@@ -202,33 +413,115 @@ public class MainScreen extends javax.swing.JPanel {
         botaoAtivo.setForeground(java.awt.Color.WHITE);
     }
     
-    private void btnMesasActionPerformed(java.awt.event.ActionEvent evt) {                          
+    private void btnMesasActionPerformed(java.awt.event.ActionEvent evt) {
+        configurarPermissoes();
         ativarBotao(btnMesas);
         cardLayout.show(CenterPanel, "mesas");
     }                          
 
-    private void btnHistoricoActionPerformed(java.awt.event.ActionEvent evt) {                                             
+    private void btnHistoricoActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador possui acesso a esta função.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         ativarBotao(btnHistorico);
         cardLayout.show(CenterPanel, "historico");
     }                                            
 
-    private void btnCaixaActionPerformed(java.awt.event.ActionEvent evt) {                          
+    private void btnCaixaActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioPodeAcessarCaixa()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Seu usuário não possui permissão para acessar o Caixa.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         ativarBotao(btnCaixa);
         caixaPanel.atualizarDados();
         cardLayout.show(CenterPanel, "caixa");
-    }                          
+    }
 
-    private void btnProdutosActionPerformed(java.awt.event.ActionEvent evt) {                                          
+
+    private void confirmarLogoff() {
+        int resposta = JOptionPane.showConfirmDialog(
+                this,
+                "Deseja realmente sair da sua conta?",
+                "Confirmar Logoff",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (resposta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        java.awt.Window janela = javax.swing.SwingUtilities.getWindowAncestor(this);
+
+        if (janela instanceof Login) {
+            ((Login) janela).voltarParaLogin();
+        }
+    }
+
+
+    private void btnProdutosActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador possui acesso a esta função.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+
         ativarBotao(btnProdutos);
         cardLayout.show(CenterPanel, "produtos");
     }                                         
 
-    private void btnRelatoriosActionPerformed(java.awt.event.ActionEvent evt) {                                              
+    private void btnRelatoriosActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador possui acesso a esta função.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
         ativarBotao(btnRelatorios);
         cardLayout.show(CenterPanel, "relatorios");
     }                                             
 
-    private void btnUsuariosActionPerformed(java.awt.event.ActionEvent evt) {                          
+    private void btnUsuariosActionPerformed(java.awt.event.ActionEvent evt) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador possui acesso a esta função.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+
+
+
     ativarBotao(btnUsuarios);
     cardLayout.show(CenterPanel, "usuarios");
 }

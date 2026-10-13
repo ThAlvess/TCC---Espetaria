@@ -12,7 +12,7 @@ public class ConnectionFactory {
 
     private static final String USER = "root";
 
-    private static final String PASSWORD = "Soneca606917#";
+    private static final String PASSWORD = "";
 
     public static Connection getConnection() {
         try {

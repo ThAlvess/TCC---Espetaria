@@ -5,6 +5,7 @@ public class Mesa {
     private int idMesa;
     private int numero;
     private String status;
+    private boolean ativo;
 
     public Mesa() {
     }
@@ -13,6 +14,7 @@ public class Mesa {
         this.idMesa = idMesa;
         this.numero = numero;
         this.status = status;
+        this.ativo = ativo;
     }
 
     public int getIdMesa() {
@@ -37,6 +39,14 @@ public class Mesa {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public boolean isAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.ativo = ativo;
     }
 
     public boolean isLivre() {

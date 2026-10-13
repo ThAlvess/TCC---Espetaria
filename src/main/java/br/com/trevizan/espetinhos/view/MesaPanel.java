@@ -114,6 +114,12 @@ public class MesaPanel extends PadraoJPanel {
         cardLayout.show(painelPrincipal, "lista");
     }
 
+    private boolean usuarioEhAdministrador() {
+        return "Administrador".equalsIgnoreCase(
+                usuarioLogado.getPerfil()
+        );
+    }
+
     private void carregarMesas() {
         painelMesas.removeAll();
 
@@ -121,13 +127,25 @@ public class MesaPanel extends PadraoJPanel {
         int livres = 0;
         int ocupadas = 0;
 
+// Atendimentos que não utilizam mesa física
+        painelMesas.add(criarCardAtendimento("RETIRADA"));
+        painelMesas.add(criarCardAtendimento("DELIVERY"));
+
         for (Mesa mesa : mesas) {
-            if (mesa.isLivre()) {
-                livres++;
-            } else {
-                ocupadas++;
+
+            if (mesa.isAtivo()) {
+                if (mesa.isLivre()) {
+                    livres++;
+                } else {
+                    ocupadas++;
+                }
             }
+
             painelMesas.add(criarCardMesa(mesa));
+        }
+        // Somente Administrador pode adicionar novas mesas
+        if (usuarioEhAdministrador()) {
+            painelMesas.add(criarCardAdicionarMesa());
         }
 
         lblResumo.setText("LIVRES  " + livres + "     •     OCUPADAS  " + ocupadas);
@@ -136,8 +154,339 @@ public class MesaPanel extends PadraoJPanel {
         painelMesas.repaint();
     }
 
+    private JPanel criarCardAtendimento(String tipoAtendimento) {
+
+        java.util.List<Comanda> pedidos =
+                comandaDAO.listarComandasAbertasPorTipo(tipoAtendimento);
+
+        int quantidadeAbertos = pedidos.size();
+
+        RoundedPanel card = new RoundedPanel(22, COR_CARD);
+        card.setLayout(new BorderLayout(0, 12));
+        card.setBorder(new EmptyBorder(16, 16, 16, 16));
+        card.setPreferredSize(new Dimension(230, 200));
+
+        JPanel topo = new JPanel(new BorderLayout());
+        topo.setOpaque(false);
+
+        JLabel categoria = new JLabel("ATENDIMENTO");
+        categoria.setFont(new Font("Arial", Font.BOLD, 11));
+        categoria.setForeground(COR_SECUNDARIO);
+
+        StatusBadge badge = new StatusBadge(
+                quantidadeAbertos == 1
+                        ? "1 ABERTO"
+                        : quantidadeAbertos + " ABERTOS",
+                quantidadeAbertos > 0
+                        ? COR_VERMELHO_CLARO
+                        : COR_VERDE_CLARO,
+                quantidadeAbertos > 0
+                        ? COR_VERMELHO
+                        : COR_VERDE_ESCURO
+        );
+
+        topo.add(categoria, BorderLayout.WEST);
+        topo.add(badge, BorderLayout.EAST);
+
+        JPanel centro = new JPanel();
+        centro.setOpaque(false);
+        centro.setLayout(
+                new BoxLayout(centro, BoxLayout.Y_AXIS)
+        );
+
+        JLabel titulo = new JLabel(tipoAtendimento);
+        titulo.setFont(
+                new Font("Arial", Font.BOLD, 25)
+        );
+        titulo.setForeground(COR_TEXTO);
+        titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel descricao = new JLabel(
+                "DELIVERY".equals(tipoAtendimento)
+                        ? "Pedidos para entrega"
+                        : "Pedidos para retirada"
+        );
+
+        descricao.setFont(
+                new Font("Arial", Font.PLAIN, 11)
+        );
+
+        descricao.setForeground(COR_SECUNDARIO);
+        descricao.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        centro.add(Box.createVerticalGlue());
+        centro.add(titulo);
+        centro.add(Box.createVerticalStrut(6));
+        centro.add(descricao);
+        centro.add(Box.createVerticalGlue());
+
+        String textoBotao =
+                quantidadeAbertos > 0
+                        ? "VER PEDIDOS"
+                        : "NOVO PEDIDO";
+
+        RoundedButton botao =
+                new RoundedButton(textoBotao, 14);
+
+        botao.setFont(
+                new Font("Arial", Font.BOLD, 12)
+        );
+
+        botao.setPreferredSize(
+                new Dimension(0, 38)
+        );
+
+        botao.setBackground(
+                quantidadeAbertos > 0
+                        ? COR_VERMELHO
+                        : COR_VERDE
+        );
+
+        botao.setForeground(Color.WHITE);
+
+        botao.setHoverColor(
+                quantidadeAbertos > 0
+                        ? new Color(150, 66, 54)
+                        : COR_VERDE_ESCURO
+        );
+
+        botao.addActionListener(e -> {
+
+            if (quantidadeAbertos > 0) {
+                mostrarPedidosAtendimento(tipoAtendimento);
+            } else {
+                abrirNovoPedidoAtendimento(tipoAtendimento);
+            }
+        });
+
+        card.add(topo, BorderLayout.NORTH);
+        card.add(centro, BorderLayout.CENTER);
+        card.add(botao, BorderLayout.SOUTH);
+
+        return card;
+    }
+
+    private void mostrarPedidosAtendimento(
+            String tipoAtendimento
+    ) {
+
+        try {
+
+            java.util.List<Comanda> pedidos =
+                    comandaDAO.listarComandasAbertasPorTipo(
+                            tipoAtendimento
+                    );
+
+            JPanel painel = new JPanel();
+
+            painel.setLayout(
+                    new BoxLayout(
+                            painel,
+                            BoxLayout.Y_AXIS
+                    )
+            );
+
+            JLabel titulo = new JLabel(
+                    "Pedidos abertos - " + tipoAtendimento
+            );
+
+            titulo.setFont(
+                    new Font(
+                            "Arial",
+                            Font.BOLD,
+                            16
+                    )
+            );
+
+            titulo.setAlignmentX(
+                    Component.LEFT_ALIGNMENT
+            );
+
+            painel.add(titulo);
+            painel.add(
+                    Box.createVerticalStrut(10)
+            );
+
+            for (Comanda comanda : pedidos) {
+
+                String nomeCliente =
+                        comanda.getNomeCliente();
+
+                if (nomeCliente == null
+                        || nomeCliente.isBlank()) {
+
+                    nomeCliente =
+                            "Cliente sem nome";
+                }
+
+                JButton btnPedido =
+                        new JButton(
+                                nomeCliente
+                                        + " - Comanda #"
+                                        + comanda.getIdComanda()
+                        );
+
+                btnPedido.setAlignmentX(
+                        Component.LEFT_ALIGNMENT
+                );
+
+                btnPedido.setMaximumSize(
+                        new Dimension(
+                                Integer.MAX_VALUE,
+                                40
+                        )
+                );
+
+                Comanda pedidoSelecionado = comanda;
+
+                btnPedido.addActionListener(e -> {
+
+                    Window janela =
+                            SwingUtilities
+                                    .getWindowAncestor(painel);
+
+                    if (janela != null) {
+                        janela.dispose();
+                    }
+
+                    abrirPedidoSemMesa(
+                            pedidoSelecionado
+                    );
+                });
+
+                painel.add(btnPedido);
+
+                painel.add(
+                        Box.createVerticalStrut(5)
+                );
+            }
+
+            painel.add(
+                    Box.createVerticalStrut(10)
+            );
+
+            JButton btnNovo =
+                    new JButton("+ NOVO PEDIDO");
+
+            btnNovo.setAlignmentX(
+                    Component.LEFT_ALIGNMENT
+            );
+
+            btnNovo.setMaximumSize(
+                    new Dimension(
+                            Integer.MAX_VALUE,
+                            40
+                    )
+            );
+
+            JOptionPane optionPane =
+                    new JOptionPane(
+                            painel,
+                            JOptionPane.PLAIN_MESSAGE,
+                            JOptionPane.DEFAULT_OPTION,
+                            null,
+                            new Object[]{
+                                    btnNovo,
+                                    "Fechar"
+                            }
+                    );
+
+            JDialog dialog =
+                    optionPane.createDialog(
+                            this,
+                            tipoAtendimento
+                    );
+
+            btnNovo.addActionListener(e -> {
+
+                dialog.dispose();
+
+                abrirNovoPedidoAtendimento(
+                        tipoAtendimento
+                );
+            });
+
+            dialog.setVisible(true);
+
+        } catch (RuntimeException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao carregar pedidos:\n"
+                            + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            e.printStackTrace();
+        }
+    }
+
+    private void abrirNovoPedidoAtendimento(
+            String tipoAtendimento
+    ) {
+
+        String nomeCliente =
+                JOptionPane.showInputDialog(
+                        this,
+                        "Informe o nome do cliente:",
+                        "Novo pedido - " + tipoAtendimento,
+                        JOptionPane.QUESTION_MESSAGE
+                );
+
+        if (nomeCliente == null) {
+            return;
+        }
+
+        nomeCliente = nomeCliente.trim();
+
+        if (nomeCliente.isEmpty()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Informe o nome do cliente.",
+                    "Atenção",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+
+        try {
+
+            int idComanda =
+                    comandaDAO.abrirComandaSemMesa(
+                            usuarioLogado.getIdUsuario(),
+                            nomeCliente,
+                            tipoAtendimento
+                    );
+
+            Comanda comanda =
+                    comandaDAO.buscarPorId(idComanda);
+
+            abrirPedidoSemMesa(comanda);
+
+        } catch (RuntimeException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao abrir pedido:\n"
+                            + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            e.printStackTrace();
+        }
+    }
+
+    private void abrirPedidoSemMesa(Comanda comanda) {
+        mostrarComanda(null, comanda);
+    }
+
     private JPanel criarCardMesa(Mesa mesa) {
         boolean livre = mesa.isLivre();
+        boolean ativo = mesa.isAtivo();
 
         RoundedPanel card = new RoundedPanel(22, COR_CARD);
         card.setLayout(new BorderLayout(0, 12));
@@ -152,14 +501,66 @@ public class MesaPanel extends PadraoJPanel {
         numeroPequeno.setFont(new Font("Arial", Font.BOLD, 11));
         numeroPequeno.setForeground(COR_SECUNDARIO);
 
-        StatusBadge badge = new StatusBadge(
-                livre ? "LIVRE" : "OCUPADA",
-                livre ? COR_VERDE_CLARO : COR_VERMELHO_CLARO,
-                livre ? COR_VERDE_ESCURO : COR_VERMELHO
+        StatusBadge badge;
+
+        if (!ativo) {
+            badge = new StatusBadge(
+                    "INATIVA",
+                    new Color(235, 235, 235),
+                    COR_SECUNDARIO
+            );
+        } else {
+            badge = new StatusBadge(
+                    livre ? "LIVRE" : "OCUPADA",
+                    livre ? COR_VERDE_CLARO : COR_VERMELHO_CLARO,
+                    livre ? COR_VERDE_ESCURO : COR_VERMELHO
+            );
+        }
+
+        RoundedButton btnOpcoes = new RoundedButton(
+                ativo ? "INATIVAR" : "REATIVAR",
+                14
         );
 
+        btnOpcoes.setFont(new Font("Arial", Font.BOLD, 9));
+        btnOpcoes.setPreferredSize(new Dimension(75, 28));
+        btnOpcoes.setFocusPainted(false);
+
+        if (ativo) {
+            // Inativar
+            btnOpcoes.setForeground(new Color(185, 75, 60));
+            btnOpcoes.setBackground(new Color(250, 230, 226));
+            btnOpcoes.setHoverColor(new Color(245, 210, 204));
+            btnOpcoes.setToolTipText("Inativar mesa");
+
+        } else {
+            // Reativar
+            btnOpcoes.setForeground(COR_VERDE_ESCURO);
+            btnOpcoes.setBackground(COR_VERDE_CLARO);
+            btnOpcoes.setHoverColor(new Color(210, 235, 218));
+            btnOpcoes.setToolTipText("Reativar mesa");
+        }
+
+        btnOpcoes.setCursor(
+                Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        );
+
+        btnOpcoes.addActionListener(e ->
+                alterarSituacaoMesa(mesa)
+        );
+
+
+        JPanel ladoDireito = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        ladoDireito.setOpaque(false);
+
+        ladoDireito.add(badge);
+
+        if (usuarioEhAdministrador() && (!ativo || livre)) {
+            ladoDireito.add(btnOpcoes);
+        }
+
         topo.add(numeroPequeno, BorderLayout.WEST);
-        topo.add(badge, BorderLayout.EAST);
+        topo.add(ladoDireito, BorderLayout.EAST);
 
         JPanel centro = new JPanel();
         centro.setOpaque(false);
@@ -178,17 +579,50 @@ public class MesaPanel extends PadraoJPanel {
 
         centro.add(Box.createVerticalGlue());
 
-        RoundedButton botao = new RoundedButton(livre ? "ABRIR MESA" : "VER COMANDA", 14);
+        String textoBotao;
+
+        if (!ativo) {
+            textoBotao = "REATIVAR";
+        } else if (livre) {
+            textoBotao = "ABRIR MESA";
+        } else {
+            textoBotao = "VER COMANDAS";
+        }
+
+        RoundedButton botao = new RoundedButton(textoBotao, 14);
         botao.setFont(new Font("Arial", Font.BOLD, 12));
         botao.setPreferredSize(new Dimension(0, 38));
-        botao.setBackground(livre ? COR_VERDE : COR_VERMELHO);
+        if (!ativo) {
+            botao.setBackground(COR_SECUNDARIO);
+        } else {
+            botao.setBackground(livre ? COR_VERDE : COR_VERMELHO);
+        }
         botao.setForeground(Color.WHITE);
-        botao.setHoverColor(livre ? COR_VERDE_ESCURO : new Color(150, 66, 54));
-        botao.addActionListener(e -> abrirMesa(mesa));
+        if (!ativo) {
+            botao.setHoverColor(new Color(90, 90, 90));
+        } else {
+            botao.setHoverColor(
+                    livre
+                            ? COR_VERDE_ESCURO
+                            : new Color(150, 66, 54)
+            );
+        }
+        botao.addActionListener(e -> {
+
+            if (!mesa.isAtivo()) {
+                alterarSituacaoMesa(mesa);
+            } else {
+                abrirMesa(mesa);
+            }
+
+        });
 
         card.add(topo, BorderLayout.NORTH);
         card.add(centro, BorderLayout.CENTER);
-        card.add(botao, BorderLayout.SOUTH);
+
+        if (ativo) {
+            card.add(botao, BorderLayout.SOUTH);
+        }
 
         MouseAdapter abrirAoClicar = new MouseAdapter() {
             @Override
@@ -203,25 +637,238 @@ public class MesaPanel extends PadraoJPanel {
         return card;
     }
 
+    private void alterarSituacaoMesa(Mesa mesa) {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador pode ativar ou inativar mesas.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // =============================================
+        // REATIVAR
+        // =============================================
+        if (!mesa.isAtivo()) {
+
+            int resposta = JOptionPane.showConfirmDialog(
+                    this,
+                    "Deseja reativar a Mesa " + mesa.getNumero() + "?",
+                    "Reativar Mesa",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE
+            );
+
+            if (resposta != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            try {
+
+                mesaDAO.atualizarAtivo(
+                        mesa.getIdMesa(),
+                        true
+                );
+
+                carregarMesas();
+
+            } catch (RuntimeException e) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Erro ao reativar a mesa:\n" + e.getMessage(),
+                        "Erro",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+
+            return;
+        }
+
+        // =============================================
+        // NÃO PERMITE INATIVAR MESA OCUPADA
+        // =============================================
+        if (mesa.isOcupada()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Não é possível inativar a Mesa "
+                            + mesa.getNumero()
+                            + " enquanto houver uma comanda aberta.",
+                    "Mesa ocupada",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+
+        // =============================================
+        // INATIVAR
+        // =============================================
+        int resposta = JOptionPane.showConfirmDialog(
+                this,
+                "Deseja inativar a Mesa " + mesa.getNumero() + "?",
+                "Inativar Mesa",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (resposta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try {
+
+            mesaDAO.atualizarAtivo(
+                    mesa.getIdMesa(),
+                    false
+            );
+
+            carregarMesas();
+
+        } catch (RuntimeException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao inativar a mesa:\n" + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    private JPanel criarCardAdicionarMesa() {
+
+        RoundedPanel card = new RoundedPanel(22, COR_CARD);
+        card.setLayout(new BorderLayout());
+        card.setBorder(new EmptyBorder(16, 16, 16, 16));
+        card.setPreferredSize(new Dimension(230, 200));
+        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        JLabel mais = new JLabel("+", SwingConstants.CENTER);
+        mais.setFont(new Font("Arial", Font.PLAIN, 72));
+        mais.setForeground(COR_VERDE);
+
+        JLabel texto = new JLabel(
+                "ADICIONAR MESA",
+                SwingConstants.CENTER
+        );
+
+        texto.setFont(new Font("Arial", Font.BOLD, 12));
+        texto.setForeground(COR_VERDE_ESCURO);
+
+        JPanel centro = new JPanel();
+        centro.setOpaque(false);
+        centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
+
+        mais.setAlignmentX(Component.CENTER_ALIGNMENT);
+        texto.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        centro.add(Box.createVerticalGlue());
+        centro.add(mais);
+        centro.add(Box.createVerticalStrut(5));
+        centro.add(texto);
+        centro.add(Box.createVerticalGlue());
+
+        card.add(centro, BorderLayout.CENTER);
+
+        MouseAdapter adicionarAoClicar = new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                adicionarMesa();
+            }
+        };
+
+        card.addMouseListener(adicionarAoClicar);
+        centro.addMouseListener(adicionarAoClicar);
+        mais.addMouseListener(adicionarAoClicar);
+        texto.addMouseListener(adicionarAoClicar);
+
+        return card;
+    }
+
+    private void adicionarMesa() {
+
+        if (!usuarioEhAdministrador()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Apenas o Administrador pode adicionar mesas.",
+                    "Acesso negado",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        int resposta = JOptionPane.showConfirmDialog(
+                this,
+                "Deseja adicionar uma nova mesa?",
+                "Adicionar Mesa",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (resposta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try {
+
+            mesaDAO.adicionarMesa();
+
+            carregarMesas();
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Mesa adicionada com sucesso!",
+                    "Sucesso",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+        } catch (RuntimeException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao adicionar mesa:\n" + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            e.printStackTrace();
+        }
+    }
+
     private void abrirMesa(Mesa mesa) {
 
-        if (mesa.isLivre()) {
+        // Mesa inativa não pode abrir nem acessar comandas
+        if (!mesa.isAtivo()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Esta mesa está inativa.\nReative a mesa antes de abrir uma comanda.",
+                    "Mesa inativa",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        if ("LIVRE".equalsIgnoreCase(mesa.getStatus())) {
 
             String nomeCliente = JOptionPane.showInputDialog(
                     this,
                     "Informe o nome do cliente:",
                     "Abrir Mesa " + mesa.getNumero(),
-                    JOptionPane.QUESTION_MESSAGE
+                    JOptionPane.PLAIN_MESSAGE
             );
 
-            // Usuário clicou em Cancelar ou fechou a janela
+            // Cancelou
             if (nomeCliente == null) {
                 return;
             }
 
             nomeCliente = nomeCliente.trim();
 
-            // Não permite nome vazio
             if (nomeCliente.isEmpty()) {
                 JOptionPane.showMessageDialog(
                         this,
@@ -233,6 +880,7 @@ public class MesaPanel extends PadraoJPanel {
             }
 
             try {
+
                 int idComanda = comandaDAO.abrirComanda(
                         mesa.getIdMesa(),
                         usuarioLogado.getIdUsuario(),
@@ -264,37 +912,206 @@ public class MesaPanel extends PadraoJPanel {
 
         } else {
 
-            try {
-                Comanda comanda =
-                        comandaDAO.buscarComandaAbertaPorMesa(
-                                mesa.getIdMesa()
-                        );
+            mostrarComandasDaMesa(mesa);
+        }
+    }
 
-                if (comanda == null) {
+private void mostrarComandasDaMesa(Mesa mesa) {
 
-                    JOptionPane.showMessageDialog(
-                            this,
-                            "A mesa está marcada como ocupada, mas não existe uma comanda aberta para ela.",
-                            "Comanda não encontrada",
-                            JOptionPane.WARNING_MESSAGE
-                    );
+    try {
 
-                    return;
-                }
-
-                mostrarComanda(mesa, comanda);
-
-            } catch (RuntimeException e) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Erro ao carregar a comanda:\n" + e.getMessage(),
-                        "Erro",
-                        JOptionPane.ERROR_MESSAGE
+        java.util.List<Comanda> comandas =
+                comandaDAO.listarComandasAbertasPorMesa(
+                        mesa.getIdMesa()
                 );
 
-                e.printStackTrace();
+        if (comandas.isEmpty()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "A mesa está marcada como ocupada, mas não possui comandas abertas.",
+                    "Comandas não encontradas",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+
+        JPanel painel = new JPanel();
+        painel.setLayout(
+                new BoxLayout(painel, BoxLayout.Y_AXIS)
+        );
+
+        JLabel titulo = new JLabel(
+                "Comandas abertas - Mesa " + mesa.getNumero()
+        );
+
+        titulo.setFont(
+                new Font("Arial", Font.BOLD, 16)
+        );
+
+        titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        painel.add(titulo);
+        painel.add(Box.createVerticalStrut(10));
+
+        for (Comanda comanda : comandas) {
+
+            String nomeCliente = comanda.getNomeCliente();
+
+            if (nomeCliente == null || nomeCliente.isBlank()) {
+                nomeCliente = "Cliente sem nome";
             }
+
+            JButton btnComanda = new JButton(
+                    nomeCliente + " - Comanda #" + comanda.getIdComanda()
+            );
+
+            btnComanda.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            btnComanda.setMaximumSize(
+                    new Dimension(
+                            Integer.MAX_VALUE,
+                            40
+                    )
+            );
+
+            btnComanda.addActionListener(e -> {
+
+                Window janela =
+                        SwingUtilities.getWindowAncestor(painel);
+
+                if (janela != null) {
+                    janela.dispose();
+                }
+
+                mostrarComanda(
+                        mesa,
+                        comanda
+                );
+            });
+
+            painel.add(btnComanda);
+            painel.add(Box.createVerticalStrut(5));
+        }
+
+        painel.add(Box.createVerticalStrut(10));
+
+        JButton btnNovaComanda =
+                new JButton("+ NOVA COMANDA");
+
+        btnNovaComanda.setAlignmentX(
+                Component.LEFT_ALIGNMENT
+        );
+
+        btnNovaComanda.setMaximumSize(
+                new Dimension(
+                        Integer.MAX_VALUE,
+                        40
+                )
+        );
+
+        JOptionPane optionPane =
+                new JOptionPane(
+                        painel,
+                        JOptionPane.PLAIN_MESSAGE,
+                        JOptionPane.DEFAULT_OPTION,
+                        null,
+                        new Object[]{btnNovaComanda, "Fechar"}
+                );
+
+        JDialog dialog =
+                optionPane.createDialog(
+                        this,
+                        "Mesa " + mesa.getNumero()
+                );
+
+        btnNovaComanda.addActionListener(e -> {
+
+            dialog.dispose();
+
+            abrirNovaComanda(mesa);
+        });
+
+        dialog.setVisible(true);
+
+    } catch (RuntimeException e) {
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Erro ao carregar comandas da mesa:\n"
+                        + e.getMessage(),
+                "Erro",
+                JOptionPane.ERROR_MESSAGE
+        );
+
+        e.printStackTrace();
+    }
+}
+
+    private void abrirNovaComanda(Mesa mesa) {
+
+        // Segurança: mesa inativa não recebe nova comanda
+        if (!mesa.isAtivo()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Esta mesa está inativa.\nReative a mesa antes de abrir uma nova comanda.",
+                    "Mesa inativa",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String nomeCliente = JOptionPane.showInputDialog(
+                this,
+                "Informe o nome do cliente:",
+                "Nova Comanda - Mesa " + mesa.getNumero(),
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (nomeCliente == null) {
+            return;
+        }
+
+        nomeCliente = nomeCliente.trim();
+
+        if (nomeCliente.isEmpty()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Informe o nome do cliente.",
+                    "Atenção",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+
+        try {
+
+            int idComanda = comandaDAO.abrirComanda(
+                    mesa.getIdMesa(),
+                    usuarioLogado.getIdUsuario(),
+                    nomeCliente
+            );
+
+            Comanda comanda = comandaDAO.buscarPorId(idComanda);
+
+            mostrarComanda(
+                    mesa,
+                    comanda
+            );
+
+        } catch (RuntimeException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Erro ao abrir nova comanda:\n" + e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            e.printStackTrace();
         }
     }
 
@@ -341,7 +1158,7 @@ public class MesaPanel extends PadraoJPanel {
         private static final int ESPACO = 18;
         private static final int LARGURA_CARD = 230;
         private static final int ALTURA_CARD = 200;
-        private static final int ALTURA_MIN_CARD = 150;
+
 
         GradeMesas() {
             setLayout(new LayoutGrade());
@@ -380,8 +1197,7 @@ public class MesaPanel extends PadraoJPanel {
         /** Ocupa exatamente a altura visível sempre que os cards couberem na altura mínima. */
         @Override
         public boolean getScrollableTracksViewportHeight() {
-            return getParent() instanceof JViewport viewport
-                    && viewport.getHeight() >= alturaPara(ALTURA_MIN_CARD);
+            return false;
         }
 
         private class LayoutGrade implements LayoutManager {
@@ -401,13 +1217,12 @@ public class MesaPanel extends PadraoJPanel {
                 // precisa rolar — assim a rolagem necessária é a menor possível.
                 return new Dimension(
                         COLUNAS * LARGURA_CARD + (COLUNAS - 1) * ESPACO + in.left + in.right,
-                        alturaPara(ALTURA_MIN_CARD));
+                        alturaPara(ALTURA_CARD));
             }
 
             @Override
             public Dimension minimumLayoutSize(Container pai) {
-                Insets in = pai.getInsets();
-                return new Dimension(in.left + in.right, alturaPara(ALTURA_MIN_CARD));
+                return preferredLayoutSize(pai);
             }
 
             @Override
@@ -422,9 +1237,10 @@ public class MesaPanel extends PadraoJPanel {
                 int largura = pai.getWidth() - in.left - in.right;
                 int altura = pai.getHeight() - in.top - in.bottom;
 
-                int larguraCard = (largura - (COLUNAS - 1) * ESPACO) / COLUNAS;
-                int alturaCard = (altura - (linhas - 1) * ESPACO) / linhas;
-                alturaCard = Math.max(ALTURA_MIN_CARD, Math.min(ALTURA_CARD, alturaCard));
+                int larguraCard =
+                        (largura - (COLUNAS - 1) * ESPACO) / COLUNAS;
+
+                int alturaCard = ALTURA_CARD;
 
                 for (int i = 0; i < total; i++) {
                     int coluna = i % COLUNAS;

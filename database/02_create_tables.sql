@@ -1,6 +1,6 @@
 -- =========================================================
 -- ESPETINHOS TREVIZAN - CRIACAO DAS TABELAS
--- Arquivo 02/03
+-- Arquivo 02/04
 -- Ordem organizada para respeitar as chaves estrangeiras.
 -- =========================================================
 
@@ -22,8 +22,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- =========================================================
 -- USUARIO
--- Mantido conforme a versao atual do projeto:
--- ativo em VARCHAR, alem dos campos cpf e perfil.
+-- Estrutura atual do projeto.
+-- Perfis utilizados: Administrador, Caixa e Atendente.
 -- =========================================================
 CREATE TABLE usuario (
     id_usuario INT NOT NULL AUTO_INCREMENT,
@@ -42,15 +42,15 @@ CREATE TABLE usuario (
 -- =========================================================
 -- MESA
 -- =========================================================
+
 CREATE TABLE mesa (
-    id_mesa INT NOT NULL AUTO_INCREMENT,
-    numero INT NOT NULL,
-    status ENUM('LIVRE','OCUPADA') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'LIVRE',
-    PRIMARY KEY (id_mesa),
-    UNIQUE KEY uk_mesa_numero (numero)
-) ENGINE=InnoDB
-  DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_unicode_ci;
+                      id_mesa INT NOT NULL AUTO_INCREMENT,
+                      numero INT NOT NULL,
+                      status ENUM('LIVRE','OCUPADA') NOT NULL DEFAULT 'LIVRE',
+                      ativo BOOLEAN NOT NULL DEFAULT TRUE,
+                      PRIMARY KEY (id_mesa),
+                      UNIQUE KEY numero (numero)
+);
 
 -- =========================================================
 -- CATEGORIA
@@ -110,8 +110,9 @@ CREATE TABLE caixa (
 -- =========================================================
 CREATE TABLE comanda (
     id_comanda INT NOT NULL AUTO_INCREMENT,
-    id_mesa INT NOT NULL,
+    id_mesa INT DEFAULT NULL,
     id_usuario INT NOT NULL,
+    tipo_atendimento ENUM('MESA','RETIRADA','DELIVERY') NOT NULL DEFAULT 'MESA',
     nome_cliente VARCHAR(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     data_abertura DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_fechamento DATETIME DEFAULT NULL,

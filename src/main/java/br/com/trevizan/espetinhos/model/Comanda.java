@@ -8,11 +8,13 @@ public class Comanda {
     private int idComanda;
     private int idMesa;
     private int idUsuario;
+    private String nomeAtendente;
     private String nomeCliente;
     private LocalDateTime dataAbertura;
     private LocalDateTime dataFechamento;
     private String status;
     private BigDecimal valorTotal;
+    private String tipoAtendimento;
 
     public int getIdComanda() {
         return idComanda;
@@ -76,5 +78,20 @@ public class Comanda {
 
     public void setValorTotal(BigDecimal valorTotal) {
         this.valorTotal = valorTotal;
+    }
+
+    public String getTipoAtendimento() {
+        return tipoAtendimento;
+    }
+
+    public void setTipoAtendimento(String tipoAtendimento) {
+        this.tipoAtendimento = tipoAtendimento;
+    }
+    public String getNomeAtendente() {
+        return nomeAtendente;
+    }
+
+    public void setNomeAtendente(String nomeAtendente) {
+        this.nomeAtendente = nomeAtendente;
     }
 }

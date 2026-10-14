@@ -12,7 +12,6 @@ public class MainScreen extends javax.swing.JPanel {
     private java.awt.CardLayout cardLayout;
     private final Usuario usuarioLogado;
     private Caixa caixaPanel;
-    private javax.swing.JButton btnLogoff;
     
     /**
      * Creates new form MainScreen
@@ -33,24 +32,210 @@ public class MainScreen extends javax.swing.JPanel {
         cardLayout = (java.awt.CardLayout) CenterPanel.getLayout();
         cardLayout.show(CenterPanel, "mesas");
         
-        javax.swing.ImageIcon iconeOriginal = (javax.swing.ImageIcon) Logo.getIcon();
-        if (iconeOriginal != null) {
-            int novaLargura = 120;
-            java.awt.Image imagemRedimensionada = iconeOriginal.getImage().getScaledInstance(novaLargura, -1, java.awt.Image.SCALE_SMOOTH);
-            Logo.setIcon(new javax.swing.ImageIcon(imagemRedimensionada));
+        // logo desenhada a partir da imagem em alta resolução
+        javax.swing.Icon logoNitida = br.com.trevizan.espetinhos.util.LogoNitida.criar(120);
+        if (logoNitida != null) {
+            Logo.setIcon(logoNitida);
         }
         
-        // Aplica o formato arredondado em todos os botões do menu lateral
-        btnMesas.putClientProperty("JButton.buttonType", "roundRect");
-        btnHistorico.putClientProperty("JButton.buttonType", "roundRect");
-        btnCaixa.putClientProperty("JButton.buttonType", "roundRect");
-        btnProdutos.putClientProperty("JButton.buttonType", "roundRect");
-        btnRelatorios.putClientProperty("JButton.buttonType", "roundRect");
-        btnUsuarios.putClientProperty("JButton.buttonType", "roundRect");
-        // Adicionado para arredondar o novo botão
+        aplicarIconesMenu();
 
         configurarPermissoes();
+        reorganizarMenuLateral();
         ativarBotao(btnMesas);
+        montarMenuConfiguracoes();
+    }
+
+    // =====================================================================
+    // Menu de configurações (engrenagem no rodapé do menu lateral)
+    // =====================================================================
+
+    /** Caminho do manual do software (PDF), relativo à pasta do projeto. */
+    private static final String CAMINHO_MANUAL = "manual/Manual_Trevizan_Espetinhos.pdf";
+
+    /**
+     * Coloca no rodapé do menu lateral o nome e o perfil do usuário logado
+     * e o botão de engrenagem "Configurações", que abre um submenu com:
+     * Redefinir senha, Manual do software e Sair do usuário.
+     */
+    private void montarMenuConfiguracoes() {
+        java.awt.Color verdeEscuro = br.com.trevizan.espetinhos.util.PadraoComponentes.VERDE;
+
+        javax.swing.JPanel rodape = new javax.swing.JPanel();
+        rodape.setBackground(java.awt.Color.WHITE);
+        rodape.setLayout(new javax.swing.BoxLayout(rodape, javax.swing.BoxLayout.Y_AXIS));
+        rodape.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createEmptyBorder(0, 20, 0, 20),
+                javax.swing.BorderFactory.createCompoundBorder(
+                        javax.swing.BorderFactory.createMatteBorder(1, 0, 0, 0,
+                                br.com.trevizan.espetinhos.util.PadraoComponentes.COR_BORDA),
+                        javax.swing.BorderFactory.createEmptyBorder(12, 5, 22, 5))));
+
+        javax.swing.JLabel lblNome = new javax.swing.JLabel(usuarioLogado.getNome());
+        lblNome.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
+        lblNome.setForeground(br.com.trevizan.espetinhos.util.PadraoComponentes.COR_TEXTO);
+        lblNome.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+
+        javax.swing.JLabel lblPerfil = new javax.swing.JLabel(
+                usuarioLogado.getPerfil() != null ? usuarioLogado.getPerfil() : " ");
+        lblPerfil.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12));
+        lblPerfil.setForeground(br.com.trevizan.espetinhos.util.PadraoComponentes.COR_TEXTO_SECUNDARIO);
+        lblPerfil.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+
+        javax.swing.JButton btnConfiguracoes = new javax.swing.JButton("Configurações",
+                br.com.trevizan.espetinhos.util.PadraoComponentes.iconeEngrenagem(null));
+        btnConfiguracoes.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
+        btnConfiguracoes.setForeground(verdeEscuro);
+        btnConfiguracoes.setBackground(java.awt.Color.WHITE);
+        btnConfiguracoes.setIconTextGap(6);
+        // margem lateral de 4 px para o texto caber nos 150 px do botão
+        btnConfiguracoes.setMargin(new java.awt.Insets(2, 4, 2, 4));
+        btnConfiguracoes.setFocusPainted(false);
+        btnConfiguracoes.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        btnConfiguracoes.putClientProperty("FlatLaf.style", "arc: "
+                + br.com.trevizan.espetinhos.util.PadraoComponentes.ARCO
+                + "; hoverBackground: #deebde");
+        btnConfiguracoes.setToolTipText("Redefinir senha, manual do software e sair");
+        java.awt.Dimension tamanho = new java.awt.Dimension(150, 40);
+        btnConfiguracoes.setPreferredSize(tamanho);
+        btnConfiguracoes.setMaximumSize(tamanho);
+        btnConfiguracoes.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+
+        javax.swing.JPopupMenu menu = criarMenuConfiguracoes();
+        btnConfiguracoes.addActionListener(e -> {
+            // abre para cima, logo acima do botão
+            java.awt.Dimension tamanhoMenu = menu.getPreferredSize();
+            menu.show(btnConfiguracoes, 0, -tamanhoMenu.height - 4);
+        });
+
+        rodape.add(lblNome);
+        rodape.add(javax.swing.Box.createVerticalStrut(1));
+        rodape.add(lblPerfil);
+        rodape.add(javax.swing.Box.createVerticalStrut(10));
+        rodape.add(btnConfiguracoes);
+
+        // menu lateral: botões em cima e rodapé embaixo
+        javax.swing.JPanel colunaLateral = new javax.swing.JPanel(new java.awt.BorderLayout());
+        colunaLateral.setBackground(java.awt.Color.WHITE);
+        PainelMargem.remove(LateralPanel);
+        colunaLateral.add(LateralPanel, java.awt.BorderLayout.CENTER);
+        colunaLateral.add(rodape, java.awt.BorderLayout.SOUTH);
+        PainelMargem.add(colunaLateral, java.awt.BorderLayout.WEST);
+        PainelMargem.revalidate();
+    }
+
+    private javax.swing.JPopupMenu criarMenuConfiguracoes() {
+        java.awt.Font fonte = new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 14);
+        java.awt.Color verde = br.com.trevizan.espetinhos.util.PadraoComponentes.VERDE;
+        java.awt.Color vermelho = br.com.trevizan.espetinhos.util.PadraoComponentes.VERMELHO;
+
+        javax.swing.JMenuItem itemSenha = new javax.swing.JMenuItem("Redefinir senha",
+                br.com.trevizan.espetinhos.util.PadraoComponentes.iconeChave(verde));
+        itemSenha.setFont(fonte);
+        itemSenha.addActionListener(e -> TrocarSenhaDialog.mostrar(this, usuarioLogado, false));
+
+        javax.swing.JMenuItem itemManual = new javax.swing.JMenuItem("Manual do software",
+                br.com.trevizan.espetinhos.util.PadraoComponentes.iconeManual(verde));
+        itemManual.setFont(fonte);
+        itemManual.addActionListener(e -> abrirManual());
+
+        javax.swing.JMenuItem itemSair = new javax.swing.JMenuItem("Sair do usuário",
+                br.com.trevizan.espetinhos.util.PadraoComponentes.iconeSair(vermelho));
+        itemSair.setFont(fonte.deriveFont(java.awt.Font.BOLD));
+        itemSair.setForeground(vermelho);
+        itemSair.addActionListener(e -> sairDoUsuario());
+
+        javax.swing.JPopupMenu menu = new javax.swing.JPopupMenu();
+        for (javax.swing.JMenuItem item : new javax.swing.JMenuItem[]{itemSenha, itemManual, itemSair}) {
+            item.setIconTextGap(10);
+            item.setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 24));
+        }
+        menu.add(itemSenha);
+        menu.add(itemManual);
+        menu.addSeparator();
+        menu.add(itemSair);
+        return menu;
+    }
+
+    /** Logoff: pede confirmação, encerra a sessão e volta para a tela de login. */
+    private void sairDoUsuario() {
+        int resposta = JOptionPane.showConfirmDialog(
+                this,
+                "Deseja sair do usuário " + usuarioLogado.getNome() + "?\n"
+                        + "Será necessário fazer login novamente.",
+                "Sair do usuário",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (resposta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        br.com.trevizan.espetinhos.util.SessaoUsuario.logout();
+
+        java.awt.Window janela = javax.swing.SwingUtilities.getWindowAncestor(this);
+        if (janela != null) {
+            janela.dispose();
+        }
+        java.awt.EventQueue.invokeLater(() -> new Login().setVisible(true));
+    }
+
+    /**
+     * Abre o manual do software (PDF) no leitor padrão do computador.
+     * Procura primeiro o arquivo na pasta "manual" do projeto e depois
+     * dentro do próprio programa (src/main/resources/manual).
+     */
+    private void abrirManual() {
+        java.io.File manual = localizarManual();
+
+        if (manual == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "O manual do software ainda está sendo elaborado.\n"
+                            + "Assim que o PDF estiver pronto, ele poderá ser aberto por aqui.",
+                    "Manual do software",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+            return;
+        }
+
+        try {
+            if (!java.awt.Desktop.isDesktopSupported()
+                    || !java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.OPEN)) {
+                throw new java.io.IOException("Abrir arquivos não é suportado neste computador.");
+            }
+            java.awt.Desktop.getDesktop().open(manual);
+        } catch (java.io.IOException | RuntimeException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Não foi possível abrir o manual automaticamente.\n"
+                            + "Abra o arquivo manualmente em:\n" + manual.getAbsolutePath(),
+                    "Manual do software",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        }
+    }
+
+    private java.io.File localizarManual() {
+        java.io.File naPasta = new java.io.File(CAMINHO_MANUAL);
+        if (naPasta.isFile()) {
+            return naPasta;
+        }
+
+        // dentro do programa (src/main/resources/manual/...): copia para um arquivo temporário
+        try (java.io.InputStream entrada = getClass().getResourceAsStream("/" + CAMINHO_MANUAL)) {
+            if (entrada == null) {
+                return null;
+            }
+            java.io.File temporario = java.io.File.createTempFile("Manual_Trevizan_Espetinhos", ".pdf");
+            temporario.deleteOnExit();
+            java.nio.file.Files.copy(entrada, temporario.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            return temporario;
+        } catch (java.io.IOException e) {
+            return null;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -75,16 +260,6 @@ public class MainScreen extends javax.swing.JPanel {
         btnProdutos = new javax.swing.JButton();
         btnRelatorios = new javax.swing.JButton();
         btnUsuarios = new javax.swing.JButton(); // Renomeado de jButton1 para btnUsuarios
-
-        btnLogoff = new javax.swing.JButton("Sair da conta");
-
-        btnLogoff.setFont(new java.awt.Font("Segoe UI", 1, 11));
-        btnLogoff.setForeground(new java.awt.Color(170, 50, 40));
-        btnLogoff.setFocusable(false);
-        btnLogoff.putClientProperty("JButton.buttonType", "roundRect");
-
-        btnLogoff.addActionListener(evt -> confirmarLogoff());
-
         CenterPanel = new javax.swing.JPanel() {
             @Override
             protected void paintComponent(java.awt.Graphics g) {
@@ -114,7 +289,7 @@ public class MainScreen extends javax.swing.JPanel {
 
         btnMesas.setFont(new java.awt.Font("Segoe UI", 1, 14));
         btnMesas.setForeground(new java.awt.Color(25, 100, 25));
-        btnMesas.setText("Mesas");
+        btnMesas.setText("Pedidos");
         btnMesas.setMargin(new java.awt.Insets(2, 15, 2, 15));
         btnMesas.addActionListener(this::btnMesasActionPerformed);
 
@@ -157,8 +332,6 @@ public class MainScreen extends javax.swing.JPanel {
                 .addGap(25, 25, 25)
                 .addGroup(LateralPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(Logo)
-                        .addComponent(btnLogoff, javax.swing.GroupLayout.PREFERRED_SIZE, 150,
-                                javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnMesas, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnHistorico, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnCaixa, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -171,11 +344,8 @@ public class MainScreen extends javax.swing.JPanel {
             LateralPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(LateralPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                    .addComponent(Logo)
-                    .addGap(8, 8, 8)
-                    .addComponent(btnLogoff, javax.swing.GroupLayout.PREFERRED_SIZE, 32,
-                            javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(18, 18, 18)
+                .addComponent(Logo)
+                .addGap(18, 18, 18)
                 .addComponent(btnMesas, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(btnHistorico, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -262,36 +432,20 @@ public class MainScreen extends javax.swing.JPanel {
 
         while (true) {
 
-            String valorInformado = javax.swing.JOptionPane.showInputDialog(
-                    this,
-                    "Informe o valor inicial do caixa:",
-                    "Abertura de Caixa",
-                    javax.swing.JOptionPane.QUESTION_MESSAGE
-            );
+            java.math.BigDecimal valorInicial =
+                    br.com.trevizan.espetinhos.util.CampoMoeda.pedirValor(
+                            this,
+                            "Informe o valor inicial do caixa (troco):",
+                            "Abertura de Caixa",
+                            java.math.BigDecimal.ZERO
+                    );
 
             // Usuário clicou em Cancelar
-            if (valorInformado == null) {
+            if (valorInicial == null) {
                 return;
             }
 
-            valorInformado = valorInformado
-                    .trim()
-                    .replace(",", ".");
-
             try {
-
-                java.math.BigDecimal valorInicial =
-                        new java.math.BigDecimal(valorInformado);
-
-                if (valorInicial.compareTo(java.math.BigDecimal.ZERO) < 0) {
-                    javax.swing.JOptionPane.showMessageDialog(
-                            this,
-                            "O valor inicial não pode ser negativo.",
-                            "Valor inválido",
-                            javax.swing.JOptionPane.WARNING_MESSAGE
-                    );
-                    continue;
-                }
 
                 br.com.trevizan.espetinhos.model.Caixa novoCaixa =
                         new br.com.trevizan.espetinhos.model.Caixa();
@@ -304,25 +458,23 @@ public class MainScreen extends javax.swing.JPanel {
                 javax.swing.JOptionPane.showMessageDialog(
                         this,
                         "Caixa aberto com sucesso!\n"
-                                + "Valor inicial: R$ "
-                                + valorInicial.setScale(
-                                2,
-                                java.math.RoundingMode.HALF_UP
-                        ),
+                                + "Valor inicial: "
+                                + br.com.trevizan.espetinhos.util.CampoMoeda.formatar(valorInicial),
                         "Caixa aberto",
                         javax.swing.JOptionPane.INFORMATION_MESSAGE
                 );
 
                 break;
 
-            } catch (NumberFormatException e) {
+            } catch (RuntimeException e) {
 
                 javax.swing.JOptionPane.showMessageDialog(
                         this,
-                        "Informe um valor válido.\nExemplo: 150,00",
-                        "Valor inválido",
-                        javax.swing.JOptionPane.WARNING_MESSAGE
+                        "Não foi possível abrir o caixa.\n" + e.getMessage(),
+                        "Erro",
+                        javax.swing.JOptionPane.ERROR_MESSAGE
                 );
+                return;
             }
         }
     }
@@ -389,6 +541,62 @@ public class MainScreen extends javax.swing.JPanel {
         btnUsuarios.setVisible(false);
     }
 
+    /**
+     * Monta o menu lateral em uma coluna (BoxLayout) com a logo e somente os
+     * botões visíveis para o perfil logado, todos com 150 x 40 px e o mesmo
+     * espaçamento de 18 px entre eles.
+     */
+    private void reorganizarMenuLateral() {
+        java.awt.Dimension tamanhoBotao = new java.awt.Dimension(150, 40);
+        javax.swing.JButton[] botoes = {btnMesas, btnHistorico, btnCaixa, btnProdutos, btnRelatorios, btnUsuarios};
+
+        LateralPanel.removeAll();
+        LateralPanel.setLayout(new javax.swing.BoxLayout(LateralPanel, javax.swing.BoxLayout.Y_AXIS));
+        LateralPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 0, 10, 0));
+
+        Logo.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+        LateralPanel.add(Logo);
+
+        for (javax.swing.JButton botao : botoes) {
+            if (!botao.isVisible()) {
+                continue;
+            }
+            botao.setPreferredSize(tamanhoBotao);
+            botao.setMinimumSize(tamanhoBotao);
+            botao.setMaximumSize(tamanhoBotao);
+            botao.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
+            LateralPanel.add(javax.swing.Box.createVerticalStrut(18));
+            LateralPanel.add(botao);
+        }
+
+        LateralPanel.add(javax.swing.Box.createVerticalGlue());
+        LateralPanel.revalidate();
+        LateralPanel.repaint();
+    }
+
+    /**
+     * Define o ícone de cada botão do menu lateral. Os ícones usam a cor do
+     * texto do botão (verde, ou branco no botão ativo). Ícone e texto ficam
+     * alinhados à esquerda.
+     */
+    private void aplicarIconesMenu() {
+        Object[][] menu = {
+            {btnMesas, br.com.trevizan.espetinhos.util.PadraoComponentes.iconePedidos(null)},
+            {btnHistorico, br.com.trevizan.espetinhos.util.PadraoComponentes.iconeHistorico(null)},
+            {btnCaixa, br.com.trevizan.espetinhos.util.PadraoComponentes.iconeCaixaRegistradora(null)},
+            {btnProdutos, br.com.trevizan.espetinhos.util.PadraoComponentes.iconeEspeto(null)},
+            {btnRelatorios, br.com.trevizan.espetinhos.util.PadraoComponentes.iconeRelatorios(null)},
+            {btnUsuarios, br.com.trevizan.espetinhos.util.PadraoComponentes.iconeUsuarios(null)}
+        };
+        for (Object[] item : menu) {
+            javax.swing.JButton botao = (javax.swing.JButton) item[0];
+            botao.setIcon((javax.swing.Icon) item[1]);
+            botao.setIconTextGap(12);
+            botao.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+            botao.setMargin(new java.awt.Insets(2, 22, 2, 10));
+        }
+    }
+
     private void resetarBotoes() {
         java.awt.Color verdeEscuro = new java.awt.Color(25, 100, 25);
         java.awt.Color branco = java.awt.Color.WHITE;
@@ -400,9 +608,8 @@ public class MainScreen extends javax.swing.JPanel {
             b.setBackground(branco);
             b.setForeground(verdeEscuro);
             
-            b.putClientProperty("JButton.buttonType", "roundRect");
-            b.putClientProperty("JComponent.arc", 999); 
-            b.putClientProperty("JButton.borderColor", verdeEscuro); 
+            // cantos com a curvatura padrão dos botões
+            b.putClientProperty("FlatLaf.style", "arc: " + br.com.trevizan.espetinhos.util.PadraoComponentes.ARCO);
         }
     }
 
@@ -450,29 +657,7 @@ public class MainScreen extends javax.swing.JPanel {
         ativarBotao(btnCaixa);
         caixaPanel.atualizarDados();
         cardLayout.show(CenterPanel, "caixa");
-    }
-
-
-    private void confirmarLogoff() {
-        int resposta = JOptionPane.showConfirmDialog(
-                this,
-                "Deseja realmente sair da sua conta?",
-                "Confirmar Logoff",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-        );
-
-        if (resposta != JOptionPane.YES_OPTION) {
-            return;
-        }
-
-        java.awt.Window janela = javax.swing.SwingUtilities.getWindowAncestor(this);
-
-        if (janela instanceof Login) {
-            ((Login) janela).voltarParaLogin();
-        }
-    }
-
+    }                          
 
     private void btnProdutosActionPerformed(java.awt.event.ActionEvent evt) {
 
@@ -518,9 +703,6 @@ public class MainScreen extends javax.swing.JPanel {
             );
             return;
         }
-
-
-
 
     ativarBotao(btnUsuarios);
     cardLayout.show(CenterPanel, "usuarios");

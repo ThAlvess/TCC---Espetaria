@@ -120,11 +120,11 @@ public class ComandaPanel extends PadraoJPanel {
         linhaVoltar.setOpaque(false);
 
         RoundedButton btnVoltar = new RoundedButton("←  VOLTAR", 12);
-        btnVoltar.setPreferredSize(new Dimension(108, 34));
         btnVoltar.setBackground(new Color(243, 240, 237));
         btnVoltar.setForeground(COR_TEXTO);
         btnVoltar.setBorderColor(COR_BORDA);
         btnVoltar.setFont(new Font("Arial", Font.BOLD, 12));
+        btnVoltar.ajustarAoTexto(34);
         btnVoltar.addActionListener(e -> {
             if (aoVoltar != null) {
                 aoVoltar.run();
@@ -195,6 +195,7 @@ public class ComandaPanel extends PadraoJPanel {
         cabecalho.add(Box.createVerticalStrut(12));
         cabecalho.add(lblPedido);
 
+        alinharTudoAEsquerda(cabecalho);
         painelComanda.add(cabecalho, BorderLayout.NORTH);
 
         // Lista de itens
@@ -309,6 +310,7 @@ public class ComandaPanel extends PadraoJPanel {
             btnFecharMesa.setVisible(false);
         }
 
+        alinharTudoAEsquerda(rodape);
         painelComanda.add(rodape, BorderLayout.SOUTH);
         conteudo.add(painelComanda, BorderLayout.WEST);
 
@@ -387,7 +389,13 @@ public class ComandaPanel extends PadraoJPanel {
         painelProdutos = new JPanel(new GridLayout(0, 3, 14, 14));
         painelProdutos.setOpaque(false);
 
-        JScrollPane scrollProdutos = new JScrollPane(painelProdutos);
+        // a grade fica presa no topo: com poucos produtos (ex.: numa pesquisa)
+        // os cartões mantêm a altura normal em vez de esticar até o fim da área
+        JPanel topoGrade = new JPanel(new BorderLayout());
+        topoGrade.setOpaque(false);
+        topoGrade.add(painelProdutos, BorderLayout.NORTH);
+
+        JScrollPane scrollProdutos = new JScrollPane(topoGrade);
         scrollProdutos.setBorder(null);
         scrollProdutos.setOpaque(false);
         scrollProdutos.getViewport().setOpaque(false);
@@ -422,6 +430,19 @@ public class ComandaPanel extends PadraoJPanel {
         carregarProdutos(null);
         carregarItensSalvos();
         carregarPagamentos();
+    }
+
+    /**
+     * Define o alinhamento horizontal de todos os filhos do painel (BoxLayout
+     * vertical) como esquerda, para que ocupem a largura toda da coluna a
+     * partir da mesma margem.
+     */
+    private static void alinharTudoAEsquerda(JPanel container) {
+        for (Component filho : container.getComponents()) {
+            if (filho instanceof JComponent componente) {
+                componente.setAlignmentX(Component.LEFT_ALIGNMENT);
+            }
+        }
     }
 
     private JPanel criarLinhaResumo(String texto, boolean destaque) {
@@ -590,31 +611,37 @@ public class ComandaPanel extends PadraoJPanel {
         RoundedPanel card = new RoundedPanel(18, COR_CARD);
         card.setLayout(new BorderLayout(0, 10));
         card.setBorder(new EmptyBorder(12, 12, 12, 12));
-        card.setPreferredSize(new Dimension(190, 235));
-        card.setMinimumSize(new Dimension(170, 235));
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         RoundedPanel areaImagem = new RoundedPanel(14, new Color(241, 236, 232));
         areaImagem.setLayout(new GridBagLayout());
         areaImagem.setPreferredSize(new Dimension(0, 98));
 
-        JLabel inicial = new JLabel(obterIniciais(produto.getNome()));
-        inicial.setFont(new Font("Arial", Font.BOLD, 34));
-        inicial.setForeground(new Color(159, 146, 136));
-        areaImagem.add(inicial);
+        // foto do produto cobrindo a área; sem foto, mostra as iniciais
+        java.awt.image.BufferedImage foto =
+                br.com.trevizan.espetinhos.util.ImagemProduto.obter(produto.getIdProduto());
+        JComponent fotoProduto = null;
+        if (foto != null) {
+            areaImagem.setLayout(new BorderLayout());
+            fotoProduto = br.com.trevizan.espetinhos.util.ImagemProduto.criarPainelFoto(foto, 14);
+            areaImagem.add(fotoProduto, BorderLayout.CENTER);
+        } else {
+            JLabel inicial = new JLabel(obterIniciais(produto.getNome()));
+            inicial.setFont(new Font("Arial", Font.BOLD, 34));
+            inicial.setForeground(new Color(159, 146, 136));
+            areaImagem.add(inicial);
+        }
 
         JPanel dados = new JPanel();
         dados.setOpaque(false);
         dados.setLayout(new BoxLayout(dados, BoxLayout.Y_AXIS));
-        dados.setPreferredSize(new Dimension(0, 78));
 
-        JLabel nome = new JLabel(
-                "<html><div style='width:155px'>" + escaparHtml(produto.getNome()) + "</div></html>"
-        );
+        // o nome quebra na largura real do cartão (até 3 linhas; se passar,
+        // termina com "..." e o nome completo aparece ao parar o mouse)
+        TextoQuebrado nome = new TextoQuebrado(produto.getNome(), 3).reservarTodasAsLinhas();
         nome.setFont(new Font("Arial", Font.BOLD, 15));
         nome.setForeground(COR_TEXTO);
         nome.setAlignmentX(Component.LEFT_ALIGNMENT);
-        nome.setToolTipText(produto.getNome());
 
         JLabel categoria = new JLabel(produto.getCategoria().getNome());
         categoria.setFont(new Font("Arial", Font.PLAIN, 11));
@@ -644,6 +671,12 @@ public class ComandaPanel extends PadraoJPanel {
         adicionar.addActionListener(e -> adicionarProduto(produto));
         card.add(adicionar, BorderLayout.SOUTH);
 
+        // altura calculada pelo conteúdo (fonte e escala do Windows incluídas),
+        // para o preço e o botão nunca ficarem cortados
+        int alturaCard = card.getLayout().preferredLayoutSize(card).height;
+        card.setPreferredSize(new Dimension(190, alturaCard));
+        card.setMinimumSize(new Dimension(170, alturaCard));
+
         MouseAdapter cliqueCard = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -651,6 +684,9 @@ public class ComandaPanel extends PadraoJPanel {
             }
         };
         areaImagem.addMouseListener(cliqueCard);
+        if (fotoProduto != null) {
+            fotoProduto.addMouseListener(cliqueCard);
+        }
         nome.addMouseListener(cliqueCard);
 
         return card;
@@ -668,18 +704,27 @@ public class ComandaPanel extends PadraoJPanel {
     }
 
     private String obterIniciais(String nome) {
-        if (nome == null || nome.isBlank()) {
+        // usa só as palavras que começam com letra (ignora "(", números etc.)
+        java.util.List<String> palavras = new ArrayList<>();
+        if (nome != null) {
+            for (String parte : nome.trim().split("\\s+")) {
+                if (!parte.isEmpty() && Character.isLetter(parte.charAt(0))) {
+                    palavras.add(parte);
+                }
+            }
+        }
+
+        if (palavras.isEmpty()) {
             return "?";
         }
 
-        String[] partes = nome.trim().split("\\s+");
-        String primeira = partes[0].substring(0, 1).toUpperCase();
+        String primeira = palavras.get(0).substring(0, 1).toUpperCase();
 
-        if (partes.length == 1) {
+        if (palavras.size() == 1) {
             return primeira;
         }
 
-        return primeira + partes[partes.length - 1].substring(0, 1).toUpperCase();
+        return primeira + palavras.get(palavras.size() - 1).substring(0, 1).toUpperCase();
     }
 
     // ================================================================
@@ -745,15 +790,21 @@ public class ComandaPanel extends PadraoJPanel {
     }
 
     private JPanel criarCardItem(ItemTemporario item) {
-        RoundedPanel card = new RoundedPanel(16, COR_ITEM);
+        // na lista (BoxLayout) o cartão não estica: fica na altura do conteúdo
+        RoundedPanel card = new RoundedPanel(16, COR_ITEM) {
+            @Override
+            public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+        };
         card.setLayout(new BorderLayout(0, 8));
         card.setBorder(new EmptyBorder(11, 12, 11, 12));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
 
         JPanel topo = new JPanel(new BorderLayout(8, 0));
         topo.setOpaque(false);
 
-        JLabel descricao = new JLabel(item.produto.getNome());
+        // nome em até 2 linhas, sem invadir o preço
+        TextoQuebrado descricao = new TextoQuebrado(item.produto.getNome(), 2);
         descricao.setFont(new Font("Arial", Font.BOLD, 14));
         descricao.setForeground(COR_TEXTO);
 
@@ -762,7 +813,7 @@ public class ComandaPanel extends PadraoJPanel {
         preco.setFont(new Font("Arial", Font.BOLD, 14));
         preco.setForeground(COR_VERDE_ESCURO);
 
-        topo.add(descricao, BorderLayout.WEST);
+        topo.add(descricao, BorderLayout.CENTER);
         topo.add(preco, BorderLayout.EAST);
         card.add(topo, BorderLayout.NORTH);
 
@@ -802,7 +853,7 @@ public class ComandaPanel extends PadraoJPanel {
         btnObservacao.setForeground(COR_TEXTO_SECUNDARIO);
         btnObservacao.setBorderColor(COR_BORDA);
         btnObservacao.setFont(new Font("Arial", Font.BOLD, 10));
-        btnObservacao.setPreferredSize(new Dimension(96, 28));
+        btnObservacao.ajustarAoTexto(28);
 
         btnMais.addActionListener(e -> {
             item.quantidade++;
@@ -942,6 +993,7 @@ public class ComandaPanel extends PadraoJPanel {
             JLabel nenhum = new JLabel("Nenhum pagamento registrado");
             nenhum.setFont(new Font("Arial", Font.ITALIC, 11));
             nenhum.setForeground(COR_TEXTO_SECUNDARIO);
+            nenhum.setAlignmentX(Component.LEFT_ALIGNMENT);
             painelPagamentos.add(nenhum);
         } else {
             for (Pagamento pagamento : pagamentos) {
@@ -983,6 +1035,7 @@ public class ComandaPanel extends PadraoJPanel {
 
                 linha.add(descricao, BorderLayout.WEST);
                 linha.add(ladoDireito, BorderLayout.EAST);
+                linha.setAlignmentX(Component.LEFT_ALIGNMENT);
                 painelPagamentos.add(linha);
                 painelPagamentos.add(Box.createVerticalStrut(4));
             }
@@ -1056,7 +1109,9 @@ public class ComandaPanel extends PadraoJPanel {
                 new String[]{"DINHEIRO", "PIX", "DEBITO", "CREDITO"}
         );
 
-        JTextField txtValor = new JTextField(restante.setScale(2).toString());
+        br.com.trevizan.espetinhos.util.CampoMoeda txtValor =
+                new br.com.trevizan.espetinhos.util.CampoMoeda(restante);
+        br.com.trevizan.espetinhos.util.CampoMoeda.focarAoAbrir(txtValor);
 
         JPanel painel = new JPanel(new GridLayout(0, 1, 5, 5));
         painel.add(new JLabel("Forma de pagamento:"));
@@ -1078,16 +1133,7 @@ public class ComandaPanel extends PadraoJPanel {
         }
 
         try {
-            String texto = txtValor.getText()
-                    .trim()
-                    .replace("R$", "")
-                    .replace(" ", "");
-
-            if (texto.contains(",")) {
-                texto = texto.replace(".", "").replace(",", ".");
-            }
-
-            BigDecimal valor = new BigDecimal(texto);
+            BigDecimal valor = txtValor.getValor();
 
             if (valor.compareTo(BigDecimal.ZERO) <= 0) {
                 JOptionPane.showMessageDialog(this, "Informe um valor maior que zero.");
@@ -1394,6 +1440,132 @@ public class ComandaPanel extends PadraoJPanel {
     }
 
     // ================================================================
+    // TEXTO COM QUEBRA DE LINHA
+    // ================================================================
+    /**
+     * Texto que quebra as linhas na largura real do componente (não numa
+     * largura fixa), com limite de linhas. Se o texto não couber, a última
+     * linha termina com "..." e o texto completo aparece no tooltip.
+     *
+     * <p>A altura acompanha o número de linhas usadas. Com
+     * {@link #reservarTodasAsLinhas} ligado, a altura é sempre a do limite
+     * de linhas (deixa o preço na mesma posição em todos os cartões).</p>
+     */
+    private static class TextoQuebrado extends JComponent {
+        private final String texto;
+        private final int maximoLinhas;
+        private boolean reservarTodas;
+        private int larguraCalculada = -1;
+        private java.util.List<String> linhas = new ArrayList<>();
+
+        TextoQuebrado(String texto, int maximoLinhas) {
+            this.texto = texto == null ? "" : texto.trim();
+            this.maximoLinhas = maximoLinhas;
+        }
+
+        TextoQuebrado reservarTodasAsLinhas() {
+            reservarTodas = true;
+            return this;
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            FontMetrics fm = getFontMetrics(getFont());
+            int quantidade = reservarTodas
+                    ? maximoLinhas
+                    : Math.max(1, calcularLinhas(getWidth()).size());
+            int largura = Math.min(fm.stringWidth(texto), 200);
+            return new Dimension(largura, quantidade * fm.getHeight());
+        }
+
+        @Override
+        public Dimension getMinimumSize() {
+            return new Dimension(0, getPreferredSize().height);
+        }
+
+        @Override
+        public Dimension getMaximumSize() {
+            return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+        }
+
+        @Override
+        public void setBounds(int x, int y, int largura, int altura) {
+            int linhasAntes = linhas.size();
+            super.setBounds(x, y, largura, altura);
+            // a largura mudou e o número de linhas também: refaz o layout
+            if (!reservarTodas && calcularLinhas(largura).size() != linhasAntes && linhasAntes > 0) {
+                SwingUtilities.invokeLater(this::revalidate);
+            }
+        }
+
+        private java.util.List<String> calcularLinhas(int largura) {
+            if (largura == larguraCalculada) {
+                return linhas;
+            }
+            larguraCalculada = largura;
+            linhas = new ArrayList<>();
+            FontMetrics fm = getFontMetrics(getFont());
+            if (largura <= 0 || texto.isEmpty()) {
+                linhas.add(texto);
+                return linhas;
+            }
+
+            String[] palavras = texto.split("\\s+");
+            StringBuilder linha = new StringBuilder();
+            int i = 0;
+            while (i < palavras.length) {
+                String tentativa = linha.length() == 0 ? palavras[i] : linha + " " + palavras[i];
+                if (fm.stringWidth(tentativa) <= largura || linha.length() == 0) {
+                    linha.setLength(0);
+                    linha.append(tentativa);
+                    i++;
+                } else {
+                    linhas.add(linha.toString());
+                    linha.setLength(0);
+                    if (linhas.size() == maximoLinhas) {
+                        break;
+                    }
+                }
+            }
+            if (linhas.size() < maximoLinhas && linha.length() > 0) {
+                linhas.add(linha.toString());
+            }
+
+            boolean sobrou = i < palavras.length;
+            String ultima = linhas.get(linhas.size() - 1);
+            if (sobrou || fm.stringWidth(ultima) > largura) {
+                // não coube: corta a última linha e coloca "..."
+                String reticencias = "...";
+                String base = sobrou ? ultima + " " : ultima;
+                while (!base.isEmpty() && fm.stringWidth(base.strip() + reticencias) > largura) {
+                    base = base.substring(0, base.length() - 1);
+                }
+                linhas.set(linhas.size() - 1, base.strip() + reticencias);
+                setToolTipText(texto);
+            } else {
+                setToolTipText(null);
+            }
+            return linhas;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setFont(getFont());
+            g2.setColor(getForeground());
+            FontMetrics fm = g2.getFontMetrics();
+            int y = fm.getAscent();
+            for (String linha : calcularLinhas(getWidth())) {
+                g2.drawString(linha, 0, y);
+                y += fm.getHeight();
+            }
+            g2.dispose();
+        }
+    }
+
+
+    // ================================================================
     // COMPONENTES VISUAIS
     // ================================================================
     private static class RoundedPanel extends JPanel {
@@ -1423,6 +1595,9 @@ public class ComandaPanel extends PadraoJPanel {
         private Color hoverColor;
         private boolean hover;
 
+        /** Altura fixa usada por {@link #ajustarAoTexto(int)}; -1 = tamanho livre. */
+        private int alturaFixa = -1;
+
         public RoundedButton(String text, int radius) {
             super(text);
             this.radius = radius;
@@ -1431,6 +1606,9 @@ public class ComandaPanel extends PadraoJPanel {
             setBorderPainted(false);
             setFocusPainted(false);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            // espaçamento interno fixo de 4 px nas laterais, sem margem extra
+            setMargin(new Insets(0, 0, 0, 0));
+            setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
 
             addMouseListener(new MouseAdapter() {
                 @Override
@@ -1450,6 +1628,31 @@ public class ComandaPanel extends PadraoJPanel {
         public void setBorderColor(Color borderColor) {
             this.borderColor = borderColor;
             repaint();
+        }
+
+        /**
+         * Usa altura fixa e largura calculada pelo texto, com 14 px de folga
+         * de cada lado.
+         */
+        public void ajustarAoTexto(int altura) {
+            this.alturaFixa = altura;
+            setBorder(BorderFactory.createEmptyBorder(0, 14, 0, 14));
+            setPreferredSize(null);
+            revalidate();
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension tamanho = super.getPreferredSize();
+            if (alturaFixa > 0 && !isPreferredSizeSet()) {
+                return new Dimension(tamanho.width + 4, alturaFixa);
+            }
+            return tamanho;
+        }
+
+        @Override
+        public Dimension getMinimumSize() {
+            return alturaFixa > 0 ? getPreferredSize() : super.getMinimumSize();
         }
 
         public void setHoverColor(Color hoverColor) {

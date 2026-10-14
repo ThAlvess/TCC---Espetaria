@@ -10,7 +10,6 @@ public class Produto {
     private Categoria categoria;
     private boolean ativo;
     private String descricao;
-    private int quantidadeEstoque;
     private String localPreparo;
 
     public Produto() {
@@ -71,14 +70,6 @@ public class Produto {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
-    }
-
-    public int getQuantidadeEstoque() {
-        return quantidadeEstoque;
-    }
-
-    public void setQuantidadeEstoque(int quantidadeEstoque) {
-        this.quantidadeEstoque = quantidadeEstoque;
     }
 
     public String getLocalPreparo() {

@@ -9,8 +9,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ProdutoDAO {
 
@@ -18,8 +21,8 @@ public class ProdutoDAO {
 
         String sql = """
         INSERT INTO produto
-        (id_categoria, nome, descricao, preco, quantidade_estoque, local_preparo, ativo)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (id_categoria, nome, descricao, preco, local_preparo, ativo)
+        VALUES (?, ?, ?, ?, ?, ?)
         """;
 
         try (
@@ -50,18 +53,13 @@ public class ProdutoDAO {
                     produto.getPreco()
             );
 
-            statement.setInt(
-                    5,
-                    produto.getQuantidadeEstoque()
-            );
-
             statement.setString(
-                    6,
+                    5,
                     produto.getLocalPreparo()
             );
 
             statement.setBoolean(
-                    7,
+                    6,
                     produto.isAtivo()
             );
 
@@ -92,10 +90,7 @@ public class ProdutoDAO {
                     p.nome,
                     p.descricao,
                     p.preco,
-                    p.quantidade_estoque,
-                    p.quantidade_estoque,
                     p.local_preparo,
-                    p.ativo,
                     p.ativo,
                     c.id_categoria,
                     c.nome AS categoria_nome,
@@ -148,10 +143,6 @@ public class ProdutoDAO {
                         resultSet.getBigDecimal("preco")
                 );
 
-                produto.setQuantidadeEstoque(
-                        resultSet.getInt("quantidade_estoque")
-                );
-
                 produto.setLocalPreparo(
                         resultSet.getString("local_preparo")
                 );
@@ -182,7 +173,6 @@ public class ProdutoDAO {
     SET nome = ?,
         descricao = ?,
         preco = ?,
-        quantidade_estoque = ?,
         id_categoria = ?,
         local_preparo = ?,
         ativo = ?
@@ -197,17 +187,73 @@ public class ProdutoDAO {
             stmt.setString(1, produto.getNome());
             stmt.setString(2, produto.getDescricao());
             stmt.setBigDecimal(3, produto.getPreco());
-            stmt.setInt(4, produto.getQuantidadeEstoque());
-            stmt.setInt(5, produto.getCategoria().getIdCategoria());
-            stmt.setString(6, produto.getLocalPreparo());
-            stmt.setBoolean(7, produto.isAtivo());
-            stmt.setInt(8, produto.getIdProduto());
+            stmt.setInt(4, produto.getCategoria().getIdCategoria());
+            stmt.setString(5, produto.getLocalPreparo());
+            stmt.setBoolean(6, produto.isAtivo());
+            stmt.setInt(7, produto.getIdProduto());
 
             stmt.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException(
                     "Erro ao atualizar produto.",
+                    e
+            );
+        }
+    }
+
+    /**
+     * Fotos de todos os produtos que têm imagem, por id do produto.
+     * Lida uma vez e guardada em memória por {@code ImagemProduto}.
+     */
+    public Map<Integer, byte[]> listarImagens() {
+
+        String sql = "SELECT id_produto, imagem FROM produto WHERE imagem IS NOT NULL";
+
+        Map<Integer, byte[]> imagens = new HashMap<>();
+
+        try (
+                Connection conexao = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conexao.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()
+        ) {
+
+            while (rs.next()) {
+                imagens.put(rs.getInt("id_produto"), rs.getBytes("imagem"));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao carregar as imagens dos produtos.",
+                    e
+            );
+        }
+
+        return imagens;
+    }
+
+    /** Grava a foto do produto ({@code null} remove a foto). */
+    public void salvarImagem(int idProduto, byte[] imagem) {
+
+        String sql = "UPDATE produto SET imagem = ? WHERE id_produto = ?";
+
+        try (
+                Connection conexao = ConnectionFactory.getConnection();
+                PreparedStatement stmt = conexao.prepareStatement(sql)
+        ) {
+
+            if (imagem == null || imagem.length == 0) {
+                stmt.setNull(1, Types.BLOB);
+            } else {
+                stmt.setBytes(1, imagem);
+            }
+            stmt.setInt(2, idProduto);
+
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Erro ao salvar a imagem do produto.",
                     e
             );
         }

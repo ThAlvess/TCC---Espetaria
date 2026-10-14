@@ -106,13 +106,9 @@ public class Relatorio extends javax.swing.JPanel {
     private LocalDate ultimoDiaExibido = LocalDate.now();
 
     /**
-     * A tela de Relatórios é criada uma única vez, quando o MainScreen abre,
-     * e fica guardada no CardLayout. Por isso, sem este listener, vendas
-     * fechadas depois disso só apareciam reiniciando o sistema.
-     *
-     * Agora, toda vez que o usuário entra na aba Relatórios (o CardLayout
-     * torna o painel visível e dispara componentShown), os dados são
-     * consultados de novo no banco, mantendo o filtro que estava selecionado.
+     * Toda vez que o usuário entra na aba Relatórios (o CardLayout torna o
+     * painel visível e dispara componentShown), os dados são consultados de
+     * novo no banco, mantendo o filtro que estava selecionado.
      */
     private void atualizarAoExibir() {
         addComponentListener(new java.awt.event.ComponentAdapter() {
@@ -411,8 +407,7 @@ public class Relatorio extends javax.swing.JPanel {
         eixoValoresEvolucao.setTickLabelFont(fonteEixosEvolucao);
         eixoValoresEvolucao.setUpperMargin(0.20);
 
-        // Período sem nenhuma venda (linha toda em R$ 0): fixa o eixo em
-        // 0–100 em vez da escala automática, que mostrava "-R$0 ... R$0".
+        // Período sem nenhuma venda (linha toda em R$ 0): fixa o eixo em 0–100.
         boolean tudoZerado = dados.values().stream().allMatch(valor -> valor == null || valor.signum() == 0)
                 && (!comparar || valoresAnteriores.stream().allMatch(valor -> valor == null || valor.signum() == 0));
         if (tudoZerado) {
@@ -683,14 +678,12 @@ public class Relatorio extends javax.swing.JPanel {
     private static final int HORA_FECHAMENTO = 23;
 
     /**
-     * Monta a série do gráfico de evolução com TODOS os pontos do período
-     * (horas, dias ou meses), preenchendo com zero os que não tiveram venda —
-     * a consulta só devolve os pontos com venda, o que fazia a linha "pular"
-     * (ex.: de 13h direto para 15h). Pontos no futuro não são desenhados,
-     * pra linha não despencar a zero depois de "agora".
+     * Monta a série do gráfico de evolução com todos os pontos do período
+     * (horas, dias ou meses), preenchendo com zero os que não tiveram venda.
+     * Pontos no futuro (depois de "agora") não são incluídos.
      *
-     * Também deixa os rótulos do eixo X mais legíveis (a consulta traz "14"
-     * para hora, "05/09" para dia, "2026-09" para mês).
+     * Também formata os rótulos do eixo X (a consulta traz "14" para hora,
+     * "05/09" para dia e "2026-09" para mês).
      */
     private LinkedHashMap<String, BigDecimal> montarSerieEvolucao(LinkedHashMap<String, BigDecimal> bruto,
             PeriodoRelatorio periodo, RelatorioDAO.Granularidade granularidade) {
@@ -920,15 +913,12 @@ public class Relatorio extends javax.swing.JPanel {
     }
 
     /**
-     * Cartão branco arredondado (mesmo estilo dos cartões de gráfico) que
-     * envolve um ícone + o controle de seleção de período, pra destacar o
-     * seletor visualmente dentro da barra de filtros.
+     * Cartão branco arredondado que envolve um ícone + o controle de seleção
+     * de período, dentro da barra de filtros.
      *
      * O preenchimento (empty border) nas laterais é igual ao raio do
-     * arredondamento do PanelArredondado: como o conteúdo nunca fica mais
-     * perto da borda esquerda/direita do que o raio da curva, ele nunca cai
-     * dentro da área que a curva do canto recorta — é o que evita tanto o
-     * ícone quanto o controle aparecerem cortados/serrilhados no canto.
+     * arredondamento do PanelArredondado, mantendo o conteúdo fora da área
+     * recortada pela curva do canto.
      */
     private javax.swing.JPanel criarCartaoSeletor(javax.swing.JComponent icone, javax.swing.JComponent controle) {
         int raio = 14;
@@ -951,9 +941,7 @@ public class Relatorio extends javax.swing.JPanel {
     }
 
     /**
-     * Ícones desenhados na hora (em vez de emoji): ficam nítidos em qualquer
-     * tamanho, não dependem de fonte de emoji instalada e não sofrem o corte
-     * que o glifo colorido do emoji sofria dentro do cartão arredondado.
+     * Ícones desenhados com Graphics2D (não dependem de fonte instalada).
      */
     private javax.swing.Icon criarIconeCalendario(java.awt.Color cor) {
         return new javax.swing.Icon() {
@@ -1043,9 +1031,8 @@ public class Relatorio extends javax.swing.JPanel {
     /**
      * Aplica o selo colorido (ícone dentro de um quadrado verde
      * arredondado, no canto superior direito) nos 4 cartões de KPI do topo
-     * da tela, no mesmo espírito do que já é feito para o seletor de
-     * período: em vez de editar o initComponents() gerado pelo Form
-     * Editor, o layout de cada cartão é reconstruído em tempo de execução.
+     * da tela. O layout de cada cartão é reconstruído em tempo de execução,
+     * sem alterar o initComponents() gerado pelo Form Editor.
      */
     private void adicionarBadgesKpi() {
         java.awt.Color verdeBadge = new java.awt.Color(25, 100, 25);
@@ -1261,9 +1248,8 @@ public class Relatorio extends javax.swing.JPanel {
 
     /**
      * Botão "Exportar" que fica na barra de filtros, logo depois do seletor
-     * de período. Ao clicar, abre um menu com as opções PDF e Excel. Criado
-     * em tempo de execução (como o seletor), pra não mexer no
-     * initComponents() gerado pelo Form Editor.
+     * de período. Ao clicar, abre um menu com as opções PDF e Excel. É criado
+     * em tempo de execução, fora do initComponents() gerado pelo Form Editor.
      */
     private javax.swing.JButton criarBotaoExportar() {
         java.awt.Color verdeEscuro = new java.awt.Color(25, 100, 25);
@@ -1278,7 +1264,9 @@ public class Relatorio extends javax.swing.JPanel {
         btnExportar.setRequestFocusEnabled(false);
         btnExportar.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
         btnExportar.setToolTipText("Exporta o relatório do período selecionado em PDF ou Excel");
-        btnExportar.putClientProperty("JButton.buttonType", "roundRect");
+        // cantos com a curvatura padrão dos botões
+        btnExportar.putClientProperty("FlatLaf.style",
+                "arc: " + br.com.trevizan.espetinhos.util.PadraoComponentes.ARCO);
 
         java.awt.Font fonteMenu = new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13);
 

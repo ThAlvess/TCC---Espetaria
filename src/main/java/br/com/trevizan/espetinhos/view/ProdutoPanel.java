@@ -5,15 +5,22 @@ import br.com.trevizan.espetinhos.dao.CategoriaDAO;
 import br.com.trevizan.espetinhos.dao.ProdutoDAO;
 import br.com.trevizan.espetinhos.model.Categoria;
 import br.com.trevizan.espetinhos.model.Produto;
+import br.com.trevizan.espetinhos.util.CampoMoeda;
+import br.com.trevizan.espetinhos.util.ImagemProduto;
+import br.com.trevizan.espetinhos.util.PadraoComponentes;
 import br.com.trevizan.espetinhos.util.PadraoTela;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.List;
@@ -33,14 +40,17 @@ public class ProdutoPanel extends PadraoJPanel {
     private List<Produto> produtos;
     private List<Produto> produtosExibidos;
 
-    private final Color VERDE =
-            new Color(20, 115, 10);
+    private JLabel lblResumo;
 
-    private final Color CINZA_TABELA =
-            new Color(224, 224, 224);
+    private static final int COL_PRECO = 4;
+    private static final int COL_STATUS = 5;
+    private static final int COL_ACOES = 6;
 
-    private final Color CINZA_CABECALHO =
-            new Color(135, 135, 132);
+    /** Tamanho da prévia da foto no formulário. */
+    private static final int TAMANHO_PREVIA = 170;
+
+    /** Última pasta usada para escolher imagens (abre nela da próxima vez). */
+    private static File ultimaPastaImagens;
 
     public ProdutoPanel() {
 
@@ -142,71 +152,37 @@ public class ProdutoPanel extends PadraoJPanel {
         );
 
         txtPesquisar =
-                new JTextField();
-
-        txtPesquisar.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.PLAIN,
-                        16
-                )
-        );
-
-        txtPesquisar.setPreferredSize(
-                new Dimension(
-                        500,
-                        48
-                )
-        );
-
-        txtPesquisar.putClientProperty(
-                "JTextField.placeholderText",
-                "Pesquisar"
-        );
-
-        txtPesquisar.setHorizontalAlignment(
-                JTextField.CENTER
-        );
-
-        btnNovoProduto =
-                new JButton(
-                        "+  Novo produto"
+                PadraoComponentes.criarCampoPesquisa(
+                        "Pesquisar produto ou categoria..."
                 );
 
-        btnNovoProduto.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        16
-                )
-        );
-
-        btnNovoProduto.setForeground(
-                Color.WHITE
-        );
-
-        btnNovoProduto.setBackground(
-                VERDE
-        );
-
-        btnNovoProduto.setFocusPainted(
-                false
-        );
-
-        btnNovoProduto.setPreferredSize(
-                new Dimension(
-                        220,
-                        48
-                )
-        );
+        btnNovoProduto =
+                PadraoComponentes.criarBotaoPrimario(
+                        "Novo produto",
+                        PadraoComponentes.iconeMais(Color.WHITE)
+                );
 
         painelTopo.add(
                 txtPesquisar,
                 BorderLayout.CENTER
         );
 
+        // GridBagLayout mantém o botão na altura padrão, centralizado na linha
+        JPanel painelBotao =
+                new JPanel(
+                        new GridBagLayout()
+                );
+
+        painelBotao.setOpaque(
+                false
+        );
+
+        painelBotao.add(
+                btnNovoProduto
+        );
+
         painelTopo.add(
-                btnNovoProduto,
+                painelBotao,
                 BorderLayout.EAST
         );
 
@@ -227,7 +203,6 @@ public class ProdutoPanel extends PadraoJPanel {
                 "Categoria",
                 "Destino",
                 "Preço",
-                "Estoque",
                 "Status",
                 "Ações"
         };
@@ -255,29 +230,27 @@ public class ProdutoPanel extends PadraoJPanel {
 
         configurarTabela();
 
-        JScrollPane scrollPane =
-                new JScrollPane(
-                        tabelaProdutos
-                );
+        lblResumo =
+                new JLabel(" ");
 
-        scrollPane.setBorder(
-                BorderFactory.createLineBorder(
-                        new Color(
-                                150,
-                                150,
-                                150
-                        )
+        lblResumo.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.PLAIN,
+                        13
                 )
         );
 
-        scrollPane
-                .getViewport()
-                .setBackground(
-                        CINZA_TABELA
-                );
+        lblResumo.setForeground(
+                PadraoComponentes.COR_TEXTO_SECUNDARIO
+        );
 
         painelConteudo.add(
-                scrollPane,
+                PadraoComponentes.criarCartaoTabela(
+                        "Produtos cadastrados",
+                        tabelaProdutos,
+                        lblResumo
+                ),
                 BorderLayout.CENTER
         );
 
@@ -308,192 +281,135 @@ public class ProdutoPanel extends PadraoJPanel {
 
     private void configurarTabela() {
 
-        tabelaProdutos.setRowHeight(
-                66
-        );
-
-        tabelaProdutos.setFont(
-                new Font(
-                        "Segoe UI",
-                        Font.BOLD,
-                        15
-                )
-        );
-
-        tabelaProdutos.setForeground(
-                VERDE
-        );
-
-        tabelaProdutos.setBackground(
-                CINZA_TABELA
-        );
-
-        tabelaProdutos.setGridColor(
-                new Color(
-                        100,
-                        100,
-                        100
-                )
-        );
-
-        tabelaProdutos.setShowVerticalLines(
-                true
-        );
-
-        tabelaProdutos.setShowHorizontalLines(
-                true
-        );
-
-        tabelaProdutos.setSelectionBackground(
-                new Color(
-                        210,
-                        225,
-                        210
-                )
-        );
-
-        tabelaProdutos.setSelectionForeground(
-                VERDE
-        );
-
         /*
-         * Cabeçalho
+         * Estilo da tabela (zebrado, sem grade, cabeçalho com linha inferior)
          */
 
-        tabelaProdutos
-                .getTableHeader()
-                .setFont(
-                        new Font(
-                                "Segoe UI",
-                                Font.BOLD,
-                                15
-                        )
-                );
-
-        tabelaProdutos
-                .getTableHeader()
-                .setForeground(
-                        Color.WHITE
-                );
-
-        tabelaProdutos
-                .getTableHeader()
-                .setBackground(
-                        CINZA_CABECALHO
-                );
-
-        tabelaProdutos
-                .getTableHeader()
-                .setPreferredSize(
-                        new Dimension(
-                                0,
-                                55
-                        )
-                );
-
-        /*
-         * Centraliza células
-         */
-
-        DefaultTableCellRenderer centralizado =
-                new DefaultTableCellRenderer();
-
-        centralizado.setHorizontalAlignment(
-                SwingConstants.CENTER
+        PadraoComponentes.estilizarTabela(
+                tabelaProdutos
         );
 
-        for (
-                int i = 0;
-                i < tabelaProdutos.getColumnCount();
-                i++
-        ) {
+        tabelaProdutos.setSelectionMode(
+                ListSelectionModel.SINGLE_SELECTION
+        );
 
-            tabelaProdutos
-                    .getColumnModel()
-                    .getColumn(i)
-                    .setCellRenderer(
-                            centralizado
-                    );
-        }
+        PadraoComponentes.alinharColuna(tabelaProdutos, COL_PRECO, SwingConstants.RIGHT);
 
         /*
-         * Renderer específico
-         * da coluna Ações
+         * Status colorido:
+         * verde = ativo, vermelho = inativo
          */
-
-        DefaultTableCellRenderer rendererAcao =
-                new DefaultTableCellRenderer() {
-
-                    @Override
-                    public Component getTableCellRendererComponent(
-                            JTable table,
-                            Object value,
-                            boolean isSelected,
-                            boolean hasFocus,
-                            int row,
-                            int column
-                    ) {
-
-                        JLabel label =
-                                new JLabel(
-                                        "Editar"
-                                );
-
-                        label.setHorizontalAlignment(
-                                SwingConstants.CENTER
-                        );
-
-                        label.setForeground(
-                                VERDE
-                        );
-
-                        label.setFont(
-                                new Font(
-                                        "Segoe UI",
-                                        Font.BOLD,
-                                        14
-                                )
-                        );
-
-                        if (isSelected) {
-
-                            label.setBackground(
-                                    table.getSelectionBackground()
-                            );
-
-                        } else {
-
-                            label.setBackground(
-                                    table.getBackground()
-                            );
-                        }
-
-                        label.setOpaque(
-                                true
-                        );
-
-                        return label;
-                    }
-                };
 
         tabelaProdutos
                 .getColumnModel()
-                .getColumn(7)
+                .getColumn(COL_STATUS)
                 .setCellRenderer(
-                        rendererAcao
+                        new PadraoComponentes.RendererCelula(SwingConstants.LEFT) {
+
+                            @Override
+                            public Component getTableCellRendererComponent(
+                                    JTable table,
+                                    Object value,
+                                    boolean isSelected,
+                                    boolean hasFocus,
+                                    int row,
+                                    int column
+                            ) {
+
+                                super.getTableCellRendererComponent(
+                                        table, value, isSelected, hasFocus, row, column
+                                );
+
+                                String status = value != null ? value.toString() : "";
+
+                                setFont(getFont().deriveFont(Font.BOLD));
+
+                                if ("Inativo".equals(status)) {
+                                    setForeground(PadraoComponentes.VERMELHO);
+                                } else {
+                                    setForeground(PadraoComponentes.VERDE);
+                                }
+
+                                return this;
+                            }
+                        }
                 );
+
+        /*
+         * Coluna Ações: "Editar" com ícone de lápis
+         */
+
+        tabelaProdutos
+                .getColumnModel()
+                .getColumn(COL_ACOES)
+                .setCellRenderer(
+                        new PadraoComponentes.RendererCelula(SwingConstants.CENTER) {
+
+                            @Override
+                            public Component getTableCellRendererComponent(
+                                    JTable table,
+                                    Object value,
+                                    boolean isSelected,
+                                    boolean hasFocus,
+                                    int row,
+                                    int column
+                            ) {
+
+                                super.getTableCellRendererComponent(
+                                        table, "Editar", isSelected, hasFocus, row, column
+                                );
+
+                                setIcon(
+                                        PadraoComponentes.iconeEditar(
+                                                PadraoComponentes.VERDE
+                                        )
+                                );
+
+                                setIconTextGap(6);
+                                setForeground(PadraoComponentes.VERDE);
+                                setFont(getFont().deriveFont(Font.BOLD));
+
+                                return this;
+                            }
+                        }
+                );
+
+        /*
+         * Cursor de "mãozinha" sobre o Editar
+         */
+
+        tabelaProdutos.addMouseMotionListener(
+                new java.awt.event.MouseMotionAdapter() {
+
+                    @Override
+                    public void mouseMoved(
+                            java.awt.event.MouseEvent evt
+                    ) {
+
+                        boolean sobreEditar =
+                                tabelaProdutos.columnAtPoint(evt.getPoint()) == COL_ACOES
+                                        && tabelaProdutos.rowAtPoint(evt.getPoint()) >= 0;
+
+                        tabelaProdutos.setCursor(
+                                sobreEditar
+                                        ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                                        : Cursor.getDefaultCursor()
+                        );
+                    }
+                }
+        );
 
         /*
          * Largura das colunas
          */
 
-        tabelaProdutos.getColumnModel().getColumn(0).setPreferredWidth(200); // Produto
-        tabelaProdutos.getColumnModel().getColumn(1).setPreferredWidth(260); // Descrição
-        tabelaProdutos.getColumnModel().getColumn(2).setPreferredWidth(160); // Categoria
-        tabelaProdutos.getColumnModel().getColumn(3).setPreferredWidth(100); // Preço
-        tabelaProdutos.getColumnModel().getColumn(4).setPreferredWidth(90);  // Estoque
-        tabelaProdutos.getColumnModel().getColumn(5).setPreferredWidth(110); // Status
-        tabelaProdutos.getColumnModel().getColumn(6).setPreferredWidth(100); // Ações
+        tabelaProdutos.getColumnModel().getColumn(0).setPreferredWidth(230); // Produto
+        tabelaProdutos.getColumnModel().getColumn(1).setPreferredWidth(300); // Descrição
+        tabelaProdutos.getColumnModel().getColumn(2).setPreferredWidth(150); // Categoria
+        tabelaProdutos.getColumnModel().getColumn(3).setPreferredWidth(100); // Destino
+        tabelaProdutos.getColumnModel().getColumn(COL_PRECO).setPreferredWidth(100);
+        tabelaProdutos.getColumnModel().getColumn(COL_STATUS).setPreferredWidth(110);
+        tabelaProdutos.getColumnModel().getColumn(COL_ACOES).setPreferredWidth(110);
     }
 
     /*
@@ -534,27 +450,7 @@ public class ProdutoPanel extends PadraoJPanel {
                 lista
         ) {
 
-            String status;
-
-            if (!produto.isAtivo()) {
-
-                status =
-                        "Inativo";
-
-            } else if (
-                    produto
-                            .getQuantidadeEstoque()
-                            <= 0
-            ) {
-
-                status =
-                        "Sem estoque";
-
-            } else {
-
-                status =
-                        "Ativo";
-            }
+            String status = produto.isAtivo() ? "Ativo" : "Inativo";
 
             modeloTabela.addRow(
                     new Object[]{
@@ -563,10 +459,15 @@ public class ProdutoPanel extends PadraoJPanel {
                             produto.getCategoria().getNome(),
                             produto.getLocalPreparo(),
                             moeda.format(produto.getPreco()),
-                            produto.getQuantidadeEstoque(),
                             status,
                             "Editar"
                     }
+            );
+        }
+
+        if (lblResumo != null) {
+            lblResumo.setText(
+                    lista.size() + (lista.size() == 1 ? " produto" : " produtos")
             );
         }
     }
@@ -689,7 +590,7 @@ public class ProdutoPanel extends PadraoJPanel {
                         if (
                                 linha >= 0
                                         &&
-                                        coluna == 7
+                                        coluna == COL_ACOES
                         ) {
 
                             editarProduto(
@@ -703,222 +604,11 @@ public class ProdutoPanel extends PadraoJPanel {
 
     private void editarProduto(int linha) {
 
-        if (linha < 0 || linha >= produtos.size()) {
+        if (linha < 0 || produtosExibidos == null || linha >= produtosExibidos.size()) {
             return;
         }
 
-        Produto produto =
-                produtosExibidos.get(linha);
-
-        JTextField txtNome =
-                new JTextField(produto.getNome());
-
-        JTextField txtDescricao =
-                new JTextField(produto.getDescricao());
-
-        JTextField txtPreco =
-                new JTextField(
-                        produto.getPreco()
-                                .toString()
-                                .replace(".", ",")
-                );
-
-        JTextField txtEstoque =
-                new JTextField(
-                        String.valueOf(
-                                produto.getQuantidadeEstoque()
-                        )
-                );
-
-        JComboBox<Categoria> cbCategoria =
-                new JComboBox<>();
-
-        JComboBox<String> cbLocalPreparo =
-                new JComboBox<>(
-                        new String[]{
-                                "COZINHA",
-                                "BALCAO"
-                        }
-                );
-
-        cbLocalPreparo.setSelectedItem(
-                produto.getLocalPreparo()
-        );
-
-        for (Categoria categoria : categoriaDAO.listarAtivas()) {
-
-            cbCategoria.addItem(categoria);
-
-            if (
-                    categoria.getIdCategoria()
-                            == produto.getCategoria().getIdCategoria()
-            ) {
-                cbCategoria.setSelectedItem(categoria);
-            }
-        }
-
-        JCheckBox chkAtivo =
-                new JCheckBox("Produto ativo");
-
-        chkAtivo.setSelected(
-                produto.isAtivo()
-        );
-
-        JPanel painel =
-                new JPanel(
-                        new GridLayout(
-                                0,
-                                1,
-                                5,
-                                5
-                        )
-                );
-
-        painel.setBorder(
-                BorderFactory.createEmptyBorder(
-                        10,
-                        10,
-                        10,
-                        10
-                )
-        );
-
-        painel.add(new JLabel("Nome:"));
-        painel.add(txtNome);
-
-        painel.add(new JLabel("Descrição:"));
-        painel.add(txtDescricao);
-
-        painel.add(new JLabel("Categoria:"));
-        painel.add(cbCategoria);
-
-        painel.add(new JLabel("Local de preparo:"));
-        painel.add(cbLocalPreparo);
-
-        painel.add(new JLabel("Preço:"));
-        painel.add(txtPreco);
-
-        painel.add(new JLabel("Estoque:"));
-        painel.add(txtEstoque);
-
-        painel.add(chkAtivo);
-
-        int resultado =
-                JOptionPane.showConfirmDialog(
-                        this,
-                        painel,
-                        "Editar produto",
-                        JOptionPane.OK_CANCEL_OPTION,
-                        JOptionPane.PLAIN_MESSAGE
-                );
-
-        if (resultado != JOptionPane.OK_OPTION) {
-            return;
-        }
-
-        try {
-
-            String nome =
-                    txtNome.getText().trim();
-
-            String descricao =
-                    txtDescricao.getText().trim();
-
-            if (nome.isEmpty()) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Informe o nome do produto."
-                );
-
-                return;
-            }
-
-            BigDecimal preco =
-                    new BigDecimal(
-                            txtPreco
-                                    .getText()
-                                    .trim()
-                                    .replace(",", ".")
-                    );
-
-            int estoque =
-                    Integer.parseInt(
-                            txtEstoque
-                                    .getText()
-                                    .trim()
-                    );
-
-            Categoria categoria =
-                    (Categoria)
-                            cbCategoria.getSelectedItem();
-
-            if (categoria == null) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Selecione uma categoria."
-                );
-
-                return;
-            }
-
-            if (
-                    preco.compareTo(
-                            BigDecimal.ZERO
-                    ) < 0
-            ) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "O preço não pode ser negativo."
-                );
-
-                return;
-            }
-
-            if (estoque < 0) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "O estoque não pode ser negativo."
-                );
-
-                return;
-            }
-
-            produto.setNome(nome);
-            produto.setDescricao(descricao);
-            produto.setPreco(preco);
-            produto.setQuantidadeEstoque(estoque);
-            produto.setCategoria(categoria);
-            produto.setLocalPreparo(
-                    (String) cbLocalPreparo.getSelectedItem()
-            );
-            produto.setAtivo(
-                    chkAtivo.isSelected()
-            );
-
-            produtoDAO.atualizar(
-                    produto
-            );
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Produto atualizado com sucesso!"
-            );
-
-            carregarProdutos();
-
-        } catch (NumberFormatException e) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Verifique os campos preço e estoque.",
-                    "Dados inválidos",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        }
+        abrirFormularioProduto(produtosExibidos.get(linha));
     }
 
     /*
@@ -928,333 +618,219 @@ public class ProdutoPanel extends PadraoJPanel {
      */
 
     private void abrirCadastroProduto() {
+        abrirFormularioProduto(null);
+    }
 
-        JTextField txtNome =
-                new JTextField();
+    /*
+     * ==========================
+     * FORMULÁRIO (NOVO / EDITAR)
+     * ==========================
+     */
 
-        JTextField txtDescricao =
-                new JTextField();
+    /**
+     * Formulário de cadastro e edição de produto, com a foto ao lado.
+     *
+     * <p>Se algum campo estiver errado, mostra o aviso e reabre o formulário
+     * mantendo o que já foi preenchido.</p>
+     *
+     * @param produto o produto a editar, ou {@code null} para um produto novo
+     */
+    private void abrirFormularioProduto(Produto produto) {
 
-        JTextField txtPreco =
-                new JTextField();
+        boolean novo = produto == null;
+        String titulo = novo ? "Novo produto" : "Editar produto";
 
-        JTextField txtEstoque =
-                new JTextField();
+        // ---------- campos ----------
+        JTextField txtNome = new JTextField(novo ? "" : produto.getNome(), 24);
+        JTextField txtDescricao = new JTextField(
+                novo || produto.getDescricao() == null ? "" : produto.getDescricao(), 24);
+        CampoMoeda txtPreco = new CampoMoeda(novo ? BigDecimal.ZERO : produto.getPreco());
 
-        JComboBox<Categoria> cbCategoria =
-                new JComboBox<>();
-
-        JComboBox<String> cbLocalPreparo =
-                new JComboBox<>(
-                        new String[]{
-                                "COZINHA",
-                                "BALCAO"
-                        }
-                );
-
-        JCheckBox chkAtivo =
-                new JCheckBox(
-                        "Produto ativo"
-                );
-
-        chkAtivo.setSelected(
-                true
-        );
-
-        /*
-         * Carrega categorias
-         */
-
-        for (
-                Categoria categoria :
-                categoriaDAO.listarAtivas()
-        ) {
-
-            cbCategoria.addItem(
-                    categoria
-            );
+        JComboBox<Categoria> cbCategoria = new JComboBox<>();
+        for (Categoria categoria : categoriaDAO.listarAtivas()) {
+            cbCategoria.addItem(categoria);
+            if (!novo && categoria.getIdCategoria() == produto.getCategoria().getIdCategoria()) {
+                cbCategoria.setSelectedItem(categoria);
+            }
         }
 
-        /*
-         * Formulário
-         */
-
-        JPanel painel =
-                new JPanel(
-                        new GridLayout(
-                                0,
-                                1,
-                                5,
-                                5
-                        )
-                );
-
-        painel.setBorder(
-                BorderFactory.createEmptyBorder(
-                        10,
-                        10,
-                        10,
-                        10
-                )
-        );
-
-        painel.add(
-                new JLabel(
-                        "Nome:"
-                )
-        );
-
-        painel.add(
-                txtNome
-        );
-
-        painel.add(
-                new JLabel(
-                        "Descrição:"
-                )
-        );
-
-        painel.add(
-                txtDescricao
-        );
-
-        painel.add(
-                new JLabel(
-                        "Categoria:"
-                )
-        );
-
-        painel.add(
-                cbCategoria
-        );
-
-        painel.add(
-                new JLabel(
-                        "Local de preparo:"
-                )
-        );
-
-        painel.add(
-                cbLocalPreparo
-        );
-
-        painel.add(
-                new JLabel(
-                        "Preço:"
-                )
-        );
-
-        painel.add(
-                txtPreco
-        );
-
-        painel.add(
-                new JLabel(
-                        "Estoque:"
-                )
-        );
-
-        painel.add(
-                txtEstoque
-        );
-
-        painel.add(
-                chkAtivo
-        );
-
-        int resultado =
-                JOptionPane.showConfirmDialog(
-                        this,
-                        painel,
-                        "Novo produto",
-                        JOptionPane.OK_CANCEL_OPTION,
-                        JOptionPane.PLAIN_MESSAGE
-                );
-
-        if (
-                resultado
-                        != JOptionPane.OK_OPTION
-        ) {
-
-            return;
+        JComboBox<String> cbLocalPreparo = new JComboBox<>(new String[]{"COZINHA", "BALCAO"});
+        if (!novo) {
+            cbLocalPreparo.setSelectedItem(produto.getLocalPreparo());
         }
 
-        /*
-         * Salvar produto
-         */
+        JCheckBox chkAtivo = new JCheckBox("Produto ativo");
+        chkAtivo.setSelected(novo || produto.isAtivo());
 
-        try {
+        for (JTextField campo : new JTextField[]{txtNome, txtDescricao}) {
+            PadraoComponentes.aplicarEstiloCampo(campo);
+        }
 
-            String nome =
-                    txtNome
-                            .getText()
-                            .trim();
+        JPanel campos = new JPanel(new GridLayout(0, 1, 5, 5));
+        campos.add(new JLabel("Nome:"));
+        campos.add(txtNome);
+        campos.add(new JLabel("Descrição:"));
+        campos.add(txtDescricao);
+        campos.add(new JLabel("Categoria:"));
+        campos.add(cbCategoria);
+        campos.add(new JLabel("Local de preparo:"));
+        campos.add(cbLocalPreparo);
+        campos.add(new JLabel("Preço:"));
+        campos.add(txtPreco);
+        campos.add(chkAtivo);
 
-            String descricao =
-                    txtDescricao
-                            .getText()
-                            .trim();
+        // ---------- foto ----------
+        // imagemAtual[0] = bytes da foto que será gravada (null = sem foto)
+        byte[][] imagemAtual = new byte[1][];
+        BufferedImage fotoInicial = novo ? null : ImagemProduto.obter(produto.getIdProduto());
+        boolean[] fotoAlterada = {false};
 
-            if (
-                    nome.isEmpty()
-            ) {
+        JLabel previa = new JLabel();
+        previa.setHorizontalAlignment(SwingConstants.CENTER);
+        previa.setPreferredSize(new Dimension(TAMANHO_PREVIA, TAMANHO_PREVIA));
+        previa.setBorder(BorderFactory.createLineBorder(PadraoComponentes.COR_BORDA));
 
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Informe o nome do produto."
-                );
+        JButton btnEscolher = new JButton("Escolher imagem...");
+        JButton btnRemover = new JButton("Remover imagem");
 
+        Runnable atualizarPrevia = () -> {
+            BufferedImage foto = fotoAlterada[0]
+                    ? ImagemProduto.ler(imagemAtual[0])
+                    : fotoInicial;
+            if (foto != null) {
+                previa.setIcon(ImagemProduto.criarIcone(foto, TAMANHO_PREVIA, TAMANHO_PREVIA, 0));
+                previa.setText(null);
+            } else {
+                previa.setIcon(null);
+                previa.setText("<html><center>Sem imagem</center></html>");
+                previa.setForeground(PadraoComponentes.COR_TEXTO_SECUNDARIO);
+            }
+            btnRemover.setEnabled(foto != null);
+        };
+        atualizarPrevia.run();
+
+        btnEscolher.addActionListener(e -> {
+            JFileChooser seletor = new JFileChooser(ultimaPastaImagens);
+            seletor.setDialogTitle("Escolher imagem do produto");
+            seletor.setAcceptAllFileFilterUsed(false);
+            seletor.setFileFilter(new FileNameExtensionFilter(
+                    "Imagens (JPG, PNG, GIF, BMP)", "jpg", "jpeg", "png", "gif", "bmp"));
+
+            if (seletor.showOpenDialog(previa) != JFileChooser.APPROVE_OPTION) {
+                return;
+            }
+            ultimaPastaImagens = seletor.getCurrentDirectory();
+            try {
+                imagemAtual[0] = ImagemProduto.prepararArquivo(seletor.getSelectedFile());
+                fotoAlterada[0] = true;
+                atualizarPrevia.run();
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(previa, ex.getMessage(),
+                        "Imagem inválida", JOptionPane.WARNING_MESSAGE);
+            }
+        });
+
+        btnRemover.addActionListener(e -> {
+            imagemAtual[0] = null;
+            fotoAlterada[0] = true;
+            atualizarPrevia.run();
+        });
+
+        JPanel botoesFoto = new JPanel(new GridLayout(0, 1, 0, 5));
+        botoesFoto.add(btnEscolher);
+        botoesFoto.add(btnRemover);
+
+        JPanel painelFoto = new JPanel(new BorderLayout(0, 8));
+        painelFoto.add(new JLabel("Imagem:"), BorderLayout.NORTH);
+        painelFoto.add(previa, BorderLayout.CENTER);
+        painelFoto.add(botoesFoto, BorderLayout.SOUTH);
+
+        JPanel colunaFoto = new JPanel(new BorderLayout());
+        colunaFoto.add(painelFoto, BorderLayout.NORTH);
+
+        JPanel painel = new JPanel(new BorderLayout(20, 0));
+        painel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        painel.add(campos, BorderLayout.CENTER);
+        painel.add(colunaFoto, BorderLayout.EAST);
+
+        CampoMoeda.focarAoAbrir(txtNome);
+
+        // ---------- confirmação e validação ----------
+        while (true) {
+
+            int resultado = JOptionPane.showConfirmDialog(
+                    this,
+                    painel,
+                    titulo,
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (resultado != JOptionPane.OK_OPTION) {
                 return;
             }
 
-            if (
-                    txtPreco
-                            .getText()
-                            .trim()
-                            .isEmpty()
-            ) {
+            String nome = txtNome.getText().trim();
+            String descricao = txtDescricao.getText().trim();
+            Categoria categoria = (Categoria) cbCategoria.getSelectedItem();
+            String erro = null;
 
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Informe o preço."
-                );
+            if (nome.isEmpty()) {
+                erro = "Informe o nome do produto.";
+            } else if (categoria == null) {
+                erro = "Selecione uma categoria.";
+            } else if (!txtPreco.temValor()) {
+                erro = "Informe o preço do produto.";
+            }
 
+            if (erro != null) {
+                JOptionPane.showMessageDialog(this, erro, titulo, JOptionPane.WARNING_MESSAGE);
+                continue; // reabre com o que já foi preenchido
+            }
+
+            Produto alvo = novo ? new Produto() : produto;
+            alvo.setNome(nome);
+            alvo.setDescricao(descricao);
+            alvo.setPreco(txtPreco.getValor());
+            alvo.setCategoria(categoria);
+            alvo.setLocalPreparo((String) cbLocalPreparo.getSelectedItem());
+            alvo.setAtivo(chkAtivo.isSelected());
+
+            try {
+                if (novo) {
+                    produtoDAO.cadastrar(alvo);
+                } else {
+                    produtoDAO.atualizar(alvo);
+                }
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Não foi possível salvar o produto no banco de dados.",
+                        "Erro", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            if (
-                    txtEstoque
-                            .getText()
-                            .trim()
-                            .isEmpty()
-            ) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Informe o estoque."
-                );
-
-                return;
+            String avisoImagem = "";
+            if (fotoAlterada[0]) {
+                try {
+                    produtoDAO.salvarImagem(alvo.getIdProduto(), imagemAtual[0]);
+                    ImagemProduto.atualizar(alvo.getIdProduto(), imagemAtual[0]);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                    avisoImagem = "\n\nA imagem não foi salva. Verifique se o script "
+                            + "database/06_cardapio_e_imagens.sql foi executado no banco.";
+                }
             }
-
-            BigDecimal preco =
-                    new BigDecimal(
-                            txtPreco
-                                    .getText()
-                                    .trim()
-                                    .replace(
-                                            ",",
-                                            "."
-                                    )
-                    );
-
-            int estoque =
-                    Integer.parseInt(
-                            txtEstoque
-                                    .getText()
-                                    .trim()
-                    );
-
-            Categoria categoria =
-                    (Categoria)
-                            cbCategoria
-                                    .getSelectedItem();
-
-            if (
-                    categoria == null
-            ) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Selecione uma categoria."
-                );
-
-                return;
-            }
-
-            if (
-                    preco.compareTo(
-                            BigDecimal.ZERO
-                    ) < 0
-            ) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "O preço não pode ser negativo."
-                );
-
-                return;
-            }
-
-            if (
-                    estoque < 0
-            ) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "O estoque não pode ser negativo."
-                );
-
-                return;
-            }
-
-            Produto produto =
-                    new Produto();
-
-            produto.setNome(
-                    nome
-            );
-
-            produto.setDescricao(
-                    descricao
-            );
-
-            produto.setPreco(
-                    preco
-            );
-
-            produto.setQuantidadeEstoque(
-                    estoque
-            );
-
-            produto.setCategoria(
-                    categoria
-            );
-
-            produto.setLocalPreparo(
-                    (String) cbLocalPreparo.getSelectedItem()
-            );
-
-            produto.setAtivo(
-                    chkAtivo.isSelected()
-            );
-
-
-            produtoDAO.cadastrar(
-                    produto
-            );
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Produto cadastrado com sucesso!"
+                    (novo ? "Produto cadastrado com sucesso!" : "Produto atualizado com sucesso!")
+                            + avisoImagem
             );
-
-            /*
-             * Atualiza a tabela
-             */
 
             carregarProdutos();
-
-        } catch (
-                NumberFormatException e
-        ) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Verifique os campos preço e estoque.",
-                    "Dados inválidos",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            return;
         }
     }
+
 }

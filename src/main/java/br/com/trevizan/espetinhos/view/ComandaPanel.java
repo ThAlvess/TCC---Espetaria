@@ -120,11 +120,11 @@ public class ComandaPanel extends PadraoJPanel {
         linhaVoltar.setOpaque(false);
 
         RoundedButton btnVoltar = new RoundedButton("←  VOLTAR", 12);
-        btnVoltar.setPreferredSize(new Dimension(108, 34));
         btnVoltar.setBackground(new Color(243, 240, 237));
         btnVoltar.setForeground(COR_TEXTO);
         btnVoltar.setBorderColor(COR_BORDA);
         btnVoltar.setFont(new Font("Arial", Font.BOLD, 12));
+        btnVoltar.ajustarAoTexto(34);
         btnVoltar.addActionListener(e -> {
             if (aoVoltar != null) {
                 aoVoltar.run();
@@ -195,6 +195,7 @@ public class ComandaPanel extends PadraoJPanel {
         cabecalho.add(Box.createVerticalStrut(12));
         cabecalho.add(lblPedido);
 
+        alinharTudoAEsquerda(cabecalho);
         painelComanda.add(cabecalho, BorderLayout.NORTH);
 
         // Lista de itens
@@ -309,6 +310,7 @@ public class ComandaPanel extends PadraoJPanel {
             btnFecharMesa.setVisible(false);
         }
 
+        alinharTudoAEsquerda(rodape);
         painelComanda.add(rodape, BorderLayout.SOUTH);
         conteudo.add(painelComanda, BorderLayout.WEST);
 
@@ -422,6 +424,19 @@ public class ComandaPanel extends PadraoJPanel {
         carregarProdutos(null);
         carregarItensSalvos();
         carregarPagamentos();
+    }
+
+    /**
+     * Define o alinhamento horizontal de todos os filhos do painel (BoxLayout
+     * vertical) como esquerda, para que ocupem a largura toda da coluna a
+     * partir da mesma margem.
+     */
+    private static void alinharTudoAEsquerda(JPanel container) {
+        for (Component filho : container.getComponents()) {
+            if (filho instanceof JComponent componente) {
+                componente.setAlignmentX(Component.LEFT_ALIGNMENT);
+            }
+        }
     }
 
     private JPanel criarLinhaResumo(String texto, boolean destaque) {
@@ -802,7 +817,7 @@ public class ComandaPanel extends PadraoJPanel {
         btnObservacao.setForeground(COR_TEXTO_SECUNDARIO);
         btnObservacao.setBorderColor(COR_BORDA);
         btnObservacao.setFont(new Font("Arial", Font.BOLD, 10));
-        btnObservacao.setPreferredSize(new Dimension(96, 28));
+        btnObservacao.ajustarAoTexto(28);
 
         btnMais.addActionListener(e -> {
             item.quantidade++;
@@ -942,6 +957,7 @@ public class ComandaPanel extends PadraoJPanel {
             JLabel nenhum = new JLabel("Nenhum pagamento registrado");
             nenhum.setFont(new Font("Arial", Font.ITALIC, 11));
             nenhum.setForeground(COR_TEXTO_SECUNDARIO);
+            nenhum.setAlignmentX(Component.LEFT_ALIGNMENT);
             painelPagamentos.add(nenhum);
         } else {
             for (Pagamento pagamento : pagamentos) {
@@ -983,6 +999,7 @@ public class ComandaPanel extends PadraoJPanel {
 
                 linha.add(descricao, BorderLayout.WEST);
                 linha.add(ladoDireito, BorderLayout.EAST);
+                linha.setAlignmentX(Component.LEFT_ALIGNMENT);
                 painelPagamentos.add(linha);
                 painelPagamentos.add(Box.createVerticalStrut(4));
             }
@@ -1423,6 +1440,9 @@ public class ComandaPanel extends PadraoJPanel {
         private Color hoverColor;
         private boolean hover;
 
+        /** Altura fixa usada por {@link #ajustarAoTexto(int)}; -1 = tamanho livre. */
+        private int alturaFixa = -1;
+
         public RoundedButton(String text, int radius) {
             super(text);
             this.radius = radius;
@@ -1431,6 +1451,9 @@ public class ComandaPanel extends PadraoJPanel {
             setBorderPainted(false);
             setFocusPainted(false);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            // espaçamento interno fixo de 4 px nas laterais, sem margem extra
+            setMargin(new Insets(0, 0, 0, 0));
+            setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
 
             addMouseListener(new MouseAdapter() {
                 @Override
@@ -1450,6 +1473,31 @@ public class ComandaPanel extends PadraoJPanel {
         public void setBorderColor(Color borderColor) {
             this.borderColor = borderColor;
             repaint();
+        }
+
+        /**
+         * Usa altura fixa e largura calculada pelo texto, com 14 px de folga
+         * de cada lado.
+         */
+        public void ajustarAoTexto(int altura) {
+            this.alturaFixa = altura;
+            setBorder(BorderFactory.createEmptyBorder(0, 14, 0, 14));
+            setPreferredSize(null);
+            revalidate();
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension tamanho = super.getPreferredSize();
+            if (alturaFixa > 0 && !isPreferredSizeSet()) {
+                return new Dimension(tamanho.width + 4, alturaFixa);
+            }
+            return tamanho;
+        }
+
+        @Override
+        public Dimension getMinimumSize() {
+            return alturaFixa > 0 ? getPreferredSize() : super.getMinimumSize();
         }
 
         public void setHoverColor(Color hoverColor) {

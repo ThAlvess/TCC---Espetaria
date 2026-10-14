@@ -1,0 +1,6 @@
+Coloque aqui o manual do software em PDF com o nome:
+
+    Manual_Trevizan_Espetinhos.pdf
+
+O menu Configuracoes > Manual do software (engrenagem no rodape do menu lateral) abre este arquivo.
+Se o programa for distribuido em .jar, copie o PDF tambem para src/main/resources/manual/ com o mesmo nome.

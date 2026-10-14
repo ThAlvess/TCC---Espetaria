@@ -18,6 +18,9 @@ import java.util.List;
 public class MesaPanel extends PadraoJPanel {
 
     private static final Color COR_FUNDO = new Color(238, 232, 227);
+
+    /** Fonte dos selos (LIVRE / OCUPADA) e do botão INATIVAR / REATIVAR. */
+    private static final Font FONTE_SELO = new Font("Arial", Font.BOLD, 10);
     private static final Color COR_CARD = Color.WHITE;
     private static final Color COR_VERDE = new Color(18, 115, 36);
     private static final Color COR_VERDE_ESCURO = new Color(18, 115, 36);
@@ -66,8 +69,8 @@ public class MesaPanel extends PadraoJPanel {
         blocoTitulo.setOpaque(false);
         blocoTitulo.setLayout(new BoxLayout(blocoTitulo, BoxLayout.Y_AXIS));
 
-        JLabel titulo = PadraoTela.criarTitulo("MESAS");
-        JLabel subtitulo = PadraoTela.criarSubtitulo("Acompanhe as mesas e acesse as comandas em andamento.");
+        JLabel titulo = PadraoTela.criarTitulo("PEDIDOS");
+        JLabel subtitulo = PadraoTela.criarSubtitulo("Acompanhe as mesas, retiradas e deliveries e acesse as comandas em andamento.");
 
         blocoTitulo.add(titulo);
         blocoTitulo.add(Box.createVerticalStrut(PadraoTela.ESPACO_TITULO_SUBTITULO));
@@ -522,8 +525,9 @@ public class MesaPanel extends PadraoJPanel {
                 14
         );
 
-        btnOpcoes.setFont(new Font("Arial", Font.BOLD, 9));
-        btnOpcoes.setPreferredSize(new Dimension(75, 28));
+        // mesma fonte e tamanho do selo LIVRE/OCUPADA
+        btnOpcoes.setFont(FONTE_SELO);
+        btnOpcoes.setPreferredSize(new Dimension(82, 28));
         btnOpcoes.setFocusPainted(false);
 
         if (ativo) {
@@ -759,6 +763,8 @@ public class MesaPanel extends PadraoJPanel {
 
         texto.setFont(new Font("Arial", Font.BOLD, 12));
         texto.setForeground(COR_VERDE_ESCURO);
+        // o rótulo ocupa toda a largura do cartão, com o texto centralizado
+        texto.setMaximumSize(new Dimension(Integer.MAX_VALUE, texto.getPreferredSize().height + 4));
 
         JPanel centro = new JPanel();
         centro.setOpaque(false);
@@ -1295,7 +1301,7 @@ private void mostrarComandasDaMesa(Mesa mesa) {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(fundo);
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-            g2.setFont(new Font("Arial", Font.BOLD, 10));
+            g2.setFont(FONTE_SELO);
             g2.setColor(frente);
             FontMetrics fm = g2.getFontMetrics();
             int x = (getWidth() - fm.stringWidth(texto)) / 2;
@@ -1318,6 +1324,9 @@ private void mostrarComandasDaMesa(Mesa mesa) {
             setBorderPainted(false);
             setFocusPainted(false);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            // espaçamento interno fixo de 4 px nas laterais, sem margem extra
+            setMargin(new Insets(0, 0, 0, 0));
+            setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
 
             addMouseListener(new MouseAdapter() {
                 @Override

@@ -2,10 +2,12 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.dao.UsuarioDAO;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.PadraoComponentes;
 import br.com.trevizan.espetinhos.util.PadraoTela;
+import br.com.trevizan.espetinhos.util.SenhaUtil;
+import br.com.trevizan.espetinhos.util.SessaoUsuario;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.text.MaskFormatter;
@@ -23,12 +25,13 @@ import java.util.List;
 public class UsuarioPanel extends javax.swing.JPanel {
 
     private JTextField txtBusca;
-    private JButton btnCadastrar, btnEditar;
+    private JButton btnCadastrar, btnEditar, btnResetarSenha;
     private JTable tabelaUsuarios;
     private DefaultTableModel modeloTabela;
     private TableRowSorter<DefaultTableModel> sorter;
     private int linhaSelecionada = -1;
     private UsuarioDAO usuarioDAO;
+    private JLabel lblResumo;
 
     public UsuarioPanel() {
         // Inicializa o objeto de acesso a dados dos usuários
@@ -56,53 +59,41 @@ public class UsuarioPanel extends javax.swing.JPanel {
         panelTopo.add(lblSubtitulo);
         add(panelTopo, BorderLayout.NORTH);
 
-        // Cria o painel central utilizando GridBagLayout para organizar a tabela estruturalmente
-        JPanel panelCentro = new JPanel(new GridBagLayout());
+        // Barra de ações: pesquisa à esquerda e botões à direita
+        JPanel panelCentro = new JPanel(new BorderLayout(0, 16));
         panelCentro.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(0, 0, 15, 0);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panelCentro.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 
-        // Cria o painel contentor da tabela com visual de card arredondado e limpo
-        JPanel panelTabelaContainer = new JPanel(new BorderLayout(5, 5));
-        panelTabelaContainer.setBackground(Color.WHITE);
-        panelTabelaContainer.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(220, 215, 210), 1, true),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        ));
-
-        // Painel superior da tabela contendo os botões de ação e o campo de busca
-        JPanel panelBusca = new JPanel(new BorderLayout());
+        JPanel panelBusca = new JPanel(new BorderLayout(12, 0));
         panelBusca.setOpaque(false);
-        panelBusca.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
-        JPanel panelBotoesEsquerda = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        panelBotoesEsquerda.setOpaque(false);
+        txtBusca = PadraoComponentes.criarCampoPesquisa("Pesquisar por nome, usuário, CPF ou perfil...");
+        panelBusca.add(txtBusca, BorderLayout.CENTER);
 
-        btnCadastrar = criarBotaoEstilizado("Cadastrar", new Color(25, 110, 45), Color.WHITE);
-        btnEditar = criarBotaoEstilizado("Editar Usuário", new Color(30, 100, 180), Color.WHITE);
+        btnCadastrar = PadraoComponentes.criarBotaoPrimario("Cadastrar", PadraoComponentes.iconeMais(Color.WHITE));
+        btnEditar = PadraoComponentes.criarBotaoSecundario("Editar usuário", PadraoComponentes.iconeEditar(PadraoComponentes.VERDE));
+        btnResetarSenha = PadraoComponentes.criarBotaoSecundario("Resetar senha", PadraoComponentes.iconeChave(PadraoComponentes.VERDE));
+        btnResetarSenha.setToolTipText("Volta a senha do usuário selecionado para a senha padrão ("
+                + SenhaUtil.SENHA_PADRAO + ")");
 
-        panelBotoesEsquerda.add(btnCadastrar);
-        panelBotoesEsquerda.add(btnEditar);
+        JPanel panelBotoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        panelBotoes.setOpaque(false);
+        panelBotoes.add(btnResetarSenha);
+        panelBotoes.add(Box.createHorizontalStrut(10));
+        panelBotoes.add(btnEditar);
+        panelBotoes.add(Box.createHorizontalStrut(10));
+        panelBotoes.add(btnCadastrar);
 
-        JPanel panelBuscaDireita = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        panelBuscaDireita.setOpaque(false);
-        
-        JLabel lblBusca = new JLabel("Buscar Usuário:");
-        lblBusca.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblBusca.setForeground(new Color(90, 90, 90));
-        panelBuscaDireita.add(lblBusca);
-        
-        txtBusca = new JTextField(18);
-        panelBuscaDireita.add(txtBusca);
+        // GridBagLayout mantém os botões na altura padrão, centralizados na linha
+        JPanel panelBotoesCentralizados = new JPanel(new GridBagLayout());
+        panelBotoesCentralizados.setOpaque(false);
+        panelBotoesCentralizados.add(panelBotoes);
+        panelBusca.add(panelBotoesCentralizados, BorderLayout.EAST);
 
-        panelBusca.add(panelBotoesEsquerda, BorderLayout.WEST);
-        panelBusca.add(panelBuscaDireita, BorderLayout.EAST);
-
-        panelTabelaContainer.add(panelBusca, BorderLayout.NORTH);
+        panelCentro.add(panelBusca, BorderLayout.NORTH);
 
         // Define o modelo da tabela (agora somente leitura)
-        modeloTabela = new DefaultTableModel(new Object[]{"ID", "Status", "Nome", "Usuário", "CPF", "Perfil", "Senha"}, 0) {
+        modeloTabela = new DefaultTableModel(new Object[]{"ID", "Status", "Nome", "Usuário", "CPF", "Perfil"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false; 
@@ -110,36 +101,33 @@ public class UsuarioPanel extends javax.swing.JPanel {
         };
 
         tabelaUsuarios = new JTable(modeloTabela);
-        tabelaUsuarios.setRowHeight(28);
         tabelaUsuarios.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tabelaUsuarios.setGridColor(new Color(235, 230, 225));
-        tabelaUsuarios.getTableHeader().setBackground(new Color(248, 246, 242));
-        tabelaUsuarios.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
 
-        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) tabelaUsuarios.getTableHeader().getDefaultRenderer();
-        headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
+        // Estilo da tabela (zebrado, sem grade)
+        PadraoComponentes.estilizarTabela(tabelaUsuarios);
+        PadraoComponentes.alinharColuna(tabelaUsuarios, 0, SwingConstants.CENTER);
+        tabelaUsuarios.getColumnModel().getColumn(1).setCellRenderer(new StatusCellRenderer());
 
-        tabelaUsuarios.getColumnModel().getColumn(1).setPreferredWidth(90);
+        tabelaUsuarios.getColumnModel().getColumn(0).setPreferredWidth(60);
+        tabelaUsuarios.getColumnModel().getColumn(0).setMaxWidth(90);
+
+        tabelaUsuarios.getColumnModel().getColumn(1).setPreferredWidth(100);
         tabelaUsuarios.getColumnModel().getColumn(1).setMinWidth(80);
-        tabelaUsuarios.getColumnModel().getColumn(1).setMaxWidth(120);
+        tabelaUsuarios.getColumnModel().getColumn(1).setMaxWidth(130);
 
-        tabelaUsuarios.getColumnModel().getColumn(5).setPreferredWidth(140);
+        tabelaUsuarios.getColumnModel().getColumn(5).setPreferredWidth(150);
         tabelaUsuarios.getColumnModel().getColumn(5).setMinWidth(100);
-        tabelaUsuarios.getColumnModel().getColumn(5).setMaxWidth(180);
-
-        tabelaUsuarios.getColumnModel().getColumn(6).setCellRenderer(new SenhaOcultaCellRenderer());
+        tabelaUsuarios.getColumnModel().getColumn(5).setMaxWidth(200);
 
         sorter = new TableRowSorter<>(modeloTabela);
         tabelaUsuarios.setRowSorter(sorter);
 
-        JScrollPane scrollPane = new JScrollPane(tabelaUsuarios);
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(230, 225, 220), 1));
-        
-        panelTabelaContainer.add(scrollPane, BorderLayout.CENTER);
+        lblResumo = new JLabel(" ");
+        lblResumo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lblResumo.setForeground(PadraoComponentes.COR_TEXTO_SECUNDARIO);
 
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1.0; gbc.weighty = 1.0; gbc.fill = GridBagConstraints.BOTH;
-        panelCentro.add(panelTabelaContainer, gbc);
+        panelCentro.add(PadraoComponentes.criarCartaoTabela("Usuários cadastrados", tabelaUsuarios, lblResumo),
+                BorderLayout.CENTER);
 
         add(panelCentro, BorderLayout.CENTER);
 
@@ -167,8 +155,9 @@ public class UsuarioPanel extends javax.swing.JPanel {
                 if (texto.trim().length() == 0) {
                     sorter.setRowFilter(null);
                 } else {
-                    sorter.setRowFilter(regexFilterSafe(texto));
+                    sorter.setRowFilter(regexFilterSafe(texto.trim()));
                 }
+                atualizarResumo();
             }
 
             private RowFilter<DefaultTableModel, Object> regexFilterSafe(String texto) {
@@ -182,6 +171,17 @@ public class UsuarioPanel extends javax.swing.JPanel {
 
         btnCadastrar.addActionListener(e -> abrirJanelaCadastro());
         btnEditar.addActionListener(e -> abrirJanelaEdicao());
+        btnResetarSenha.addActionListener(e -> resetarSenha());
+
+        // Duplo clique em uma linha também abre a edição
+        tabelaUsuarios.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2 && tabelaUsuarios.rowAtPoint(e.getPoint()) >= 0) {
+                    abrirJanelaEdicao();
+                }
+            }
+        });
 
         tabelaUsuarios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -195,26 +195,13 @@ public class UsuarioPanel extends javax.swing.JPanel {
         });
     }
 
-    private JButton criarBotaoEstilizado(String texto, Color bg, Color fg) {
-        JButton btn = new JButton(texto) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getBackground());
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), getHeight(), getHeight());
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        btn.setBackground(bg);
-        btn.setForeground(fg);
-        btn.setFocusPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
+    /** Quantidade de usuários que estão aparecendo na tabela (respeita a pesquisa). */
+    private void atualizarResumo() {
+        if (lblResumo == null) {
+            return;
+        }
+        int quantidade = tabelaUsuarios.getRowCount();
+        lblResumo.setText(quantidade + (quantidade == 1 ? " usuário" : " usuários"));
     }
 
     private void carregarTabela() {
@@ -222,7 +209,7 @@ public class UsuarioPanel extends javax.swing.JPanel {
         List<Usuario> lista = usuarioDAO.listar();
         if (lista != null) {
             for (Usuario u : lista) {
-                Object[] linha = new Object[7];
+                Object[] linha = new Object[6];
                 linha[0] = u.getIdUsuario();
                 linha[1] = Boolean.TRUE.equals(u.isAtivo()) ? "Ativo" : "Inativo";
                 linha[2] = u.getNome();
@@ -237,51 +224,57 @@ public class UsuarioPanel extends javax.swing.JPanel {
                 }
                 linha[4] = cpfBruto;
                 linha[5] = u.getPerfil();
-                linha[6] = u.getSenha();
                 modeloTabela.addRow(linha);
             }
         }
+        atualizarResumo();
     }
 
-    private void abrirJanelaCadastro() {
-        // Confirmação de Segurança do Administrador antes de abrir a janela
+    /**
+     * Pede a senha do administrador logado antes de ações sensíveis
+     * (cadastrar, editar ou resetar senha).
+     *
+     * @return {@code true} se a senha conferiu
+     */
+    private boolean confirmarAdministrador() {
         JPasswordField txtSenhaAdmin = new JPasswordField(15);
+        PadraoComponentes.habilitarMostrarSenha(txtSenhaAdmin);
         Object[] mensagemAdmin = {
-            "Digite a senha do administrador para continuar:", txtSenhaAdmin
+            "Digite a sua senha de administrador para continuar:", txtSenhaAdmin
         };
 
         int opcaoAdmin = JOptionPane.showConfirmDialog(
-            this, 
-            mensagemAdmin, 
-            "Confirmação de Segurança", 
-            JOptionPane.OK_CANCEL_OPTION, 
+            this,
+            mensagemAdmin,
+            "Confirmação de Segurança",
+            JOptionPane.OK_CANCEL_OPTION,
             JOptionPane.WARNING_MESSAGE
         );
 
         if (opcaoAdmin != JOptionPane.OK_OPTION) {
-            return;
+            return false;
         }
 
+        // confere a senha de quem está logado (se for administrador)
+        Usuario logado = SessaoUsuario.getUsuarioLogado();
+        String loginAdmin = logado != null && "Administrador".equalsIgnoreCase(logado.getPerfil())
+                ? logado.getLogin()
+                : "admin";
+
         String senhaAdmin = new String(txtSenhaAdmin.getPassword());
-        Usuario adminAutenticado = usuarioDAO.autenticar("admin", senhaAdmin);
+        Usuario adminAutenticado = usuarioDAO.autenticar(loginAdmin, senhaAdmin);
 
         if (adminAutenticado == null || !"Administrador".equalsIgnoreCase(adminAutenticado.getPerfil())) {
             JOptionPane.showMessageDialog(this, "Senha incorreta ou usuário sem privilégios de Administrador!", "Erro", JOptionPane.ERROR_MESSAGE);
-            return;
+            return false;
         }
+        return true;
+    }
 
-        JDialog dialogCadastro = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Cadastrar Usuário", true);
-        dialogCadastro.setSize(420, 360);
-        dialogCadastro.setLocationRelativeTo(this);
-        dialogCadastro.setLayout(null);
-        dialogCadastro.getContentPane().setBackground(Color.WHITE);
-        dialogCadastro.setResizable(false);
-
-        JLabel lblCNome = new JLabel("Nome:");
-        lblCNome.setBounds(25, 20, 80, 25);
-        final JTextField txtNome = new JTextField();
-        // Filtro para bloquear números no campo Nome
-        txtNome.setDocument(new PlainDocument() {
+    /** Campo de nome que não aceita números. */
+    private JTextField criarCampoNome(String valorInicial) {
+        JTextField campo = new JTextField(22);
+        campo.setDocument(new PlainDocument() {
             @Override
             public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
                 if (str == null) return;
@@ -290,96 +283,115 @@ public class UsuarioPanel extends javax.swing.JPanel {
                 }
             }
         });
-        txtNome.setBounds(95, 20, 280, 28);
+        campo.setText(valorInicial);
+        return campo;
+    }
 
-        JLabel lblCCpf = new JLabel("CPF:");
-        lblCCpf.setBounds(25, 60, 80, 25);
-        JFormattedTextField tempCpf;
+    private JFormattedTextField criarCampoCpf(String valorInicial) {
+        JFormattedTextField campo;
         try {
             MaskFormatter maskCpf = new MaskFormatter("###.###.###-##");
             maskCpf.setPlaceholderCharacter('_');
-            tempCpf = new JFormattedTextField(maskCpf);
+            campo = new JFormattedTextField(maskCpf);
         } catch (ParseException e) {
-            tempCpf = new JFormattedTextField();
+            campo = new JFormattedTextField();
         }
-        final JFormattedTextField txtCpf = tempCpf;
-        txtCpf.setBounds(95, 60, 280, 28);
+        campo.setColumns(22);
+        if (valorInicial != null && !valorInicial.isEmpty()) {
+            campo.setText(valorInicial);
+        }
+        return campo;
+    }
 
-        JLabel lblCUsuario = new JLabel("Usuário:");
-        lblCUsuario.setBounds(25, 100, 80, 25);
-        final JTextField txtUsuario = new JTextField();
-        txtUsuario.setBounds(95, 100, 280, 28);
+    /**
+     * Monta o formulário (rótulo + campo por linha) usado dentro das janelas
+     * padrão de Cadastrar e Editar, com um aviso sobre a senha no final.
+     */
+    private JPanel montarFormulario(String[] rotulos, JComponent[] campos, String avisoSenha) {
+        JPanel formulario = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 0, 5, 10);
+        gbc.anchor = GridBagConstraints.WEST;
 
-        JLabel lblCSenha = new JLabel("Senha:");
-        lblCSenha.setBounds(25, 140, 80, 25);
-        final JPasswordField txtSenha = new JPasswordField();
-        txtSenha.setBounds(95, 140, 280, 28);
+        for (int i = 0; i < rotulos.length; i++) {
+            gbc.gridx = 0;
+            gbc.gridy = i;
+            gbc.weightx = 0;
+            gbc.fill = GridBagConstraints.NONE;
+            formulario.add(new JLabel(rotulos[i]), gbc);
 
-        JLabel lblCConfirmaSenha = new JLabel("Confirmar:");
-        lblCConfirmaSenha.setBounds(25, 180, 80, 25);
-        final JPasswordField txtConfirmaSenha = new JPasswordField();
-        txtConfirmaSenha.setBounds(95, 180, 280, 28);
+            gbc.gridx = 1;
+            gbc.weightx = 1;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
+            formulario.add(campos[i], gbc);
+        }
 
-        JLabel lblCPerfil = new JLabel("Perfil:");
-        lblCPerfil.setBounds(25, 220, 80, 25);
-        final JComboBox<String> cbPerfil =
-                new JComboBox<>(new String[]{"Atendente", "Caixa", "Administrador"});
-        cbPerfil.setBounds(95, 220, 280, 28);
-        cbPerfil.setBackground(Color.WHITE);
+        JLabel aviso = new JLabel("<html><div style='width:260px'>" + avisoSenha + "</div></html>");
+        gbc.gridx = 0;
+        gbc.gridy = rotulos.length;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(12, 0, 0, 0);
+        formulario.add(aviso, gbc);
+        return formulario;
+    }
 
-        JButton btnSalvarCadastro = criarBotaoEstilizado("Cadastrar", new Color(25, 110, 45), Color.WHITE);
-        btnSalvarCadastro.setBounds(145, 275, 120, 35);
+    private void abrirJanelaCadastro() {
+        // Confirmação de Segurança do Administrador antes de abrir a janela
+        if (!confirmarAdministrador()) {
+            return;
+        }
 
-        dialogCadastro.add(lblCNome); dialogCadastro.add(txtNome);
-        dialogCadastro.add(lblCCpf); dialogCadastro.add(txtCpf);
-        dialogCadastro.add(lblCUsuario); dialogCadastro.add(txtUsuario);
-        dialogCadastro.add(lblCSenha); dialogCadastro.add(txtSenha);
-        dialogCadastro.add(lblCConfirmaSenha); dialogCadastro.add(txtConfirmaSenha);
-        dialogCadastro.add(lblCPerfil); dialogCadastro.add(cbPerfil);
-        dialogCadastro.add(btnSalvarCadastro);
+        JTextField txtNome = criarCampoNome("");
+        JFormattedTextField txtCpf = criarCampoCpf("");
+        JTextField txtUsuario = new JTextField(22);
+        JComboBox<String> cbPerfil = new JComboBox<>(new String[]{"Atendente", "Caixa", "Administrador"});
 
-        btnSalvarCadastro.addActionListener(e -> {
+        // o usuário é cadastrado com a senha padrão e cria a senha pessoal no primeiro login
+        JPanel formulario = montarFormulario(
+                new String[]{"Nome:", "CPF:", "Usuário:", "Perfil:"},
+                new JComponent[]{txtNome, txtCpf, txtUsuario, cbPerfil},
+                "Senha inicial: <b>" + SenhaUtil.SENHA_PADRAO + "</b>. "
+                        + "No primeiro acesso o usuário vai criar a própria senha.");
+
+        while (true) {
+            SwingUtilities.invokeLater(txtNome::requestFocusInWindow);
+            int opcao = JOptionPane.showConfirmDialog(this, formulario, "Cadastrar Usuário",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (opcao != JOptionPane.OK_OPTION) {
+                return;
+            }
+
             String nome = txtNome.getText().trim();
             String cpf = txtCpf.getText().replaceAll("\\D", "");
             String login = txtUsuario.getText().trim();
-            String senha = new String(txtSenha.getPassword());
-            String confirmaSenha = new String(txtConfirmaSenha.getPassword());
             String perfil = (String) cbPerfil.getSelectedItem();
 
-            if (nome.isEmpty() || login.isEmpty() || senha.isEmpty()) {
-                JOptionPane.showMessageDialog(dialogCadastro, "Preencha todos os campos obrigatórios!", "Aviso", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            if (senha.length() < 6) {
-                JOptionPane.showMessageDialog(dialogCadastro, "A senha deve ter no mínimo 6 caracteres!", "Aviso", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            if (!senha.equals(confirmaSenha)) {
-                JOptionPane.showMessageDialog(dialogCadastro, "As senhas não coincidem!", "Erro", JOptionPane.ERROR_MESSAGE);
-                return;
+            if (nome.isEmpty() || login.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Preencha todos os campos obrigatórios!", "Aviso", JOptionPane.WARNING_MESSAGE);
+                continue; // reabre a janela com o que já foi digitado
             }
 
             Usuario u = new Usuario();
             u.setNome(nome);
             u.setCpf(cpf);
             u.setLogin(login);
-            u.setSenha(senha);
+            u.setSenha(SenhaUtil.SENHA_PADRAO); // gravada criptografada pelo DAO
             u.setPerfil(perfil);
             u.setAtivo(true);
 
             try {
                 usuarioDAO.cadastrar(u);
-                JOptionPane.showMessageDialog(dialogCadastro, "Usuário cadastrado com sucesso!");
-                dialogCadastro.dispose();
+                JOptionPane.showMessageDialog(this,
+                        "Usuário cadastrado com sucesso!\n\n"
+                                + "Login: " + login + "\n"
+                                + "Senha inicial: " + SenhaUtil.SENHA_PADRAO + "\n\n"
+                                + "No primeiro acesso será pedida uma nova senha.");
                 carregarTabela();
+                return;
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialogCadastro, "Erro ao cadastrar usuário: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Erro ao cadastrar usuário: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
             }
-        });
-
-        dialogCadastro.setVisible(true);
+        }
     }
 
     private void abrirJanelaEdicao() {
@@ -394,28 +406,7 @@ public class UsuarioPanel extends javax.swing.JPanel {
         }
 
         // Confirmação de Segurança do Administrador
-        JPasswordField txtSenhaAdmin = new JPasswordField(15);
-        Object[] mensagemAdmin = {
-            "Digite a senha do administrador para continuar:", txtSenhaAdmin
-        };
-
-        int opcaoAdmin = JOptionPane.showConfirmDialog(
-            this, 
-            mensagemAdmin, 
-            "Confirmação de Segurança", 
-            JOptionPane.OK_CANCEL_OPTION, 
-            JOptionPane.WARNING_MESSAGE
-        );
-
-        if (opcaoAdmin != JOptionPane.OK_OPTION) {
-            return;
-        }
-
-        String senhaAdmin = new String(txtSenhaAdmin.getPassword());
-        Usuario adminAutenticado = usuarioDAO.autenticar("admin", senhaAdmin);
-
-        if (adminAutenticado == null || !"Administrador".equalsIgnoreCase(adminAutenticado.getPerfil())) {
-            JOptionPane.showMessageDialog(this, "Senha incorreta ou usuário sem privilégios de Administrador!", "Erro", JOptionPane.ERROR_MESSAGE);
+        if (!confirmarAdministrador()) {
             return;
         }
 
@@ -423,103 +414,44 @@ public class UsuarioPanel extends javax.swing.JPanel {
         int id = Integer.parseInt(modeloTabela.getValueAt(linhaSelecionada, 0).toString());
         String statusAtual = modeloTabela.getValueAt(linhaSelecionada, 1).toString();
         String loginAtual = modeloTabela.getValueAt(linhaSelecionada, 3).toString();
-        String cpfAtual = modeloTabela.getValueAt(linhaSelecionada, 4).toString().replaceAll("\\D", "");
-        String perfilAtual = modeloTabela.getValueAt(linhaSelecionada, 5).toString();
-        
-        // Pega o nome e a senha real direto do banco para garantir que venham corretos
+        Object cpfTabela = modeloTabela.getValueAt(linhaSelecionada, 4);
+        String cpfAtual = cpfTabela != null ? cpfTabela.toString().replaceAll("\\D", "") : "";
+        String perfilAtual = String.valueOf(modeloTabela.getValueAt(linhaSelecionada, 5));
+
+        // busca o nome no banco (a senha não é carregada)
         Usuario usuarioBanco = usuarioDAO.buscarPorId(id);
         String nomeAtual = usuarioBanco != null && usuarioBanco.getNome() != null ? usuarioBanco.getNome() : "";
 
-
-        // Cria a nova janela menor (Dialog) com os campos preenchidos
-        JDialog dialogEdicao = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Editar Usuário", true);
-        dialogEdicao.setSize(420, 360);
-        dialogEdicao.setLocationRelativeTo(this);
-        dialogEdicao.setLayout(null);
-        dialogEdicao.getContentPane().setBackground(Color.WHITE);
-        dialogEdicao.setResizable(false);
-
-        JLabel lblENome = new JLabel("Nome:");
-        lblENome.setBounds(25, 20, 80, 25);
-        final JTextField editNome = new JTextField();
-        // Aplica o documento customizado com o filtro de números e define o valor inicial corretamente
-        editNome.setDocument(new PlainDocument() {
-            @Override
-            public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
-                if (str == null) return;
-                if (!str.matches(".*\\d.*")) {
-                    super.insertString(offset, str, attr);
-                }
-            }
-        });
-        editNome.setText(nomeAtual);
-        editNome.setBounds(95, 20, 280, 28);
-
-        JLabel lblECpf = new JLabel("CPF:");
-        lblECpf.setBounds(25, 60, 80, 25);
-        JFormattedTextField tempCpf;
-        try {
-            MaskFormatter maskCpf = new MaskFormatter("###.###.###-##");
-            maskCpf.setPlaceholderCharacter('_');
-            tempCpf = new JFormattedTextField(maskCpf);
-        } catch (ParseException e) {
-            tempCpf = new JFormattedTextField();
-        }
-        final JFormattedTextField editCpf = tempCpf;
-        editCpf.setText(cpfAtual);
-        editCpf.setBounds(95, 60, 280, 28);
-
-        JLabel lblELogin = new JLabel("Usuário:");
-        lblELogin.setBounds(25, 100, 80, 25);
-        final JTextField editLogin = new JTextField(loginAtual);
-        editLogin.setBounds(95, 100, 280, 28);
-
-        JLabel lblESenha = new JLabel("Senha:");
-        lblESenha.setBounds(25, 140, 80, 25);
-        final JPasswordField editSenha = new JPasswordField();
-        editSenha.setToolTipText("Deixe em branco para manter a senha atual.");
-        editSenha.setBounds(95, 140, 280, 28);
-
-        JLabel lblEPerfil = new JLabel("Perfil:");
-        lblEPerfil.setBounds(25, 180, 80, 25);
-        final JComboBox<String> editPerfil =
-                new JComboBox<>(new String[]{"Atendente", "Caixa", "Administrador"});
+        JTextField editNome = criarCampoNome(nomeAtual);
+        JFormattedTextField editCpf = criarCampoCpf(cpfAtual);
+        JTextField editLogin = new JTextField(loginAtual, 22);
+        JComboBox<String> editPerfil = new JComboBox<>(new String[]{"Atendente", "Caixa", "Administrador"});
         editPerfil.setSelectedItem(perfilAtual);
-        editPerfil.setBounds(95, 180, 280, 28);
-
-        JLabel lblEStatus = new JLabel("Status:");
-        lblEStatus.setBounds(25, 220, 80, 25);
-        final JComboBox<String> editStatus = new JComboBox<>(new String[]{"Ativo", "Inativo"});
+        JComboBox<String> editStatus = new JComboBox<>(new String[]{"Ativo", "Inativo"});
         editStatus.setSelectedItem(statusAtual);
-        editStatus.setBounds(95, 220, 280, 28);
 
-        JButton btnSalvarEdicao = criarBotaoEstilizado("Salvar", new Color(30, 100, 180), Color.WHITE);
-        btnSalvarEdicao.setBounds(145, 275, 120, 35);
+        JPanel formulario = montarFormulario(
+                new String[]{"Nome:", "CPF:", "Usuário:", "Perfil:", "Status:"},
+                new JComponent[]{editNome, editCpf, editLogin, editPerfil, editStatus},
+                "A senha é pessoal e não pode ser vista nem alterada aqui. "
+                        + "Para bloquear o acesso, mude o status para <b>Inativo</b>.");
 
-        dialogEdicao.add(lblENome); dialogEdicao.add(editNome);
-        dialogEdicao.add(lblECpf); dialogEdicao.add(editCpf);
-        dialogEdicao.add(lblELogin); dialogEdicao.add(editLogin);
-        dialogEdicao.add(lblESenha); dialogEdicao.add(editSenha);
-        dialogEdicao.add(lblEPerfil); dialogEdicao.add(editPerfil);
-        dialogEdicao.add(lblEStatus); dialogEdicao.add(editStatus);
-        dialogEdicao.add(btnSalvarEdicao);
+        while (true) {
+            int opcao = JOptionPane.showConfirmDialog(this, formulario, "Editar Usuário",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (opcao != JOptionPane.OK_OPTION) {
+                return;
+            }
 
-        btnSalvarEdicao.addActionListener(e -> {
             String novoNome = editNome.getText().trim();
             String novoCpf = editCpf.getText().replaceAll("\\D", "");
             String novoLogin = editLogin.getText().trim();
-            String novaSenha = new String(editSenha.getPassword());
             String novoPerfil = (String) editPerfil.getSelectedItem();
             boolean novoStatus = "Ativo".equalsIgnoreCase((String) editStatus.getSelectedItem());
 
             if (novoNome.isEmpty() || novoLogin.isEmpty()) {
-                JOptionPane.showMessageDialog(dialogEdicao, "Preencha todos os campos obrigatórios!", "Aviso", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            if (!novaSenha.isEmpty() && novaSenha.length() < 6) {
-                JOptionPane.showMessageDialog(dialogEdicao, "A senha deve ter no mínimo 6 caracteres!", "Aviso", JOptionPane.WARNING_MESSAGE);
-                return;
+                JOptionPane.showMessageDialog(this, "Preencha todos os campos obrigatórios!", "Aviso", JOptionPane.WARNING_MESSAGE);
+                continue; // reabre a janela com o que já foi digitado
             }
 
             try {
@@ -528,29 +460,69 @@ public class UsuarioPanel extends javax.swing.JPanel {
                 u.setNome(novoNome);
                 u.setCpf(novoCpf);
                 u.setLogin(novoLogin);
-                u.setSenha(novaSenha);
                 u.setPerfil(novoPerfil);
                 u.setAtivo(novoStatus);
 
-                usuarioDAO.alterar(u);
-                JOptionPane.showMessageDialog(dialogEdicao, "Alterações salvas com sucesso!");
-                dialogEdicao.dispose();
+                usuarioDAO.alterar(u); // não altera a senha
+                JOptionPane.showMessageDialog(this, "Alterações salvas com sucesso!");
                 carregarTabela();
+                return;
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialogEdicao, "Erro ao atualizar usuário: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Erro ao atualizar usuário: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
             }
-        });
-
-        dialogEdicao.setVisible(true);
+        }
     }
 
-    // Classe auxiliar interna para renderizar a senha com asteriscos na JTable
-    private static class SenhaOcultaCellRenderer extends DefaultTableCellRenderer {
+    /**
+     * Volta a senha do usuário selecionado para a senha padrão. O
+     * administrador não vê nem escolhe a senha: no próximo login o usuário
+     * é obrigado a criar uma senha pessoal nova.
+     */
+    private void resetarSenha() {
+        int viewRow = tabelaUsuarios.getSelectedRow();
+        if (viewRow == -1) {
+            JOptionPane.showMessageDialog(this, "Selecione o usuário que vai ter a senha resetada.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int linha = tabelaUsuarios.convertRowIndexToModel(viewRow);
+        int id = Integer.parseInt(modeloTabela.getValueAt(linha, 0).toString());
+        String nome = String.valueOf(modeloTabela.getValueAt(linha, 2));
+
+        int resposta = JOptionPane.showConfirmDialog(this,
+                "Resetar a senha de " + nome + "?\n\n"
+                        + "A senha volta a ser a padrão (" + SenhaUtil.SENHA_PADRAO + ") e,\n"
+                        + "no próximo login, o usuário terá que criar uma nova senha.",
+                "Resetar senha", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (resposta != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        if (!confirmarAdministrador()) {
+            return;
+        }
+
+        try {
+            usuarioDAO.redefinirSenhaPadrao(id);
+            JOptionPane.showMessageDialog(this,
+                    "Senha de " + nome + " resetada.\nSenha temporária: " + SenhaUtil.SENHA_PADRAO,
+                    "Resetar senha", JOptionPane.INFORMATION_MESSAGE);
+        } catch (RuntimeException ex) {
+            JOptionPane.showMessageDialog(this, "Erro ao resetar a senha: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Status em verde (Ativo) ou vermelho (Inativo)
+    private static class StatusCellRenderer extends PadraoComponentes.RendererCelula {
+        StatusCellRenderer() {
+            super(SwingConstants.LEFT);
+        }
+
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            String senha = value != null ? value.toString() : "";
-            String oculto = "•".repeat(senha.length());
-            return super.getTableCellRendererComponent(table, oculto, isSelected, hasFocus, row, column);
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setFont(getFont().deriveFont(Font.BOLD));
+            setForeground("Inativo".equals(value) ? PadraoComponentes.VERMELHO : PadraoComponentes.VERDE);
+            return this;
         }
     }
 }

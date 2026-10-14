@@ -121,7 +121,7 @@
                 <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                   <Color blue="19" green="64" red="19" type="rgb"/>
                 </Property>
-                <Property name="text" type="java.lang.String" value="Mesas"/>
+                <Property name="text" type="java.lang.String" value="Pedidos"/>
                 <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
                   <Insets value="[2, 15, 2, 15]"/>
                 </Property>

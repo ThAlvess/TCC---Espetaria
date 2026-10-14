@@ -20,7 +20,6 @@ public class TesteProdutoDAO {
         produto.setNome("Espeto de Carne");
         produto.setDescricao("Espeto bovino");
         produto.setPreco(new BigDecimal("12.00"));
-        produto.setQuantidadeEstoque(50);
         produto.setCategoria(categoria);
         produto.setAtivo(true);
 
@@ -45,8 +44,6 @@ public class TesteProdutoDAO {
                             + p.getCategoria().getNome()
                             + " - R$ "
                             + p.getPreco()
-                            + " - Estoque: "
-                            + p.getQuantidadeEstoque()
             );
         }
     }

@@ -2,6 +2,9 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.dao.CaixaDAO;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.CampoMoeda;
+import br.com.trevizan.espetinhos.util.FiltroPeriodo;
+import br.com.trevizan.espetinhos.util.PadraoComponentes;
 import br.com.trevizan.espetinhos.util.PadraoTela;
 import br.com.trevizan.espetinhos.util.SessaoUsuario;
 
@@ -11,13 +14,14 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.util.List;
 import br.com.trevizan.espetinhos.dao.PagamentoDAO;
-import com.github.lgooddatepicker.components.DatePicker;
-import com.github.lgooddatepicker.components.DatePickerSettings;
 import br.com.trevizan.espetinhos.dao.MovimentacaoCaixaDAO;
 
-import java.time.LocalDate;
-
 /**
+ * Tela de Caixa: caixa atual, histórico de caixas e detalhes de um caixa.
+ *
+ * <p>Os componentes visuais (botões, cartões de indicadores, tabelas e
+ * filtro de datas) são criados com {@link PadraoComponentes} e
+ * {@link br.com.trevizan.espetinhos.util.FiltroPeriodo}.</p>
  *
  * @author thiag
  */
@@ -40,6 +44,9 @@ public class Caixa extends javax.swing.JPanel {
     private JLabel lblDetalheVendas;
     private JLabel lblDetalheSangrias;
     private JLabel lblDetalheFinal;
+    private JLabel lblApoioDetalheVendas;
+    private JLabel lblApoioDetalheSangrias;
+    private JLabel lblApoioDetalheFinal;
 
     private DefaultTableModel modeloTabelaPagamentos;
     private JTable tabelaPagamentos;
@@ -60,6 +67,10 @@ public class Caixa extends javax.swing.JPanel {
     private JLabel lblTotalVendas;
     private JLabel lblSangrias;
     private JLabel lblStatus;
+    private JLabel lblApoioValorInicial;
+    private JLabel lblApoioVendas;
+    private JLabel lblApoioSangrias;
+    private JLabel lblApoioStatus;
     private JLabel lblNumeroCaixa;
     private JLabel lblDataCaixa;
     private DefaultTableModel modeloTabelaComandas;
@@ -74,15 +85,24 @@ public class Caixa extends javax.swing.JPanel {
     private JButton btnVoltarCaixa;
     private JPanel painelCentral;
     private CardLayout cardLayoutCaixa;
-    private DatePicker dataInicioHistorico;
-    private DatePicker dataFimHistorico;
+    private FiltroPeriodo filtroHistorico;
 
+    private JLabel lblQtdCaixas;
+    private JLabel lblFaturamentoPeriodo;
+    private JLabel lblApoioFaturamentoPeriodo;
     private JLabel lblMaiorFaturamento;
-    private JButton btnFiltrarHistorico;
-    private JButton btnLimparFiltroHistorico;
+    private JLabel lblApoioMaiorFaturamento;
+    private JLabel lblSangriasPeriodo;
+    private JLabel lblResumoHistorico;
     private DefaultTableModel modeloTabelaMovimentacoes;
     private JTable tabelaMovimentacoes;
     private JLabel lblTituloDetalheFinal;
+
+    /** Subtítulo das seções (ex.: "Caixa #3", "Histórico de caixas"). */
+    private static final Font FONTE_SECAO = new Font("Segoe UI", Font.BOLD, 20);
+    private static final Font FONTE_INFO = new Font("Segoe UI", Font.PLAIN, 14);
+    /** Cor das informações do caixa (data, horário, operador). */
+    private static final Color COR_INFO = new Color(60, 60, 60);
 
 
     public Caixa() {
@@ -100,165 +120,105 @@ public class Caixa extends javax.swing.JPanel {
 
 
     private void initComponents() {
-        this.setLayout(new BorderLayout(20, 20));
-        this.setBackground(new Color(237, 231, 226));
+        this.setLayout(new BorderLayout(0, 18));
+        this.setBackground(PadraoComponentes.COR_FUNDO);
         // margens do padrão de telas (título na mesma posição da tela de Relatórios)
         this.setBorder(BorderFactory.createEmptyBorder(
-                PadraoTela.MARGEM_TOPO, PadraoTela.MARGEM_LATERAL, 20, PadraoTela.MARGEM_LATERAL));
+                PadraoTela.MARGEM_TOPO, PadraoTela.MARGEM_LATERAL, 30, PadraoTela.MARGEM_LATERAL));
 
-        // ---------- Cabeçalho (título + ícone) ----------
-        JPanel painelCabecalho = new JPanel(new BorderLayout());
-        painelCabecalho.setOpaque(false);
-
+        // ---------- Cabeçalho ----------
         JLabel lblTitulo = PadraoTela.criarTitulo("CAIXA");
 
-        JLabel lblIconePerfil = new JLabel("👤");
-        lblIconePerfil.setFont(new Font("SansSerif", Font.PLAIN, 24));
-        lblIconePerfil.setForeground(new Color(34, 102, 51));
-
-        painelCabecalho.add(lblTitulo, BorderLayout.WEST);
-        painelCabecalho.add(lblIconePerfil, BorderLayout.EAST);
-
-        // ---------- Corpo (botões + cards + tabela) ----------
-        JPanel painelCorpo = new JPanel();
+        // ---------- Corpo do caixa atual ----------
+        JPanel painelCorpo = new JPanel(new BorderLayout(0, 18));
         painelCorpo.setOpaque(false);
-        painelCorpo.setLayout(new BoxLayout(painelCorpo, BoxLayout.Y_AXIS));
+
+        JPanel topoCorpo = new JPanel();
+        topoCorpo.setOpaque(false);
+        topoCorpo.setLayout(new BoxLayout(topoCorpo, BoxLayout.Y_AXIS));
 
         // Identificação do caixa atual
+        lblNumeroCaixa = criarTituloSecao("Nenhum caixa aberto");
+        lblDataCaixa = criarInfo("Aguardando abertura");
+
         JPanel painelIdentificacao = new JPanel();
         painelIdentificacao.setOpaque(false);
-        painelIdentificacao.setLayout(
-                new BoxLayout(painelIdentificacao, BoxLayout.Y_AXIS)
-        );
-        painelIdentificacao.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        lblNumeroCaixa = new JLabel("Nenhum caixa aberto");
-        lblNumeroCaixa.setFont(
-                new Font("SansSerif", Font.BOLD, 18)
-        );
-        lblNumeroCaixa.setForeground(
-                new Color(40, 40, 40)
-        );
-        lblNumeroCaixa.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        lblDataCaixa = new JLabel("Aguardando abertura");
-        lblDataCaixa.setFont(
-                new Font("SansSerif", Font.PLAIN, 13)
-        );
-        lblDataCaixa.setForeground(
-                new Color(100, 100, 100)
-        );
-        lblDataCaixa.setAlignmentX(Component.LEFT_ALIGNMENT);
-
+        painelIdentificacao.setLayout(new BoxLayout(painelIdentificacao, BoxLayout.Y_AXIS));
         painelIdentificacao.add(lblNumeroCaixa);
-        painelIdentificacao.add(
-                Box.createRigidArea(new Dimension(0, 3))
-        );
+        painelIdentificacao.add(Box.createVerticalStrut(4));
         painelIdentificacao.add(lblDataCaixa);
-        painelIdentificacao.add(
-                Box.createRigidArea(new Dimension(0, 10))
-        );
 
-        btnVerHistorico = new JButton("Histórico de caixas");
-        btnVerHistorico.setFont(
-                new Font("SansSerif", Font.BOLD, 12)
-        );
-        btnVerHistorico.setFocusPainted(false);
-        btnVerHistorico.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-
-        btnVerHistorico.addActionListener(e -> mostrarHistorico());
-
-// Botão de resumo financeiro
-        JButton btnResumoFinanceiro = new JButton("Resumo financeiro");
-        btnResumoFinanceiro.setFont(
-                new Font("SansSerif", Font.BOLD, 12)
-        );
-        btnResumoFinanceiro.setFocusPainted(false);
-
-        btnResumoFinanceiro.addActionListener(
-                e -> mostrarResumoFinanceiro()
-        );
-
-// Coloca os dois botões lado a lado
-        JPanel painelBotoesResumo = new JPanel(
-                new FlowLayout(FlowLayout.LEFT, 10, 0)
-        );
-
-        painelBotoesResumo.setMaximumSize(
-                new Dimension(Integer.MAX_VALUE, 35)
-        );
-        painelBotoesResumo.setPreferredSize(
-                new Dimension(400, 35)
-        );
-
-        painelBotoesResumo.setOpaque(false);
-        painelBotoesResumo.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        painelBotoesResumo.add(btnVerHistorico);
-        painelBotoesResumo.add(btnResumoFinanceiro);
-
-        painelIdentificacao.add(painelBotoesResumo);
-
-
-        // Linha de botões
-        JPanel painelBotoes = new JPanel(new GridLayout(1, 3, 15, 0));
-        painelBotoes.setOpaque(false);
-        painelBotoes.setAlignmentX(Component.LEFT_ALIGNMENT);
-        painelBotoes.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-
-        btnAbrirCaixa = new JButton("Abrir caixa");
-        btnAbrirCaixa.setBackground(new Color(27, 94, 32));
-        btnAbrirCaixa.setForeground(Color.WHITE);
-        btnAbrirCaixa.setFont(new Font("SansSerif", Font.BOLD, 14));
-        btnAbrirCaixa.setFocusPainted(false);
+        // Botões de ação
+        btnAbrirCaixa = PadraoComponentes.criarBotaoPrimario(
+                "Abrir caixa", PadraoComponentes.iconeCadeadoAberto(Color.WHITE));
         btnAbrirCaixa.addActionListener(e -> abrirCaixaClicado());
 
-        btnSangria = new JButton("Registrar sangria");
-        btnSangria.setBackground(new Color(204, 102, 0));
-        btnSangria.setForeground(Color.WHITE);
-        btnSangria.setFont(
-                new Font("SansSerif", Font.BOLD, 14)
-        );
-        btnSangria.setFocusPainted(false);
-
+        btnSangria = PadraoComponentes.criarBotaoDestaque(
+                "Registrar sangria", PadraoComponentes.iconeSaida(Color.WHITE));
         btnSangria.addActionListener(
                 e -> registrarSangriaClicado()
         );
 
-        btnFecharCaixa = new JButton("Fechar caixa");
-        btnFecharCaixa.setBackground(new Color(153, 0, 0));
-        btnFecharCaixa.setForeground(Color.WHITE);
-        btnFecharCaixa.setFont(new Font("SansSerif", Font.BOLD, 14));
-        btnFecharCaixa.setFocusPainted(false);
+        btnFecharCaixa = PadraoComponentes.criarBotaoPerigo(
+                "Fechar caixa", PadraoComponentes.iconeCadeadoFechado(Color.WHITE));
         btnFecharCaixa.addActionListener(e -> fecharCaixaClicado());
 
+        btnVerHistorico = PadraoComponentes.criarBotaoSecundario(
+                "Histórico de caixas", PadraoComponentes.iconeHistorico(PadraoComponentes.VERDE));
+        btnVerHistorico.addActionListener(e -> mostrarHistorico());
+
+        JButton btnResumoFinanceiro = PadraoComponentes.criarBotaoSecundario(
+                "Resumo financeiro", PadraoComponentes.iconeCifrao(PadraoComponentes.VERDE));
+        btnResumoFinanceiro.addActionListener(e -> mostrarResumoFinanceiro());
+
+        JPanel painelConsultas = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        painelConsultas.setOpaque(false);
+        painelConsultas.add(btnResumoFinanceiro);
+        painelConsultas.add(Box.createHorizontalStrut(12));
+        painelConsultas.add(btnVerHistorico);
+
+        JPanel painelBotoes = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        painelBotoes.setOpaque(false);
         painelBotoes.add(btnAbrirCaixa);
+        painelBotoes.add(Box.createHorizontalStrut(12));
         painelBotoes.add(btnSangria);
+        painelBotoes.add(Box.createHorizontalStrut(12));
         painelBotoes.add(btnFecharCaixa);
 
-        // Linha de 4 cards
-        JPanel painelCards = new JPanel(new GridLayout(1, 4, 15, 0));
-        painelCards.setOpaque(false);
-        painelCards.setAlignmentX(Component.LEFT_ALIGNMENT);
-        painelCards.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
+        JPanel linhaBotoes = new JPanel(new BorderLayout());
+        linhaBotoes.setOpaque(false);
+        linhaBotoes.setAlignmentX(Component.LEFT_ALIGNMENT);
+        linhaBotoes.add(painelBotoes, BorderLayout.WEST);
+        linhaBotoes.add(painelConsultas, BorderLayout.EAST);
+        linhaBotoes.setMaximumSize(new Dimension(Integer.MAX_VALUE, PadraoComponentes.ALTURA_BOTAO));
 
+        painelIdentificacao.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Linha de 4 cartões de indicadores
         lblValorInicial = new JLabel("R$ -");
         lblTotalVendas = new JLabel("-");
         lblSangrias = new JLabel("R$ -");
         lblStatus = new JLabel("Pendente abertura");
+        lblApoioValorInicial = new JLabel(" ");
+        lblApoioVendas = new JLabel(" ");
+        lblApoioSangrias = new JLabel(" ");
+        lblApoioStatus = new JLabel(" ");
 
-        painelCards.add(criarCard("Valor Inicial", lblValorInicial));
-        painelCards.add(criarCard("Total de vendas", lblTotalVendas));
-        painelCards.add(criarCard("Sangrias", lblSangrias));
-        painelCards.add(criarCard("Status", lblStatus));
+        JPanel painelCards = criarLinhaCartoes(
+                PadraoComponentes.criarCartaoKpi("Valor inicial", lblValorInicial, lblApoioValorInicial,
+                        PadraoComponentes.iconeCarteira(Color.WHITE)),
+                PadraoComponentes.criarCartaoKpi("Total de vendas", lblTotalVendas, lblApoioVendas,
+                        PadraoComponentes.iconeSacola(Color.WHITE)),
+                PadraoComponentes.criarCartaoKpi("Sangrias", lblSangrias, lblApoioSangrias,
+                        PadraoComponentes.iconeSaida(Color.WHITE)),
+                PadraoComponentes.criarCartaoKpi("Status", lblStatus, lblApoioStatus,
+                        PadraoComponentes.iconeCadeadoAberto(Color.WHITE)));
 
-        // Título da lista de comandas
-        JLabel lblComandas = new JLabel("Comandas deste caixa");
-        lblComandas.setFont(new Font("SansSerif", Font.BOLD, 14));
-        lblComandas.setForeground(new Color(34, 102, 51));
-        lblComandas.setAlignmentX(Component.LEFT_ALIGNMENT);
-        lblComandas.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
+        topoCorpo.add(painelIdentificacao);
+        topoCorpo.add(Box.createVerticalStrut(16));
+        topoCorpo.add(linhaBotoes);
+        topoCorpo.add(Box.createVerticalStrut(18));
+        topoCorpo.add(painelCards);
 
         // Tabela de comandas
         modeloTabelaComandas = new DefaultTableModel(
@@ -271,23 +231,11 @@ public class Caixa extends javax.swing.JPanel {
         };
 
         tabelaComandas = new JTable(modeloTabelaComandas);
-        tabelaComandas.setRowHeight(28);
-        tabelaComandas.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 12));
+        estilizarTabelaComandas(tabelaComandas);
 
-        JScrollPane scrollTabela = new JScrollPane(tabelaComandas);
-        scrollTabela.setAlignmentX(Component.LEFT_ALIGNMENT);
-        scrollTabela.setPreferredSize(new Dimension(0, 200));
-        scrollTabela.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
-
-        painelCorpo.add(painelIdentificacao);
-        painelCorpo.add(Box.createRigidArea(new Dimension(0, 15)));
-
-        painelCorpo.add(painelBotoes);
-        painelCorpo.add(Box.createRigidArea(new Dimension(0, 15)));
-
-        painelCorpo.add(painelCards);
-        painelCorpo.add(lblComandas);
-        painelCorpo.add(scrollTabela);
+        painelCorpo.add(topoCorpo, BorderLayout.NORTH);
+        painelCorpo.add(PadraoComponentes.criarCartaoTabela("Comandas deste caixa", tabelaComandas, null),
+                BorderLayout.CENTER);
 
         // Painel do caixa atual
         painelAtual = painelCorpo;
@@ -304,38 +252,161 @@ public class Caixa extends javax.swing.JPanel {
         painelCentral.add(painelHistorico, "HISTORICO");
         painelCentral.add(painelDetalhes, "DETALHES");
 
-        this.add(painelCabecalho, BorderLayout.NORTH);
+        this.add(lblTitulo, BorderLayout.NORTH);
         this.add(painelCentral, BorderLayout.CENTER);
+    }
+
+    // ------------------------------------------------------------------
+    // Auxiliares de layout
+    // ------------------------------------------------------------------
+
+    private JLabel criarTituloSecao(String texto) {
+        JLabel label = new JLabel(texto);
+        label.setFont(FONTE_SECAO);
+        label.setForeground(PadraoComponentes.COR_TEXTO);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
+    }
+
+    /** Separador entre as informações (data • horário • operador). */
+    private static final String SEPARADOR_INFO = "&nbsp;&nbsp;•&nbsp;&nbsp;";
+
+    /** Texto em negrito (HTML), escapando caracteres especiais do nome. */
+    private static String negrito(String texto) {
+        String seguro = texto == null ? "-" : texto
+                .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        return "<b>" + seguro + "</b>";
+    }
+
+    private JLabel criarInfo(String texto) {
+        JLabel label = new JLabel(texto);
+        label.setFont(FONTE_INFO);
+        label.setForeground(COR_INFO);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
+    }
+
+    /** Bloco com o botão de voltar e, embaixo dele, o título da seção. */
+    private JPanel criarLinhaVoltar(JButton botaoVoltar, JLabel titulo) {
+        JPanel bloco = new JPanel();
+        bloco.setOpaque(false);
+        bloco.setLayout(new BoxLayout(bloco, BoxLayout.Y_AXIS));
+        bloco.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel linhaBotao = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        linhaBotao.setOpaque(false);
+        linhaBotao.setAlignmentX(Component.LEFT_ALIGNMENT);
+        linhaBotao.add(botaoVoltar);
+        linhaBotao.setMaximumSize(new Dimension(Integer.MAX_VALUE, PadraoComponentes.ALTURA_BOTAO));
+
+        titulo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        bloco.add(linhaBotao);
+        bloco.add(Box.createVerticalStrut(14));
+        bloco.add(titulo);
+        return bloco;
+    }
+
+    /** Linha com os cartões de indicadores, todos com a mesma largura. */
+    private JPanel criarLinhaCartoes(JComponent... cartoes) {
+        JPanel linha = new JPanel(new GridLayout(1, cartoes.length, 18, 0));
+        linha.setOpaque(false);
+        linha.setAlignmentX(Component.LEFT_ALIGNMENT);
+        for (JComponent cartao : cartoes) {
+            linha.add(cartao);
+        }
+        linha.setPreferredSize(new Dimension(0, 96));
+        linha.setMaximumSize(new Dimension(Integer.MAX_VALUE, 96));
+        return linha;
+    }
+
+    /** Colunas: Atendimento, Cliente, Status, Valor. */
+    private void estilizarTabelaComandas(JTable tabela) {
+        PadraoComponentes.estilizarTabela(tabela);
+        tabela.getColumnModel().getColumn(2).setCellRenderer(new RendererStatus());
+        PadraoComponentes.alinharColuna(tabela, 3, SwingConstants.RIGHT);
+    }
+
+    /**
+     * Status com a primeira letra maiúscula e colorido:
+     * verde (fechada / aberto), laranja (aberta) e vermelho (cancelada).
+     */
+    private static class RendererStatus extends PadraoComponentes.RendererCelula {
+
+        RendererStatus() {
+            super(SwingConstants.LEFT);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable tabela, Object valor, boolean selecionada,
+                boolean foco, int linha, int coluna) {
+            String texto = valor != null ? valor.toString() : "";
+            String exibicao = texto.isEmpty() ? texto
+                    : texto.substring(0, 1).toUpperCase() + texto.substring(1).toLowerCase();
+            super.getTableCellRendererComponent(tabela, exibicao, selecionada, foco, linha, coluna);
+            setFont(getFont().deriveFont(Font.BOLD));
+            switch (texto.toUpperCase()) {
+                case "ABERTA" -> setForeground(PadraoComponentes.LARANJA);
+                case "CANCELADA" -> setForeground(PadraoComponentes.VERMELHO);
+                case "FECHADO" -> setForeground(PadraoComponentes.COR_TEXTO_SECUNDARIO);
+                default -> setForeground(PadraoComponentes.VERDE);
+            }
+            return this;
+        }
+    }
+
+    /** Tipo da movimentação: entrada em verde, saída em vermelho. */
+    private static class RendererTipoMovimentacao extends PadraoComponentes.RendererCelula {
+
+        RendererTipoMovimentacao() {
+            super(SwingConstants.LEFT);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable tabela, Object valor, boolean selecionada,
+                boolean foco, int linha, int coluna) {
+            super.getTableCellRendererComponent(tabela, valor, selecionada, foco, linha, coluna);
+            setFont(getFont().deriveFont(Font.BOLD));
+            setForeground("Saída".equals(valor) ? PadraoComponentes.VERMELHO : PadraoComponentes.VERDE);
+            return this;
+        }
+    }
+
+    /** Nome de exibição da forma de pagamento. */
+    private static String nomeFormaPagamento(String forma) {
+        if (forma == null) {
+            return "-";
+        }
+        return switch (forma.toUpperCase()) {
+            case "DINHEIRO" -> "Dinheiro";
+            case "PIX" -> "Pix";
+            case "DEBITO" -> "Cartão de Débito";
+            case "CREDITO" -> "Cartão de Crédito";
+            default -> forma;
+        };
+    }
+
+    private static String descreverAtendimento(CaixaDAO.ComandaResumo comanda) {
+        if ("MESA".equalsIgnoreCase(comanda.tipoAtendimento)) {
+            return "Mesa " + comanda.numeroMesa;
+        }
+        String tipo = comanda.tipoAtendimento != null ? comanda.tipoAtendimento : "-";
+        return tipo.isEmpty() ? tipo : tipo.substring(0, 1).toUpperCase() + tipo.substring(1).toLowerCase();
     }
 
 
 
     private void criarPainelHistorico() {
 
-        painelHistorico = new JPanel();
+        painelHistorico = new JPanel(new BorderLayout(0, 16));
         painelHistorico.setOpaque(false);
-        painelHistorico.setLayout(
-                new BoxLayout(painelHistorico, BoxLayout.Y_AXIS)
-        );
 
-        // Cabeçalho do histórico
-        JPanel topo = new JPanel(new BorderLayout());
+        JPanel topo = new JPanel();
         topo.setOpaque(false);
-        topo.setAlignmentX(Component.LEFT_ALIGNMENT);
-        topo.setMaximumSize(
-                new Dimension(Integer.MAX_VALUE, 45)
-        );
+        topo.setLayout(new BoxLayout(topo, BoxLayout.Y_AXIS));
 
-        JLabel titulo = new JLabel("Histórico de caixas");
-        titulo.setFont(
-                new Font("SansSerif", Font.BOLD, 20)
-        );
-        titulo.setForeground(
-                new Color(34, 102, 51)
-        );
-
-        btnVoltarCaixa = new JButton("← Voltar ao caixa atual");
-        btnVoltarCaixa.setFocusPainted(false);
+        // Cabeçalho do histórico: botão de voltar e título
+        btnVoltarCaixa = PadraoComponentes.criarBotaoSecundario(
+                "Voltar ao caixa atual", PadraoComponentes.iconeVoltar(PadraoComponentes.VERDE));
 
         btnVoltarCaixa.addActionListener(e -> {
             cardLayoutCaixa.show(
@@ -346,88 +417,42 @@ public class Caixa extends javax.swing.JPanel {
             carregarCaixaAberto();
         });
 
-        topo.add(titulo, BorderLayout.WEST);
-        topo.add(btnVoltarCaixa, BorderLayout.EAST);
+        JLabel titulo = criarTituloSecao("Histórico de caixas");
 
-        // ---------- FILTROS ----------
-        JPanel painelFiltros = new JPanel(
-                new FlowLayout(FlowLayout.LEFT, 10, 5)
-        );
-        painelFiltros.setOpaque(false);
-        painelFiltros.setAlignmentX(Component.LEFT_ALIGNMENT);
-        painelFiltros.setMaximumSize(
-                new Dimension(Integer.MAX_VALUE, 45)
-        );
+        JPanel linhaTitulo = criarLinhaVoltar(btnVoltarCaixa, titulo);
 
-        DatePickerSettings configInicio = new DatePickerSettings();
-        configInicio.setFormatForDatesCommonEra("dd/MM/yyyy");
+        // ---------- FILTRO DE DATAS ----------
+        filtroHistorico = new FiltroPeriodo(this::carregarHistorico);
 
-        DatePickerSettings configFim = new DatePickerSettings();
-        configFim.setFormatForDatesCommonEra("dd/MM/yyyy");
+        // filtro "De ... até ..." (datas em branco = todos os caixas)
+        JPanel linhaFiltro = new JPanel(new BorderLayout());
+        linhaFiltro.setOpaque(false);
+        linhaFiltro.setAlignmentX(Component.LEFT_ALIGNMENT);
+        linhaFiltro.add(filtroHistorico, BorderLayout.WEST);
 
-        dataInicioHistorico = new DatePicker(configInicio);
-        dataFimHistorico = new DatePicker(configFim);
+        // ---------- CARTÕES DO PERÍODO ----------
+        lblQtdCaixas = new JLabel("-");
+        lblFaturamentoPeriodo = new JLabel("-");
+        lblApoioFaturamentoPeriodo = new JLabel(" ");
+        lblMaiorFaturamento = new JLabel("-");
+        lblApoioMaiorFaturamento = new JLabel(" ");
+        lblSangriasPeriodo = new JLabel("-");
 
-        btnFiltrarHistorico = new JButton("Filtrar");
-        btnLimparFiltroHistorico = new JButton("Limpar");
+        JPanel cartoes = criarLinhaCartoes(
+                PadraoComponentes.criarCartaoKpi("Caixas no período", lblQtdCaixas, new JLabel(" "),
+                        PadraoComponentes.iconeCalendario(Color.WHITE)),
+                PadraoComponentes.criarCartaoKpi("Faturamento do período", lblFaturamentoPeriodo,
+                        lblApoioFaturamentoPeriodo, PadraoComponentes.iconeCifrao(Color.WHITE)),
+                PadraoComponentes.criarCartaoKpi("Maior faturamento", lblMaiorFaturamento,
+                        lblApoioMaiorFaturamento, PadraoComponentes.iconeTrofeu(Color.WHITE)),
+                PadraoComponentes.criarCartaoKpi("Sangrias do período", lblSangriasPeriodo, new JLabel(" "),
+                        PadraoComponentes.iconeSaida(Color.WHITE)));
 
-        btnFiltrarHistorico.setFocusPainted(false);
-        btnLimparFiltroHistorico.setFocusPainted(false);
-
-        painelFiltros.add(new JLabel("De:"));
-        painelFiltros.add(dataInicioHistorico);
-
-        painelFiltros.add(new JLabel("Até:"));
-        painelFiltros.add(dataFimHistorico);
-
-        painelFiltros.add(btnFiltrarHistorico);
-        painelFiltros.add(btnLimparFiltroHistorico);
-
-        JPanel painelDestaque = new JPanel(
-                new BorderLayout()
-        );
-
-        painelDestaque.setBackground(
-                new Color(224, 224, 224)
-        );
-
-        painelDestaque.setBorder(
-                BorderFactory.createEmptyBorder(
-                        10, 12, 10, 12
-                )
-        );
-
-        painelDestaque.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
-        painelDestaque.setMaximumSize(
-                new Dimension(Integer.MAX_VALUE, 55)
-        );
-
-        JLabel lblTituloMaior =
-                new JLabel("Maior faturamento do período");
-
-        lblTituloMaior.setFont(
-                new Font("SansSerif", Font.PLAIN, 12)
-        );
-
-        lblMaiorFaturamento =
-                new JLabel("Nenhum período selecionado");
-
-        lblMaiorFaturamento.setFont(
-                new Font("SansSerif", Font.BOLD, 15)
-        );
-
-        painelDestaque.add(
-                lblTituloMaior,
-                BorderLayout.WEST
-        );
-
-        painelDestaque.add(
-                lblMaiorFaturamento,
-                BorderLayout.EAST
-        );
+        topo.add(linhaTitulo);
+        topo.add(Box.createVerticalStrut(12));
+        topo.add(linhaFiltro);
+        topo.add(Box.createVerticalStrut(14));
+        topo.add(cartoes);
 
         // Tabela
         modeloTabelaHistorico = new DefaultTableModel(
@@ -455,40 +480,32 @@ public class Caixa extends javax.swing.JPanel {
         };
 
         tabelaHistorico = new JTable(modeloTabelaHistorico);
-        tabelaHistorico.setRowHeight(30);
+        tabelaHistorico.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        PadraoComponentes.estilizarTabela(tabelaHistorico);
+        PadraoComponentes.alinharColuna(tabelaHistorico, 0, SwingConstants.CENTER);
+        for (int coluna = 5; coluna <= 8; coluna++) {
+            PadraoComponentes.alinharColuna(tabelaHistorico, coluna, SwingConstants.RIGHT);
+        }
+        tabelaHistorico.getColumnModel().getColumn(9).setCellRenderer(new RendererStatus());
+        tabelaHistorico.getColumnModel().getColumn(0).setPreferredWidth(70);
+        tabelaHistorico.getColumnModel().getColumn(4).setPreferredWidth(150);
 
-        tabelaHistorico
-                .getTableHeader()
-                .setFont(
-                        new Font(
-                                "SansSerif",
-                                Font.BOLD,
-                                12
-                        )
-                );
-
-        JScrollPane scroll =
-                new JScrollPane(tabelaHistorico);
-
-        scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        btnVerDetalhes = new JButton("Ver detalhes");
-        btnVerDetalhes.setFont(
-                new Font("SansSerif", Font.BOLD, 12)
-        );
-        btnVerDetalhes.setFocusPainted(false);
+        // "Ver detalhes" no cabeçalho do cartão da tabela, ao lado do resumo
+        btnVerDetalhes = PadraoComponentes.criarBotaoPrimario(
+                "Ver detalhes", PadraoComponentes.iconeOlho(Color.WHITE));
         btnVerDetalhes.setEnabled(false);
-
+        btnVerDetalhes.setToolTipText("Selecione um caixa na tabela para ver os detalhes");
         btnVerDetalhes.addActionListener(e -> abrirDetalhesCaixaSelecionado());
 
-        JPanel painelAcoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        painelAcoes.setOpaque(false);
-        painelAcoes.setAlignmentX(Component.LEFT_ALIGNMENT);
-        painelAcoes.setMaximumSize(
-                new Dimension(Integer.MAX_VALUE, 40)
-        );
+        lblResumoHistorico = new JLabel(" ");
+        lblResumoHistorico.setFont(FONTE_INFO);
+        lblResumoHistorico.setForeground(PadraoComponentes.COR_TEXTO_SUAVE);
 
-        painelAcoes.add(btnVerDetalhes);
+        JPanel acoesTabela = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        acoesTabela.setOpaque(false);
+        acoesTabela.add(lblResumoHistorico);
+        acoesTabela.add(Box.createHorizontalStrut(16));
+        acoesTabela.add(btnVerDetalhes);
 
         tabelaHistorico.getSelectionModel().addListSelectionListener(e -> {
             btnVerDetalhes.setEnabled(
@@ -496,68 +513,12 @@ public class Caixa extends javax.swing.JPanel {
             );
         });
 
-        painelHistorico.add(topo);
-        painelHistorico.add(
-                Box.createRigidArea(new Dimension(0, 8))
-        );
-
-        painelHistorico.add(painelFiltros);
-        painelHistorico.add(
-                Box.createRigidArea(new Dimension(0, 8))
-        );
-
-        painelHistorico.add(painelDestaque);
-        painelHistorico.add(
-                Box.createRigidArea(new Dimension(0, 8))
-        );
-
-        painelHistorico.add(painelAcoes);
-        painelHistorico.add(
-                Box.createRigidArea(new Dimension(0, 8))
-        );
-
-        painelHistorico.add(scroll);
-        painelHistorico.add(
-                Box.createRigidArea(new Dimension(0, 10))
-        );
-
-        painelHistorico.add(scroll);
-
-        btnFiltrarHistorico.addActionListener(e -> {
-
-            LocalDate inicio =
-                    dataInicioHistorico.getDate();
-
-            LocalDate fim =
-                    dataFimHistorico.getDate();
-
-            if (inicio != null
-                    && fim != null
-                    && inicio.isAfter(fim)) {
-
-                JOptionPane.showMessageDialog(
-                        this,
-                        "A data inicial não pode ser posterior à data final.",
-                        "Período inválido",
-                        JOptionPane.WARNING_MESSAGE
-                );
-
-                return;
-            }
-
-            carregarHistorico(inicio, fim);
-        });
-        btnLimparFiltroHistorico.addActionListener(e -> {
-
-            dataInicioHistorico.clear();
-            dataFimHistorico.clear();
-
-            carregarHistorico(null, null);
-        });
+        painelHistorico.add(topo, BorderLayout.NORTH);
+        painelHistorico.add(PadraoComponentes.criarCartaoTabela("Caixas", tabelaHistorico, acoesTabela),
+                BorderLayout.CENTER);
     }
 
-    private void carregarHistorico(LocalDate inicio,
-                                   LocalDate fim) {
+    private void carregarHistorico() {
 
 
         try {
@@ -572,6 +533,10 @@ public class Caixa extends javax.swing.JPanel {
             br.com.trevizan.espetinhos.model.Caixa
                     caixaMaiorFaturamento = null;
 
+            BigDecimal totalVendasPeriodo = BigDecimal.ZERO;
+            BigDecimal totalSangriasPeriodo = BigDecimal.ZERO;
+            int quantidadeCaixas = 0;
+
             java.time.format.DateTimeFormatter formatoData =
                     java.time.format.DateTimeFormatter.ofPattern(
                             "dd/MM/yyyy"
@@ -584,20 +549,12 @@ public class Caixa extends javax.swing.JPanel {
 
             for (br.com.trevizan.espetinhos.model.Caixa caixa : caixas) {
 
-                LocalDate dataCaixa =
-                        caixa.getDataHoraAbertura() != null
-                                ? caixa.getDataHoraAbertura().toLocalDate()
-                                : null;
-
-                if (dataCaixa == null) {
+                if (caixa.getDataHoraAbertura() == null) {
                     continue;
                 }
 
-                if (inicio != null && dataCaixa.isBefore(inicio)) {
-                    continue;
-                }
-
-                if (fim != null && dataCaixa.isAfter(fim)) {
+                // filtra pelo período escolhido (o caixa conta pela data de abertura)
+                if (!filtroHistorico.contem(caixa.getDataHoraAbertura())) {
                     continue;
                 }
 
@@ -618,17 +575,17 @@ public class Caixa extends javax.swing.JPanel {
                                 caixa.getIdCaixa()
                         );
 
+                quantidadeCaixas++;
+                totalVendasPeriodo = totalVendasPeriodo.add(vendas);
+                totalSangriasPeriodo = totalSangriasPeriodo.add(sangrias);
+
                 String data =
-                        caixa.getDataHoraAbertura() != null
-                                ? caixa.getDataHoraAbertura()
-                                .format(formatoData)
-                                : "-";
+                        caixa.getDataHoraAbertura()
+                                .format(formatoData);
 
                 String abertura =
-                        caixa.getDataHoraAbertura() != null
-                                ? caixa.getDataHoraAbertura()
-                                .format(formatoHora)
-                                : "-";
+                        caixa.getDataHoraAbertura()
+                                .format(formatoHora);
 
                 String fechamento =
                         caixa.getDataHoraFechamento() != null
@@ -662,6 +619,15 @@ public class Caixa extends javax.swing.JPanel {
                 );
             }
 
+            lblQtdCaixas.setText(String.valueOf(quantidadeCaixas));
+            lblFaturamentoPeriodo.setText(formatarMoeda(totalVendasPeriodo));
+            lblApoioFaturamentoPeriodo.setText(quantidadeCaixas > 0
+                    ? "Média por caixa: " + formatarMoeda(totalVendasPeriodo.divide(
+                            BigDecimal.valueOf(quantidadeCaixas), 2, java.math.RoundingMode.HALF_UP))
+                    : " ");
+            lblSangriasPeriodo.setText(formatarMoeda(totalSangriasPeriodo));
+            lblResumoHistorico.setText(quantidadeCaixas + (quantidadeCaixas == 1 ? " caixa" : " caixas"));
+
             if (caixaMaiorFaturamento != null) {
 
                 String dataMaior =
@@ -672,21 +638,23 @@ public class Caixa extends javax.swing.JPanel {
                                                 .ofPattern("dd/MM/yyyy")
                                 );
 
-                lblMaiorFaturamento.setText(
+                lblMaiorFaturamento.setText(formatarMoeda(maiorFaturamento));
+                lblApoioMaiorFaturamento.setText(
                         "Caixa #"
                                 + caixaMaiorFaturamento.getIdCaixa()
                                 + " • "
                                 + dataMaior
-                                + " • "
-                                + formatarMoeda(maiorFaturamento)
                 );
 
             } else {
 
-                lblMaiorFaturamento.setText(
-                        "Nenhum caixa encontrado"
+                lblMaiorFaturamento.setText("-");
+                lblApoioMaiorFaturamento.setText(
+                        "Nenhum caixa no período"
                 );
             }
+
+            btnVerDetalhes.setEnabled(false);
 
         } catch (RuntimeException e) {
 
@@ -703,34 +671,12 @@ public class Caixa extends javax.swing.JPanel {
 
     private void mostrarHistorico() {
 
-        carregarHistorico(null, null);
+        carregarHistorico();
 
         cardLayoutCaixa.show(
                 painelCentral,
                 "HISTORICO"
         );
-    }
-
-    private JPanel criarCard(String titulo, JLabel lblValor) {
-        JPanel card = new JPanel();
-        card.setBackground(new Color(224, 224, 224));
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-
-        JLabel lblTitulo = new JLabel(titulo);
-        lblTitulo.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        lblTitulo.setForeground(new Color(80, 80, 80));
-        lblTitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        lblValor.setFont(new Font("SansSerif", Font.BOLD, 16));
-        lblValor.setForeground(new Color(40, 40, 40));
-        lblValor.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        card.add(lblTitulo);
-        card.add(Box.createRigidArea(new Dimension(0, 6)));
-        card.add(lblValor);
-
-        return card;
     }
 
     /**
@@ -751,14 +697,22 @@ public class Caixa extends javax.swing.JPanel {
                         "Caixa #" + caixaAtual.getIdCaixa()
                 );
 
-                lblDataCaixa.setText(
-                        caixaAtual.getDataHoraAbertura().format(formatoData)
-                                + "  •  Aberto às "
-                                + caixaAtual.getDataHoraAbertura().format(formatoHora)
+                String operador = caixaAtual.getUsuarioAbertura() != null
+                        && caixaAtual.getUsuarioAbertura().getNome() != null
+                        ? SEPARADOR_INFO + "Operador: " + negrito(caixaAtual.getUsuarioAbertura().getNome())
+                        : "";
+
+                // valores em negrito
+                lblDataCaixa.setText("<html>"
+                        + negrito(caixaAtual.getDataHoraAbertura().format(formatoData))
+                        + SEPARADOR_INFO + "Aberto às "
+                        + negrito(caixaAtual.getDataHoraAbertura().format(formatoHora))
+                        + operador + "</html>"
                 );
                 lblValorInicial.setText(
                         formatarMoeda(caixaAtual.getValorInicial())
                 );
+                lblApoioValorInicial.setText("Troco na abertura");
 
                 BigDecimal totalVendas = caixaDAO.calcularTotalVendas(caixaAtual.getIdCaixa());
                 lblTotalVendas.setText(
@@ -769,7 +723,14 @@ public class Caixa extends javax.swing.JPanel {
                 lblSangrias.setText(
                         formatarMoeda(sangrias)
                 );
+                lblApoioSangrias.setText("Retiradas do caixa");
+
+                BigDecimal saldo = caixaAtual.getValorInicial() != null
+                        ? caixaAtual.getValorInicial().add(totalVendas).subtract(sangrias)
+                        : totalVendas.subtract(sangrias);
+
                 lblStatus.setText("Aberto");
+                lblApoioStatus.setText("Saldo atual: " + formatarMoeda(saldo));
 
                 btnAbrirCaixa.setEnabled(false);
                 btnAbrirCaixa.setText("Caixa já aberto");
@@ -785,6 +746,10 @@ public class Caixa extends javax.swing.JPanel {
                 lblTotalVendas.setText("-");
                 lblSangrias.setText("R$ -");
                 lblStatus.setText("Pendente abertura");
+                lblApoioValorInicial.setText(" ");
+                lblApoioVendas.setText(" ");
+                lblApoioSangrias.setText(" ");
+                lblApoioStatus.setText("Abra o caixa para começar");
 
                 btnAbrirCaixa.setEnabled(true);
                 btnAbrirCaixa.setText("Abrir caixa");
@@ -816,22 +781,15 @@ public class Caixa extends javax.swing.JPanel {
             List<CaixaDAO.ComandaResumo> comandas = caixaDAO.listarComandasDoCaixa(idCaixa);
 
             for (CaixaDAO.ComandaResumo c : comandas) {
-
-                String atendimento;
-
-                if ("MESA".equalsIgnoreCase(c.tipoAtendimento)) {
-                    atendimento = "Mesa " + c.numeroMesa;
-                } else {
-                    atendimento = c.tipoAtendimento;
-                }
-
                 modeloTabelaComandas.addRow(new Object[]{
-                        atendimento,
+                        descreverAtendimento(c),
                         c.nomeCliente,
                         c.status,
-                        "R$ " + c.valorTotal
+                        formatarMoeda(c.valorTotal)
                 });
             }
+
+            lblApoioVendas.setText(comandas.size() + (comandas.size() == 1 ? " comanda" : " comandas"));
 
         } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(
@@ -860,28 +818,15 @@ public class Caixa extends javax.swing.JPanel {
             return;
         }
 
-        String valorDigitado = JOptionPane.showInputDialog(
+        BigDecimal valorInicial = CampoMoeda.pedirValor(
                 this,
-                "Informe o valor inicial do caixa (ex: 100.00):",
+                "Informe o valor inicial do caixa (troco):",
                 "Abrir caixa",
-                JOptionPane.QUESTION_MESSAGE
+                BigDecimal.ZERO
         );
 
-        if (valorDigitado == null || valorDigitado.isBlank()) {
+        if (valorInicial == null) {
             return; // usuário cancelou
-        }
-
-        BigDecimal valorInicial;
-        try {
-            valorInicial = new BigDecimal(valorDigitado.trim().replace(",", "."));
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Valor inválido. Use apenas números (ex: 100.00).",
-                    "Erro",
-                    JOptionPane.WARNING_MESSAGE
-            );
-            return;
         }
 
         try {
@@ -927,8 +872,10 @@ public class Caixa extends javax.swing.JPanel {
             return;
         }
 
-        JTextField campoValor = new JTextField();
+        CampoMoeda campoValor = new CampoMoeda();
         JTextField campoMotivo = new JTextField();
+        PadraoComponentes.aplicarEstiloCampo(campoMotivo);
+        CampoMoeda.focarAoAbrir(campoValor);
 
         JPanel painel = new JPanel(
                 new GridLayout(0, 1, 5, 5)
@@ -953,13 +900,10 @@ public class Caixa extends javax.swing.JPanel {
             return;
         }
 
-        String valorTexto =
-                campoValor.getText().trim();
-
         String motivo =
                 campoMotivo.getText().trim();
 
-        if (valorTexto.isEmpty()) {
+        if (!campoValor.temValor()) {
 
             JOptionPane.showMessageDialog(
                     this,
@@ -983,25 +927,7 @@ public class Caixa extends javax.swing.JPanel {
             return;
         }
 
-        BigDecimal valor;
-
-        try {
-
-            valor = new BigDecimal(
-                    valorTexto.replace(",", ".")
-            );
-
-        } catch (NumberFormatException e) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Informe um valor válido.",
-                    "Sangria",
-                    JOptionPane.WARNING_MESSAGE
-            );
-
-            return;
-        }
+        BigDecimal valor = campoValor.getValor();
 
         if (valor.compareTo(BigDecimal.ZERO) <= 0) {
 
@@ -1017,8 +943,7 @@ public class Caixa extends javax.swing.JPanel {
 
         try {
 
-
-
+            // a sangria não pode passar do dinheiro que deveria estar na gaveta
             java.util.Map<String, BigDecimal> totaisPorForma =
                     pagamentoDAO.listarTotaisPorFormaDoCaixa(
                             caixaAtual.getIdCaixa()
@@ -1029,7 +954,6 @@ public class Caixa extends javax.swing.JPanel {
                             "DINHEIRO",
                             BigDecimal.ZERO
                     );
-
 
             BigDecimal totalSangrias =
                     caixaDAO.calcularSangrias(caixaAtual.getIdCaixa());
@@ -1054,7 +978,6 @@ public class Caixa extends javax.swing.JPanel {
 
                 return;
             }
-
 
             movimentacaoCaixaDAO.registrarSaida(
                     caixaAtual.getIdCaixa(),
@@ -1091,32 +1014,18 @@ public class Caixa extends javax.swing.JPanel {
 
     private void criarPainelDetalhes() {
 
-        painelDetalhes = new JPanel();
+        painelDetalhes = new JPanel(new BorderLayout(0, 16));
         painelDetalhes.setOpaque(false);
-        painelDetalhes.setLayout(
-                new BoxLayout(painelDetalhes, BoxLayout.Y_AXIS)
-        );
+
+        JPanel topo = new JPanel();
+        topo.setOpaque(false);
+        topo.setLayout(new BoxLayout(topo, BoxLayout.Y_AXIS));
 
         // ---------- TOPO ----------
-        JPanel topo = new JPanel(new BorderLayout());
-        topo.setOpaque(false);
-        topo.setAlignmentX(Component.LEFT_ALIGNMENT);
-        topo.setMaximumSize(
-                new Dimension(Integer.MAX_VALUE, 45)
-        );
+        lblDetalheTitulo = criarTituloSecao("Detalhes do caixa");
 
-        lblDetalheTitulo = new JLabel("Detalhes do caixa");
-        lblDetalheTitulo.setFont(
-                new Font("SansSerif", Font.BOLD, 20)
-        );
-        lblDetalheTitulo.setForeground(
-                new Color(34, 102, 51)
-        );
-
-        btnVoltarHistorico =
-                new JButton("← Voltar ao histórico");
-
-        btnVoltarHistorico.setFocusPainted(false);
+        btnVoltarHistorico = PadraoComponentes.criarBotaoSecundario(
+                "Voltar ao histórico", PadraoComponentes.iconeVoltar(PadraoComponentes.VERDE));
 
         btnVoltarHistorico.addActionListener(e ->
                 cardLayoutCaixa.show(
@@ -1125,115 +1034,41 @@ public class Caixa extends javax.swing.JPanel {
                 )
         );
 
-        topo.add(lblDetalheTitulo, BorderLayout.WEST);
-        topo.add(btnVoltarHistorico, BorderLayout.EAST);
+        JPanel linhaTitulo = criarLinhaVoltar(btnVoltarHistorico, lblDetalheTitulo);
 
         // ---------- INFORMAÇÕES ----------
-        lblDetalhePeriodo = new JLabel("-");
-        lblDetalhePeriodo.setFont(
-                new Font("SansSerif", Font.PLAIN, 13)
-        );
+        lblDetalhePeriodo = criarInfo("-");
+        lblDetalheOperador = criarInfo("-");
 
-        lblDetalheOperador = new JLabel("-");
-        lblDetalheOperador.setFont(
-                new Font("SansSerif", Font.PLAIN, 13)
-        );
-
-        // ---------- CARDS ----------
-        JPanel cards = new JPanel(
-                new GridLayout(1, 4, 15, 0)
-        );
-
-        cards.setOpaque(false);
-        cards.setAlignmentX(Component.LEFT_ALIGNMENT);
-        cards.setMaximumSize(
-                new Dimension(Integer.MAX_VALUE, 90)
-        );
-
+        // ---------- CARTÕES ----------
         lblDetalheInicial = new JLabel("-");
         lblDetalheVendas = new JLabel("-");
         lblDetalheSangrias = new JLabel("-");
         lblDetalheFinal = new JLabel("-");
         lblTituloDetalheFinal = new JLabel("Valor final");
+        lblApoioDetalheVendas = new JLabel(" ");
+        lblApoioDetalheSangrias = new JLabel(" ");
+        lblApoioDetalheFinal = new JLabel(" ");
 
-        cards.add(
-                criarCard(
-                        "Valor inicial",
-                        lblDetalheInicial
-                )
-        );
+        JPanel cards = criarLinhaCartoes(
+                PadraoComponentes.criarCartaoKpi("Valor inicial", lblDetalheInicial, new JLabel("Troco na abertura"),
+                        PadraoComponentes.iconeCarteira(Color.WHITE)),
+                PadraoComponentes.criarCartaoKpi("Total de vendas", lblDetalheVendas, lblApoioDetalheVendas,
+                        PadraoComponentes.iconeSacola(Color.WHITE)),
+                PadraoComponentes.criarCartaoKpi("Sangrias", lblDetalheSangrias, lblApoioDetalheSangrias,
+                        PadraoComponentes.iconeSaida(Color.WHITE)),
+                PadraoComponentes.criarCartaoKpi(lblTituloDetalheFinal, lblDetalheFinal, lblApoioDetalheFinal,
+                        PadraoComponentes.iconeCifrao(Color.WHITE)));
 
-        cards.add(
-                criarCard(
-                        "Total de vendas",
-                        lblDetalheVendas
-                )
-        );
-
-        cards.add(
-                criarCard(
-                        "Sangrias",
-                        lblDetalheSangrias
-                )
-        );
-
-        JPanel cardFinal = new JPanel();
-        cardFinal.setLayout(
-                new BoxLayout(cardFinal, BoxLayout.Y_AXIS)
-        );
-
-        cardFinal.setBackground(
-                new Color(224, 224, 224)
-        );
-
-        cardFinal.setBorder(
-                BorderFactory.createEmptyBorder(
-                        15, 15, 15, 15
-                )
-        );
-
-        lblTituloDetalheFinal.setFont(
-                new Font("SansSerif", Font.PLAIN, 12)
-        );
-
-        lblDetalheFinal.setFont(
-                new Font("SansSerif", Font.BOLD, 18)
-        );
-
-        lblTituloDetalheFinal.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
-        lblDetalheFinal.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
-        cardFinal.add(lblTituloDetalheFinal);
-        cardFinal.add(
-                Box.createRigidArea(
-                        new Dimension(0, 8)
-                )
-        );
-        cardFinal.add(lblDetalheFinal);
-
-        cards.add(cardFinal);
+        topo.add(linhaTitulo);
+        topo.add(Box.createVerticalStrut(4));
+        topo.add(lblDetalhePeriodo);
+        topo.add(Box.createVerticalStrut(2));
+        topo.add(lblDetalheOperador);
+        topo.add(Box.createVerticalStrut(16));
+        topo.add(cards);
 
         // ---------- PAGAMENTOS ----------
-        JLabel tituloPagamentos =
-                new JLabel("Formas de pagamento");
-
-        tituloPagamentos.setFont(
-                new Font("SansSerif", Font.BOLD, 14)
-        );
-
-        tituloPagamentos.setForeground(
-                new Color(34, 102, 51)
-        );
-
-        tituloPagamentos.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
         modeloTabelaPagamentos =
                 new DefaultTableModel(
                         new Object[]{
@@ -1254,39 +1089,10 @@ public class Caixa extends javax.swing.JPanel {
 
         tabelaPagamentos =
                 new JTable(modeloTabelaPagamentos);
-
-        tabelaPagamentos.setRowHeight(27);
-
-        JScrollPane scrollPagamentos =
-                new JScrollPane(tabelaPagamentos);
-
-        scrollPagamentos.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
-        scrollPagamentos.setMaximumSize(
-                new Dimension(
-                        Integer.MAX_VALUE,
-                        130
-                )
-        );
+        PadraoComponentes.estilizarTabela(tabelaPagamentos);
+        PadraoComponentes.alinharColuna(tabelaPagamentos, 1, SwingConstants.RIGHT);
 
         // ---------- MOVIMENTAÇÕES ----------
-        JLabel tituloMovimentacoes =
-                new JLabel("Movimentações do caixa");
-
-        tituloMovimentacoes.setFont(
-                new Font("SansSerif", Font.BOLD, 14)
-        );
-
-        tituloMovimentacoes.setForeground(
-                new Color(34, 102, 51)
-        );
-
-        tituloMovimentacoes.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
         modeloTabelaMovimentacoes =
                 new DefaultTableModel(
                         new Object[]{
@@ -1309,43 +1115,18 @@ public class Caixa extends javax.swing.JPanel {
 
         tabelaMovimentacoes =
                 new JTable(modeloTabelaMovimentacoes);
-
-        tabelaMovimentacoes.setRowHeight(27);
-
-        JScrollPane scrollMovimentacoes =
-                new JScrollPane(tabelaMovimentacoes);
-
-        scrollMovimentacoes.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
-        scrollMovimentacoes.setMaximumSize(
-                new Dimension(
-                        Integer.MAX_VALUE,
-                        150
-                )
-        );
+        PadraoComponentes.estilizarTabela(tabelaMovimentacoes);
+        tabelaMovimentacoes.getColumnModel().getColumn(1).setCellRenderer(new RendererTipoMovimentacao());
+        PadraoComponentes.alinharColuna(tabelaMovimentacoes, 3, SwingConstants.RIGHT);
+        tabelaMovimentacoes.getColumnModel().getColumn(0).setPreferredWidth(80);
+        tabelaMovimentacoes.getColumnModel().getColumn(1).setPreferredWidth(90);
+        tabelaMovimentacoes.getColumnModel().getColumn(2).setPreferredWidth(260);
 
         // ---------- COMANDAS ----------
-        JLabel tituloComandas =
-                new JLabel("Comandas deste caixa");
-
-        tituloComandas.setFont(
-                new Font("SansSerif", Font.BOLD, 14)
-        );
-
-        tituloComandas.setForeground(
-                new Color(34, 102, 51)
-        );
-
-        tituloComandas.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
-
         modeloTabelaComandasDetalhes =
                 new DefaultTableModel(
                         new Object[]{
-                                "Mesa",
+                                "Atendimento",
                                 "Cliente",
                                 "Status",
                                 "Valor"
@@ -1364,83 +1145,43 @@ public class Caixa extends javax.swing.JPanel {
 
         tabelaComandasDetalhes =
                 new JTable(modeloTabelaComandasDetalhes);
-
-        tabelaComandasDetalhes.setRowHeight(27);
-
-        JScrollPane scrollComandas =
-                new JScrollPane(tabelaComandasDetalhes);
-
-        scrollComandas.setAlignmentX(
-                Component.LEFT_ALIGNMENT
-        );
+        estilizarTabelaComandas(tabelaComandasDetalhes);
 
         // ---------- MONTAGEM ----------
-        painelDetalhes.add(topo);
+        // Linha de cima: pagamentos (mais estreito) + movimentações; embaixo: comandas
+        JPanel tabelas = new JPanel(new GridBagLayout());
+        tabelas.setOpaque(false);
 
-        painelDetalhes.add(
-                Box.createRigidArea(
-                        new Dimension(0, 8)
-                )
-        );
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 1;
 
-        painelDetalhes.add(lblDetalhePeriodo);
-        painelDetalhes.add(lblDetalheOperador);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.4;
+        gbc.insets = new Insets(0, 0, 18, 9);
+        tabelas.add(PadraoComponentes.criarCartaoTabela("Formas de pagamento", tabelaPagamentos, null), gbc);
 
-        painelDetalhes.add(
-                Box.createRigidArea(
-                        new Dimension(0, 15)
-                )
-        );
+        gbc.gridx = 1;
+        gbc.weightx = 0.6;
+        gbc.insets = new Insets(0, 9, 18, 0);
+        tabelas.add(PadraoComponentes.criarCartaoTabela("Movimentações do caixa", tabelaMovimentacoes, null), gbc);
 
-        painelDetalhes.add(cards);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        tabelas.add(PadraoComponentes.criarCartaoTabela("Comandas deste caixa", tabelaComandasDetalhes, null), gbc);
 
-        painelDetalhes.add(
-                Box.createRigidArea(
-                        new Dimension(0, 15)
-                )
-        );
+        // cada cartão começa do mesmo tamanho; a altura é dividida igualmente
+        for (Component cartao : tabelas.getComponents()) {
+            cartao.setPreferredSize(new Dimension(100, 180));
+            cartao.setMinimumSize(new Dimension(100, 150));
+        }
 
-        painelDetalhes.add(tituloPagamentos);
-
-        painelDetalhes.add(
-                Box.createRigidArea(
-                        new Dimension(0, 5)
-                )
-        );
-
-        painelDetalhes.add(scrollPagamentos);
-
-        painelDetalhes.add(
-                Box.createRigidArea(
-                        new Dimension(0, 15)
-                )
-        );
-
-        painelDetalhes.add(tituloMovimentacoes);
-
-        painelDetalhes.add(
-                Box.createRigidArea(
-                        new Dimension(0, 5)
-                )
-        );
-
-        painelDetalhes.add(scrollMovimentacoes);
-
-        painelDetalhes.add(
-                Box.createRigidArea(
-                        new Dimension(0, 15)
-                )
-        );
-
-        painelDetalhes.add(tituloComandas);
-
-        painelDetalhes.add(
-                Box.createRigidArea(
-                        new Dimension(0, 5)
-                )
-        );
-
-        painelDetalhes.add(scrollComandas);
+        painelDetalhes.add(topo, BorderLayout.NORTH);
+        painelDetalhes.add(tabelas, BorderLayout.CENTER);
     }
 
     private void abrirDetalhesCaixaSelecionado() {
@@ -1459,7 +1200,7 @@ public class Caixa extends javax.swing.JPanel {
 
         String textoId =
                 modeloTabelaHistorico
-                        .getValueAt(linha, 0)
+                        .getValueAt(tabelaHistorico.convertRowIndexToModel(linha), 0)
                         .toString();
 
         int idCaixa;
@@ -1528,27 +1269,27 @@ public class Caixa extends javax.swing.JPanel {
             );
 
             String periodo =
-                    caixaSelecionado
+                    negrito(caixaSelecionado
                             .getDataHoraAbertura()
-                            .format(data)
-                            + " • "
-                            + caixaSelecionado
+                            .format(data))
+                            + SEPARADOR_INFO + "Aberto às "
+                            + negrito(caixaSelecionado
                             .getDataHoraAbertura()
-                            .format(hora);
+                            .format(hora));
 
             if (caixaSelecionado.getDataHoraFechamento() != null) {
 
-                periodo += " às "
-                        + caixaSelecionado
+                periodo += SEPARADOR_INFO + "Fechado às "
+                        + negrito(caixaSelecionado
                         .getDataHoraFechamento()
-                        .format(hora);
+                        .format(hora));
 
             } else {
 
-                periodo += " • Em andamento";
+                periodo += SEPARADOR_INFO + negrito("Em andamento");
             }
 
-            lblDetalhePeriodo.setText(periodo);
+            lblDetalhePeriodo.setText("<html>" + periodo + "</html>");
 
             String operador =
                     caixaSelecionado.getUsuarioAbertura() != null
@@ -1558,7 +1299,13 @@ public class Caixa extends javax.swing.JPanel {
                             : "-";
 
             lblDetalheOperador.setText(
-                    "Operador: " + operador
+                    "<html>Operador: " + negrito(operador) + "</html>"
+            );
+
+            lblApoioDetalheFinal.setText(
+                    caixaSelecionado.getDataHoraFechamento() != null
+                            ? "Fechado às " + caixaSelecionado.getDataHoraFechamento().format(hora)
+                            : "Caixa em andamento"
             );
 
             BigDecimal vendas =
@@ -1620,7 +1367,7 @@ public class Caixa extends javax.swing.JPanel {
 
                 modeloTabelaPagamentos.addRow(
                         new Object[]{
-                                entrada.getKey(),
+                                nomeFormaPagamento(entrada.getKey()),
                                 formatarMoeda(entrada.getValue())
                         }
                 );
@@ -1637,8 +1384,14 @@ public class Caixa extends javax.swing.JPanel {
                     java.time.format.DateTimeFormatter
                             .ofPattern("HH:mm");
 
+            int quantidadeSaidas = 0;
+
             for (MovimentacaoCaixaDAO.MovimentacaoResumo movimentacao
                     : movimentacoes) {
+
+                if (!"ENTRADA".equalsIgnoreCase(movimentacao.tipo)) {
+                    quantidadeSaidas++;
+                }
 
                 String tipoExibicao =
                         "ENTRADA".equalsIgnoreCase(movimentacao.tipo)
@@ -1655,6 +1408,11 @@ public class Caixa extends javax.swing.JPanel {
                 );
             }
 
+            lblApoioDetalheSangrias.setText(
+                    quantidadeSaidas == 0 ? "Nenhuma retirada"
+                            : quantidadeSaidas + (quantidadeSaidas == 1 ? " retirada" : " retiradas")
+            );
+
             // Comandas
             modeloTabelaComandasDetalhes.setRowCount(0);
 
@@ -1663,19 +1421,15 @@ public class Caixa extends javax.swing.JPanel {
                             idCaixa
                     );
 
+            lblApoioDetalheVendas.setText(
+                    comandas.size() + (comandas.size() == 1 ? " comanda" : " comandas")
+            );
+
             for (CaixaDAO.ComandaResumo comanda : comandas) {
-
-                String atendimento;
-
-                if ("MESA".equalsIgnoreCase(comanda.tipoAtendimento)) {
-                    atendimento = "Mesa " + comanda.numeroMesa;
-                } else {
-                    atendimento = comanda.tipoAtendimento;
-                }
 
                 modeloTabelaComandasDetalhes.addRow(
                         new Object[]{
-                                atendimento,
+                                descreverAtendimento(comanda),
                                 comanda.nomeCliente,
                                 comanda.status,
                                 formatarMoeda(comanda.valorTotal)
@@ -1767,7 +1521,6 @@ public class Caixa extends javax.swing.JPanel {
             }
         }
 
-
         try {
             int idCaixa = caixaAtual.getIdCaixa();
 
@@ -1794,7 +1547,7 @@ public class Caixa extends javax.swing.JPanel {
                             .add(totalDinheiro)
                             .subtract(sangrias);
 
-            String entrada = JOptionPane.showInputDialog(
+            BigDecimal valorContado = CampoMoeda.pedirValor(
                     this,
                     "CONFERÊNCIA DO CAIXA\n\n"
                             + "Valor inicial: "
@@ -1807,32 +1560,14 @@ public class Caixa extends javax.swing.JPanel {
                             + formatarMoeda(sangrias)
                             + "\n\nSaldo esperado na gaveta: "
                             + formatarMoeda(valorEsperado)
-                            + "\n\nInforme o dinheiro contado (R$):",
+                            + "\n\nInforme o dinheiro contado na gaveta:",
                     "Conferência de fechamento",
-                    JOptionPane.QUESTION_MESSAGE
+                    BigDecimal.ZERO
             );
 
-            if (entrada == null) {
+            if (valorContado == null) {
                 return;
             }
-
-            String textoValor = entrada.trim();
-
-            if (!textoValor.matches(
-                    "(?:\\d+(?:,\\d{1,2})?|\\d{1,3}(?:\\.\\d{3})+(?:,\\d{1,2})?)"
-            )) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Informe um valor válido. Exemplo: 150,00",
-                        "Valor inválido",
-                        JOptionPane.WARNING_MESSAGE
-                );
-                return;
-            }
-
-            BigDecimal valorContado = new BigDecimal(
-                    textoValor.replace(".", "").replace(",", ".")
-            );
 
             BigDecimal diferenca =
                     valorContado.subtract(valorEsperado);
@@ -1897,7 +1632,7 @@ public class Caixa extends javax.swing.JPanel {
         }
     }
 
-
+    /** Mostra a soma dos valores finais de todos os caixas já fechados. */
     private void mostrarResumoFinanceiro() {
         try {
             BigDecimal totalValoresFinais =
@@ -1922,6 +1657,4 @@ public class Caixa extends javax.swing.JPanel {
             );
         }
     }
-
-
-}
+}

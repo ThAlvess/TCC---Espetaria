@@ -2,6 +2,7 @@ package br.com.trevizan.espetinhos.view;
 
 import br.com.trevizan.espetinhos.dao.CaixaDAO;
 import br.com.trevizan.espetinhos.model.Usuario;
+import br.com.trevizan.espetinhos.util.CampoMoeda;
 import br.com.trevizan.espetinhos.util.FiltroPeriodo;
 import br.com.trevizan.espetinhos.util.PadraoComponentes;
 import br.com.trevizan.espetinhos.util.PadraoTela;
@@ -817,28 +818,15 @@ public class Caixa extends javax.swing.JPanel {
             return;
         }
 
-        String valorDigitado = JOptionPane.showInputDialog(
+        BigDecimal valorInicial = CampoMoeda.pedirValor(
                 this,
-                "Informe o valor inicial do caixa (ex: 100.00):",
+                "Informe o valor inicial do caixa (troco):",
                 "Abrir caixa",
-                JOptionPane.QUESTION_MESSAGE
+                BigDecimal.ZERO
         );
 
-        if (valorDigitado == null || valorDigitado.isBlank()) {
+        if (valorInicial == null) {
             return; // usuário cancelou
-        }
-
-        BigDecimal valorInicial;
-        try {
-            valorInicial = new BigDecimal(valorDigitado.trim().replace(",", "."));
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Valor inválido. Use apenas números (ex: 100.00).",
-                    "Erro",
-                    JOptionPane.WARNING_MESSAGE
-            );
-            return;
         }
 
         try {
@@ -884,8 +872,10 @@ public class Caixa extends javax.swing.JPanel {
             return;
         }
 
-        JTextField campoValor = new JTextField();
+        CampoMoeda campoValor = new CampoMoeda();
         JTextField campoMotivo = new JTextField();
+        PadraoComponentes.aplicarEstiloCampo(campoMotivo);
+        CampoMoeda.focarAoAbrir(campoValor);
 
         JPanel painel = new JPanel(
                 new GridLayout(0, 1, 5, 5)
@@ -910,13 +900,10 @@ public class Caixa extends javax.swing.JPanel {
             return;
         }
 
-        String valorTexto =
-                campoValor.getText().trim();
-
         String motivo =
                 campoMotivo.getText().trim();
 
-        if (valorTexto.isEmpty()) {
+        if (!campoValor.temValor()) {
 
             JOptionPane.showMessageDialog(
                     this,
@@ -940,25 +927,7 @@ public class Caixa extends javax.swing.JPanel {
             return;
         }
 
-        BigDecimal valor;
-
-        try {
-
-            valor = new BigDecimal(
-                    valorTexto.replace(",", ".")
-            );
-
-        } catch (NumberFormatException e) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Informe um valor válido.",
-                    "Sangria",
-                    JOptionPane.WARNING_MESSAGE
-            );
-
-            return;
-        }
+        BigDecimal valor = campoValor.getValor();
 
         if (valor.compareTo(BigDecimal.ZERO) <= 0) {
 
@@ -1578,7 +1547,7 @@ public class Caixa extends javax.swing.JPanel {
                             .add(totalDinheiro)
                             .subtract(sangrias);
 
-            String entrada = JOptionPane.showInputDialog(
+            BigDecimal valorContado = CampoMoeda.pedirValor(
                     this,
                     "CONFERÊNCIA DO CAIXA\n\n"
                             + "Valor inicial: "
@@ -1591,32 +1560,14 @@ public class Caixa extends javax.swing.JPanel {
                             + formatarMoeda(sangrias)
                             + "\n\nSaldo esperado na gaveta: "
                             + formatarMoeda(valorEsperado)
-                            + "\n\nInforme o dinheiro contado (R$):",
+                            + "\n\nInforme o dinheiro contado na gaveta:",
                     "Conferência de fechamento",
-                    JOptionPane.QUESTION_MESSAGE
+                    BigDecimal.ZERO
             );
 
-            if (entrada == null) {
+            if (valorContado == null) {
                 return;
             }
-
-            String textoValor = entrada.trim();
-
-            if (!textoValor.matches(
-                    "(?:\\d+(?:,\\d{1,2})?|\\d{1,3}(?:\\.\\d{3})+(?:,\\d{1,2})?)"
-            )) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Informe um valor válido. Exemplo: 150,00",
-                        "Valor inválido",
-                        JOptionPane.WARNING_MESSAGE
-                );
-                return;
-            }
-
-            BigDecimal valorContado = new BigDecimal(
-                    textoValor.replace(".", "").replace(",", ".")
-            );
 
             BigDecimal diferenca =
                     valorContado.subtract(valorEsperado);

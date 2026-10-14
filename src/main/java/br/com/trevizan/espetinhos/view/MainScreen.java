@@ -432,36 +432,20 @@ public class MainScreen extends javax.swing.JPanel {
 
         while (true) {
 
-            String valorInformado = javax.swing.JOptionPane.showInputDialog(
-                    this,
-                    "Informe o valor inicial do caixa:",
-                    "Abertura de Caixa",
-                    javax.swing.JOptionPane.QUESTION_MESSAGE
-            );
+            java.math.BigDecimal valorInicial =
+                    br.com.trevizan.espetinhos.util.CampoMoeda.pedirValor(
+                            this,
+                            "Informe o valor inicial do caixa (troco):",
+                            "Abertura de Caixa",
+                            java.math.BigDecimal.ZERO
+                    );
 
             // Usuário clicou em Cancelar
-            if (valorInformado == null) {
+            if (valorInicial == null) {
                 return;
             }
 
-            valorInformado = valorInformado
-                    .trim()
-                    .replace(",", ".");
-
             try {
-
-                java.math.BigDecimal valorInicial =
-                        new java.math.BigDecimal(valorInformado);
-
-                if (valorInicial.compareTo(java.math.BigDecimal.ZERO) < 0) {
-                    javax.swing.JOptionPane.showMessageDialog(
-                            this,
-                            "O valor inicial não pode ser negativo.",
-                            "Valor inválido",
-                            javax.swing.JOptionPane.WARNING_MESSAGE
-                    );
-                    continue;
-                }
 
                 br.com.trevizan.espetinhos.model.Caixa novoCaixa =
                         new br.com.trevizan.espetinhos.model.Caixa();
@@ -474,25 +458,23 @@ public class MainScreen extends javax.swing.JPanel {
                 javax.swing.JOptionPane.showMessageDialog(
                         this,
                         "Caixa aberto com sucesso!\n"
-                                + "Valor inicial: R$ "
-                                + valorInicial.setScale(
-                                2,
-                                java.math.RoundingMode.HALF_UP
-                        ),
+                                + "Valor inicial: "
+                                + br.com.trevizan.espetinhos.util.CampoMoeda.formatar(valorInicial),
                         "Caixa aberto",
                         javax.swing.JOptionPane.INFORMATION_MESSAGE
                 );
 
                 break;
 
-            } catch (NumberFormatException e) {
+            } catch (RuntimeException e) {
 
                 javax.swing.JOptionPane.showMessageDialog(
                         this,
-                        "Informe um valor válido.\nExemplo: 150,00",
-                        "Valor inválido",
-                        javax.swing.JOptionPane.WARNING_MESSAGE
+                        "Não foi possível abrir o caixa.\n" + e.getMessage(),
+                        "Erro",
+                        javax.swing.JOptionPane.ERROR_MESSAGE
                 );
+                return;
             }
         }
     }
